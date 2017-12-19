@@ -1,0 +1,47 @@
+{
+  "name": "prosemirror-noting",
+  "version": "0.1.0",
+  "description": "A plugin to allow noting in prosemirror",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "test": "NODE_ENV=test jest test 'test/*.spec.js'",
+    "test-visual": "http-server",
+    "prepublish": "yarn build",
+    "build": "yarn build-js && yarn build-scss",
+    "build-js": "rollup -c",
+    "watch-js": "rollup -c -w",
+    "build-scss": "node-sass src/css/noting.scss -o dist",
+    "watch-scss": "node-sass -w src/css/noting.scss -o dist",
+    "format": "prettier --write './src/**/*.js'"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.0.0-beta.35",
+    "@babel/preset-env": "^7.0.0-beta.35",
+    "babel-core": "^7.0.0-0",
+    "babel-jest": "^22.0.1",
+    "eslint": "^4.13.1",
+    "eslint-config-airbnb-base": "^12.1.0",
+    "eslint-plugin-import": "^2.8.0",
+    "eslint-plugin-prettier": "^2.4.0",
+    "http-server": "^0.10.0",
+    "jest": "^22.0.1",
+    "node-sass": "^4.7.2",
+    "prettier": "^1.9.2",
+    "prosemirror-example-setup": "^1.0.1",
+    "prosemirror-history": "^1.0.0",
+    "prosemirror-keymap": "^1.0.0",
+    "prosemirror-model": "^1.0.1",
+    "prosemirror-schema-basic": "^1.0.0",
+    "prosemirror-state": "^1.0.2",
+    "prosemirror-test-builder": "^1.0.0",
+    "prosemirror-view": "^1.0.5",
+    "rollup": "^0.52.3",
+    "rollup-plugin-commonjs": "^8.2.6",
+    "rollup-plugin-eslint": "^4.0.0",
+    "rollup-plugin-node-resolve": "^3.0.0"
+  },
+  "dependencies": {
+    "uuid": "^3.1.0"
+  }
+}
