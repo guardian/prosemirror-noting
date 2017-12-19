@@ -22,7 +22,7 @@ const noteSchema = new Schema({
       },
       meta => ({
         class: meta.hidden ? "note--collapsed" : "",
-        title: getNoteTitle(meta.noteEditedBy, meta.noteEditedDate)
+        title: "Test"
       })
     )
   })
@@ -34,7 +34,7 @@ const build = builders(noteSchema, {
   }
 });
 
-const { doc, textElement, p } = build;
+const { doc, p } = build;
 
 const note = (attrs = {}, content) =>
   build.note(Object.assign({}, { meta: { type: "note" } }, attrs), content);
@@ -64,7 +64,7 @@ const initPM = initDoc => {
     selection: selFor(initDoc),
     plugins: [
       historyPlugin,
-      noter(noteSchema.marks.note, historyPlugin)(initDoc)
+      noter(noteSchema.marks.note, initDoc, historyPlugin)
     ]
   });
   return new TestState(state);
