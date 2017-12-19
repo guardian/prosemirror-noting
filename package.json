@@ -4,6 +4,10 @@
   "description": "A plugin to allow noting in prosemirror",
   "main": "dist/noting.js",
   "license": "MIT",
+  "author": {
+    "name": "Richard Beddington",
+    "email": "richard.beddington@guardian.co.uk"
+  },
   "scripts": {
     "test": "NODE_ENV=test jest test 'test/*.spec.js'",
     "test-visual": "http-server",
