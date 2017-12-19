@@ -21,6 +21,6 @@ const createConfig = (input, file, name) => ({
 });
 
 export default [
-  createConfig("src/js/index.js", "dist/bundle.js"),
+  createConfig("src/js/index.js", "dist/noting.js"),
   createConfig("test/visual/index.js", "test/visual/bundle.js", "TestVisual")
 ];
