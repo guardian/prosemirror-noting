@@ -2799,7 +2799,7 @@ node-pre-gyp@^0.6.39:
     tar "^2.2.1"
     tar-pack "^3.4.0"
 
-node-sass@^4.7.2:
+node-sass@^4.5.3:
   version "4.7.2"
   resolved "https://registry.yarnpkg.com/node-sass/-/node-sass-4.7.2.tgz#9366778ba1469eb01438a9e8592f4262bcb6794e"
   dependencies:
@@ -3177,7 +3177,7 @@ prosemirror-keymap@^1.0.0:
     prosemirror-state "^1.0.0"
     w3c-keyname "^1.1.0"
 
-prosemirror-menu@^1.0.0:
+prosemirror-menu@^1.0.0, prosemirror-menu@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/prosemirror-menu/-/prosemirror-menu-1.0.1.tgz#63b5e5b85300c7eb9127dcc66f7be0a3d22903fb"
   dependencies:
@@ -3568,6 +3568,13 @@ rollup-plugin-node-resolve@^3.0.0:
     builtin-modules "^1.1.0"
     is-module "^1.0.0"
     resolve "^1.1.6"
+
+rollup-plugin-scss@^0.4.0:
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/rollup-plugin-scss/-/rollup-plugin-scss-0.4.0.tgz#26b57c3c1601fb10087ff28c339e66aaa8b1e638"
+  dependencies:
+    node-sass "^4.5.3"
+    rollup-pluginutils "^2.0.1"
 
 rollup-pluginutils@^2.0.1:
   version "2.0.1"

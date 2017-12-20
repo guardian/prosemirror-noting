@@ -15477,7 +15477,6 @@ class NoteTransaction {
       }
       return this.addNotes([{ from, to, meta: { type } }]);
     }
-    return this;
   }
 
   /*
@@ -15697,6 +15696,9 @@ const datasetToAttrs = (dataset, defaults = {}) => ({
     )
 });
 
+const filterTagTypeMap = tagTypeMap =>
+  typeof tagTypeMap === "string" ? { note: tagTypeMap } : tagTypeMap;
+
 const createNoteMark = (typeTagMap, attrGenerator = () => {}) => ({
   attrs: {
     id: {},
@@ -15705,7 +15707,7 @@ const createNoteMark = (typeTagMap, attrGenerator = () => {}) => ({
     }
   },
   // Create a rule for every type
-  parseDOM: Object.keys(typeTagMap).map(type => ({
+  parseDOM: Object.keys(filterTagTypeMap(typeTagMap)).map(type => ({
     tag: typeTagMap[type],
     getAttrs: ({ dataset }) => {
       const attrs = datasetToAttrs(dataset);
@@ -15719,7 +15721,7 @@ const createNoteMark = (typeTagMap, attrGenerator = () => {}) => ({
   })),
   // Spit out the node based on the type
   toDOM: ({ attrs: { id, meta } }) => [
-    typeTagMap[meta.type] || fallbackType,
+    typeTagMap[meta.type],
     noteToAttrs(id, meta, attrGenerator)
   ]
 });
@@ -15791,7 +15793,7 @@ const noterPlugin = noter(mySchema.marks.note, doc, historyPlugin, note => {
   });
 });
 
-const view = new dist_1$3(document.querySelector("#editor"), {
+new dist_1$3(document.querySelector("#editor"), {
   state: dist_7.create({
     doc: dist_12.fromSchema(mySchema).parse(
       document.querySelector("#content")
@@ -15799,7 +15801,23 @@ const view = new dist_1$3(document.querySelector("#editor"), {
     plugins: [
       ...dist_4$4({
         schema: mySchema,
-        history: false
+        history: false,
+        menuContent: [
+          ...dist_1$4(mySchema).fullMenu,
+          [
+            new dist_1$6({
+              title: "Toggle Note",
+              label: "Toggle Note",
+              icon: {
+                width: 512,
+                height: 512,
+                path:
+                  "M448,0H64C46.328,0,32,14.313,32,32v448c0,17.688,14.328,32,32,32h288l128-128V32C480,14.313,465.688,0,448,0z M352,466.75  V384h82.75L352,466.75z M448,352h-96c-17.688,0-32,14.313-32,32v96H64V32h384V352z M96,112c0-8.844,7.156-16,16-16h288  c8.844,0,16,7.156,16,16s-7.156,16-16,16H112C103.156,128,96,120.844,96,112z M96,208c0-8.844,7.156-16,16-16h288  c8.844,0,16,7.156,16,16s-7.156,16-16,16H112C103.156,224,96,216.844,96,208z M96,304c0-8.844,7.156-16,16-16h288  c8.844,0,16,7.156,16,16s-7.156,16-16,16H112C103.156,320,96,312.844,96,304z"
+              },
+              run: toggleNote("note")
+            })
+          ]
+        ]
       }),
       keymap_2({
         F10: toggleNote("note")

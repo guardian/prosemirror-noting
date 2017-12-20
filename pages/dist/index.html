@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+  <link rel="stylesheet" href="./styles.css">
+  <style>
+  .ProseMirror {
+    padding: 4px 8px 4px 14px;
+    line-height: 1.2;
+    outline: none;
+  }
+
+  .editor {
+    background: white;
+    color: black;
+    background-clip: padding-box;
+    border-radius: 4px;
+    border: 2px solid rgba(0, 0, 0, 0.2);
+    padding: 5px 0;
+  }
+
+  .hide {
+    display: none;
+  }
+</style>
+</head>
+
+<body>
+  <h1>Prosemirror Noting</h1>
+  <p></p>
+  <div id="editor" class="editor"></div>
+  <div id="content" class="hide">
+    <p>Let's do some <span data-note-id="note-id" class="note">noting</span> in Prosemirror</p>
+  </div>
+  <script src="./bundle.js"></script>
+</script>
+</body>
+
+</html>
