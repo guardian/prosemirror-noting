@@ -15638,8 +15638,8 @@ const hyphenatePascal = str =>
     .replace(/([A-Z]{2})[a-z]/, "$1-")
     .toLowerCase();
 
-const valToAtt = val => JSON.stringify(val);
-const attToVal = att => JSON.parse(att);
+// Coerce trues
+const attToVal = att => (att === "true" ? true : att);
 
 const noteToAttrs = (id, meta, attrGenerator = () => {}) => {
   const classes = ["note"]; // allow classes to be added by all
@@ -15657,7 +15657,7 @@ const noteToAttrs = (id, meta, attrGenerator = () => {}) => {
       .reduce(
         (out, key) =>
           Object.assign({}, out, {
-            [`data-${hyphenatePascal(key)}`]: valToAtt(meta[key])
+            [`data-${hyphenatePascal(key)}`]: meta[key]
           }),
         {}
       ),
