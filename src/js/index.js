@@ -5,6 +5,7 @@ import { createDecorateNotes } from "./utils/DecorationUtils";
 import clickHandler from "./clickHandler";
 import { notesFromDoc } from "./utils/StateUtils";
 import { createNoteMark } from "./utils/SchemaUtils";
+import "../css/noting.scss";
 
 const toggleNote = type => (state, dispatch) =>
   dispatch ? dispatch(state.tr.setMeta("toggle-note", type)) : true;
