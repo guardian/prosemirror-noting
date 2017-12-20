@@ -147,7 +147,6 @@ export default class NoteTransaction {
       }
       return this.addNotes([{ from, to, meta: { type } }]);
     }
-    return this;
   }
 
   /*

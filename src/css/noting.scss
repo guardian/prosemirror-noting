@@ -13,9 +13,11 @@
         position: relative;
     }
 
-    .note--start,
+    .note--start {
+        padding-left: 8px;
+    }
     .note--end {
-        padding: 0 8px;
+        padding-right: 8px;
     }
 
     .note--start:before,

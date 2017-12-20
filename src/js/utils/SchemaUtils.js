@@ -55,7 +55,7 @@ export const createNoteMark = (typeTagMap, attrGenerator = () => {}) => ({
     }
   },
   // Create a rule for every type
-  parseDOM: Object.keys(typeTagMap).map(type => ({
+  parseDOM: Object.keys(filterTagTypeMap(typeTagMap)).map(type => ({
     tag: typeTagMap[type],
     getAttrs: ({ dataset }) => {
       const attrs = datasetToAttrs(dataset);
@@ -69,7 +69,7 @@ export const createNoteMark = (typeTagMap, attrGenerator = () => {}) => ({
   })),
   // Spit out the node based on the type
   toDOM: ({ attrs: { id, meta } }) => [
-    typeTagMap[meta.type] || fallbackType,
+    typeTagMap[meta.type],
     noteToAttrs(id, meta, attrGenerator)
   ]
 });
