@@ -3471,7 +3471,7 @@ exports.MarkType = MarkType;
 exports.ContentMatch = ContentMatch;
 exports.DOMParser = DOMParser;
 exports.DOMSerializer = DOMSerializer;
-
+//# sourceMappingURL=index.js.map
 });
 
 unwrapExports(dist$1);
@@ -5118,7 +5118,7 @@ exports.RemoveMarkStep = RemoveMarkStep;
 exports.ReplaceStep = ReplaceStep;
 exports.ReplaceAroundStep = ReplaceAroundStep;
 exports.replaceStep = replaceStep;
-
+//# sourceMappingURL=index.js.map
 });
 
 unwrapExports(dist$2);
@@ -6273,7 +6273,7 @@ exports.Transaction = Transaction;
 exports.EditorState = EditorState;
 exports.Plugin = Plugin;
 exports.PluginKey = PluginKey;
-
+//# sourceMappingURL=index.js.map
 });
 
 unwrapExports(dist);
@@ -10893,7 +10893,7 @@ exports.Decoration = Decoration;
 exports.DecorationSet = DecorationSet;
 exports.__serializeForClipboard = serializeForClipboard;
 exports.__parseFromClipboard = parseFromClipboard;
-
+//# sourceMappingURL=index.js.map
 });
 
 unwrapExports(dist$3);
@@ -11064,7 +11064,7 @@ var schema = new dist$1.Schema({nodes: nodes, marks: marks});
 exports.nodes = nodes;
 exports.marks = marks;
 exports.schema = schema;
-
+//# sourceMappingURL=schema-basic.js.map
 });
 
 unwrapExports(schemaBasic);
@@ -11714,7 +11714,7 @@ exports.undo = undo;
 exports.redo = redo;
 exports.undoDepth = undoDepth;
 exports.redoDepth = redoDepth;
-
+//# sourceMappingURL=history.js.map
 });
 
 unwrapExports(history_1);
@@ -11954,7 +11954,7 @@ function keydownHandler(bindings) {
 
 exports.keymap = keymap;
 exports.keydownHandler = keydownHandler;
-
+//# sourceMappingURL=keymap.js.map
 });
 
 unwrapExports(keymap_1);
@@ -12619,7 +12619,7 @@ exports.chainCommands = chainCommands;
 exports.pcBaseKeymap = pcBaseKeymap;
 exports.macBaseKeymap = macBaseKeymap;
 exports.baseKeymap = baseKeymap;
-
+//# sourceMappingURL=commands.js.map
 });
 
 unwrapExports(commands);
@@ -12762,7 +12762,7 @@ function dropPos(slice, $pos) {
 }
 
 exports.dropCursor = dropCursor;
-
+//# sourceMappingURL=dropcursor.js.map
 });
 
 unwrapExports(dropcursor);
@@ -12955,7 +12955,7 @@ function drawGapCursor(state) {
 
 exports.gapCursor = gapCursor;
 exports.GapCursor = GapCursor;
-
+//# sourceMappingURL=index.js.map
 });
 
 unwrapExports(dist$7);
@@ -13785,7 +13785,7 @@ exports.redoItem = redoItem;
 exports.wrapItem = wrapItem;
 exports.blockTypeItem = blockTypeItem;
 exports.menuBar = menuBar;
-
+//# sourceMappingURL=index.js.map
 });
 
 unwrapExports(dist$8);
@@ -14050,7 +14050,7 @@ exports.wrapInList = wrapInList;
 exports.splitListItem = splitListItem;
 exports.liftListItem = liftListItem;
 exports.sinkListItem = sinkListItem;
-
+//# sourceMappingURL=schema-list.js.map
 });
 
 unwrapExports(schemaList);
@@ -14236,7 +14236,7 @@ exports.closeSingleQuote = closeSingleQuote;
 exports.smartQuotes = smartQuotes;
 exports.wrappingInputRule = wrappingInputRule;
 exports.textblockTypeInputRule = textblockTypeInputRule;
-
+//# sourceMappingURL=index.js.map
 });
 
 unwrapExports(dist$9);
@@ -14880,7 +14880,7 @@ exports.buildMenuItems = buildMenuItems;
 exports.buildKeymap = buildKeymap;
 exports.buildInputRules = buildInputRules;
 exports.exampleSetup = exampleSetup;
-
+//# sourceMappingURL=index.js.map
 });
 
 unwrapExports(dist$6);
@@ -14905,10 +14905,6 @@ const cloneDeep = val => {
   }
   return val;
 };
-
-/*
- * NOTE: All ends for ranges are EXCLUSIVE
- */
 
 const clamp = (num, min, max) => Math.max(Math.min(num, max), min);
 
@@ -14979,10 +14975,6 @@ class Note {
   }
 }
 
-// Unique ID creation requires a high quality random # generator.  In the
-// browser this is a little complicated due to unknown quality of Math.random()
-// and inconsistent support for the `crypto` API.  We do the best we can via
-// feature-detection
 var rng;
 
 var crypto = commonjsGlobal.crypto || commonjsGlobal.msCrypto; // for IE 11
@@ -15037,12 +15029,6 @@ function bytesToUuid(buf, offset) {
 
 var bytesToUuid_1 = bytesToUuid;
 
-// **`v1()` - Generate time-based UUID**
-//
-// Inspired by https://github.com/LiosK/UUID.js
-// and http://docs.python.org/library/uuid.html
-
-// random #'s we need to init node and clockseq
 var _seedBytes = rngBrowser();
 
 // Per 4.5, create and 48-bit node id, (47 random bits + multicast bit = 1)
@@ -15346,9 +15332,9 @@ class NoteTransaction {
 
   filterTransaction(tr, oldState) {
     this.init(tr).setCorrectMark();
-    if (tr.getMeta("set-note-meta")) {
-      const { id, meta } = tr.getMeta("set-note-meta");
-      this.updateMeta(id, meta);
+    if (tr.getMeta("set-notes-meta")) {
+      const specs = tr.getMeta("set-notes-meta");
+      specs.forEach(({ id, meta }) => this.updateMeta(id, meta));
     } else if (tr.getMeta("toggle-note")) {
       const type = tr.getMeta("toggle-note");
       this.handleToggle(type, oldState);
@@ -15652,7 +15638,6 @@ const hyphenatePascal = str =>
     .replace(/([A-Z]{2})[a-z]/, "$1-")
     .toLowerCase();
 
-// Helps type coercion
 const valToAtt = val => JSON.stringify(val);
 const attToVal = att => JSON.parse(att);
 
@@ -15729,8 +15714,55 @@ const createNoteMark = (typeTagMap, attrGenerator = () => {}) => ({
 const toggleNote = type => (state, dispatch) =>
   dispatch ? dispatch(state.tr.setMeta("toggle-note", type)) : true;
 
-const setNoteMeta = (id, meta) => (state, dispatch) =>
-  dispatch ? dispatch(state.tr.setMeta("set-note-meta", { id, meta })) : true;
+const setNotesMeta = (specs = []) => (state, dispatch) =>
+  dispatch ? dispatch(state.tr.setMeta("set-notes-meta", specs)) : true;
+
+const setNoteMeta = (id, meta) => setNotesMeta([{ id, meta }]);
+
+const collapseAllNotes = (state, dispatch) => {
+  // @TODO: This is searching the entire doc for notes every time.
+  // NoteTracker is essentially the state of the Noter plugin, in
+  // order to make it act like others, and to clean this up, we
+  // should be able to call noter.getState() and read the list of notes from there
+  const allNotes = notesFromDoc(state.doc, state.config.schema.marks.note);
+  let hidden = !allNotes.every(note => note.meta.hidden === true);
+
+  if (!hidden) {
+    return false;
+  }
+
+  const specs = allNotes.map(({ id }) => ({
+    id,
+    meta: {
+      hidden: true
+    }
+  }));
+
+  return setNotesMeta(specs)(state, dispatch);
+};
+
+const showAllNotes = (state, dispatch) => {
+  const allNotes = notesFromDoc(state.doc, state.config.schema.marks.note);
+  let hidden = !allNotes.every(note => note.meta.hidden === true);
+
+  if (hidden) {
+    return false;
+  }
+
+  const specs = allNotes.map(({ id }) => ({
+    id,
+    meta: {
+      hidden: false
+    }
+  }));
+
+  return setNotesMeta(specs)(state, dispatch);
+};
+
+const toggleAllNotes = (state, dispatch) =>
+  collapseAllNotes(state)
+    ? collapseAllNotes(state, dispatch)
+    : showAllNotes(state, dispatch);
 
 /*
  * The main plugin that setups the noter
@@ -15764,6 +15796,19 @@ const noter = (markType, initDoc, historyPlugin, onNoteCreate = () => {}) => {
     filterTransaction: (tr, oldState) =>
       noteTransaction.filterTransaction(tr, oldState)
   });
+};
+
+const toggleNoteIcon = {
+  width: 512,
+  height: 512,
+  path:
+    "M448,0H64C46.328,0,32,14.313,32,32v448c0,17.688,14.328,32,32,32h288l128-128V32C480,14.313,465.688,0,448,0z M352,466.75  V384h82.75L352,466.75z M448,352h-96c-17.688,0-32,14.313-32,32v96H64V32h384V352z M96,112c0-8.844,7.156-16,16-16h288  c8.844,0,16,7.156,16,16s-7.156,16-16,16H112C103.156,128,96,120.844,96,112z M96,208c0-8.844,7.156-16,16-16h288  c8.844,0,16,7.156,16,16s-7.156,16-16,16H112C103.156,224,96,216.844,96,208z M96,304c0-8.844,7.156-16,16-16h288  c8.844,0,16,7.156,16,16s-7.156,16-16,16H112C103.156,320,96,312.844,96,304z"
+};
+
+const collapseNoteIcon = {
+  width: 128,
+  height: 121.451,
+  path: `M39.637 53.63H8.69l-.01 10.105h30.945L25.68 81.865l4.468 4.46L56.07 60.41v-3.476l-25.918-25.91-4.46 4.47zm48.504 10.1h30.27l.008-10.1-30.266-.007 13.942-18.13-4.465-4.47L71.714 56.94l-.008 3.484 25.91 25.902 4.47-4.468z`
 };
 
 const mySchema = new dist_8$1({
@@ -15808,13 +15853,14 @@ new dist_1$3(document.querySelector("#editor"), {
             new dist_1$6({
               title: "Toggle Note",
               label: "Toggle Note",
-              icon: {
-                width: 512,
-                height: 512,
-                path:
-                  "M448,0H64C46.328,0,32,14.313,32,32v448c0,17.688,14.328,32,32,32h288l128-128V32C480,14.313,465.688,0,448,0z M352,466.75  V384h82.75L352,466.75z M448,352h-96c-17.688,0-32,14.313-32,32v96H64V32h384V352z M96,112c0-8.844,7.156-16,16-16h288  c8.844,0,16,7.156,16,16s-7.156,16-16,16H112C103.156,128,96,120.844,96,112z M96,208c0-8.844,7.156-16,16-16h288  c8.844,0,16,7.156,16,16s-7.156,16-16,16H112C103.156,224,96,216.844,96,208z M96,304c0-8.844,7.156-16,16-16h288  c8.844,0,16,7.156,16,16s-7.156,16-16,16H112C103.156,320,96,312.844,96,304z"
-              },
+              icon: toggleNoteIcon,
               run: toggleNote("note")
+            }),
+            new dist_1$6({
+              title: "Collapse Notes",
+              icon: collapseNoteIcon,
+              run: toggleAllNotes,
+              active: showAllNotes
             })
           ]
         ]

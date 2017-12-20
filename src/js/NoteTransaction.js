@@ -16,9 +16,9 @@ export default class NoteTransaction {
 
   filterTransaction(tr, oldState) {
     this.init(tr).setCorrectMark();
-    if (tr.getMeta("set-note-meta")) {
-      const { id, meta } = tr.getMeta("set-note-meta");
-      this.updateMeta(id, meta);
+    if (tr.getMeta("set-notes-meta")) {
+      const specs = tr.getMeta("set-notes-meta");
+      specs.forEach(({ id, meta }) => this.updateMeta(id, meta));
     } else if (tr.getMeta("toggle-note")) {
       const type = tr.getMeta("toggle-note");
       this.handleToggle(type, oldState);

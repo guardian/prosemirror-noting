@@ -10,7 +10,7 @@
   },
   "scripts": {
     "test": "NODE_ENV=test jest test 'test/*.spec.js'",
-    "pages": "yarn build && http-server ./pages/dist",
+    "pages": "http-server ./pages/dist",
     "prepublishOnly": "yarn build",
     "build": "rollup -c",
     "watch": "rollup -c -w",
