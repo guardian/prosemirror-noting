@@ -1,4 +1,4 @@
-# prosemirror-noter
+# prosemirror-noting
 This plugin adds the ability to have ranges added to the document that expand and contract around dependent on the input. These notes are represented as `marks` in the document.
 
 ---
