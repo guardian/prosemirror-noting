@@ -16,9 +16,7 @@ export default [
       }),
       eslint({
         exclude: ["node_modules/**"]
-      }),
-      resolve({ browser: true }),
-      commonjs()
+      })
     ]
   },
   {
