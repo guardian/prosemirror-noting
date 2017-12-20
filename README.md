@@ -3,6 +3,51 @@ This plugin adds the ability to have ranges added to the document that expand an
 
 ---
 
+## Install
+`npm install prosemirror-noting`
+
+## Usage
+Add the mark to the schema
+```javascript
+const mySchema = new Schema({
+  nodes,
+  marks: Object.assign({}, marks, {
+    note: createNoteMark(
+      {
+        note: "span.note"
+      },
+      meta => ({
+        class: meta.hidden ? "note--collapsed" : "",
+        title: "My Title",
+        contenteditable: !meta.hidden
+      })
+    )
+  })
+});
+```
+Add the plugin to the state
+```javascript
+const historyPlugin = history();
+const noterPlugin = noter(mySchema.marks.note, doc, historyPlugin);
+
+new EditorView(document.querySelector("#editor"), {
+  state: EditorState.create({
+    doc: DOMParser.fromSchema(mySchema).parse(
+      document.querySelector("#content")
+    ),
+    plugins: [
+      keymap({
+        F10: toggleNote("note")
+      }),
+      historyPlugin,
+      noterPlugin
+    ]
+  })
+});
+```
+
+And import the css (if needed) from `prosemirror-noting/dist/noting.css`.
+
 ## API
 ### createNoteMark(typeTagMap: string | object, attrGenerator: function): MarkType
 Returns a mark to be added to the schema.
