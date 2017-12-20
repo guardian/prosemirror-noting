@@ -84,6 +84,7 @@ Returns the plugin to add to prosemirror
 - `onNoteCreate` -  a callback that is called when a new note is added to the document.
 
 ## Roadmap
+- Add in collapsing as a config option, currently there are some overlapping concerns here (`meta.hidden` manually having to be set in the schema setup)
 - Better documentation
 - Use proper plugin state in order to expose the state of the notes
 - Better CSS / decorations
