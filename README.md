@@ -55,7 +55,7 @@ And import the css (if needed) from `prosemirror-noting/dist/noting.css`.
 Returns a mark to be added to the schema.
 
 - `typeTagMap` - if this is passed with an object it expects a map between a "note type" and a dom tag (e.g. `{ note: "span.note"}`). Otherwise if a string is passed it will expect that string to be simply a tag name and the type will default to a type of `note`. Good for styling.
-- `metaGenerator` - this will run when rendering the note to add derived DOM attributes from the meta data.
+- `attrGenerator` - this will run when rendering the note to add derived DOM attributes from the meta data.
 
 ### toggleNote(type: string = "note"): CommandFunction
 Returns a command used for toggling notes based on the cursor position.
