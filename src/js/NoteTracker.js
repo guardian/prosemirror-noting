@@ -141,9 +141,12 @@ export default class NoteTracker {
 
     if (start) {
       const end = oldState.doc.content.findDiffEnd(state.doc.content).b;
-      const mergeableRange = this.mergeableRange(start, end);
       if (start < end) {
-        return mergeableRange;
+        return this.mergeableRange(start, end);
+      } else if (oldState.doc.nodeSize < state.doc.nodeSize) {
+        // make sure we're over-zealous with our rebuild size
+        const diff = state.doc.nodeSize - oldState.doc.nodeSize;
+        return this.mergeableRange(start, start + diff);
       }
     }
     return false;

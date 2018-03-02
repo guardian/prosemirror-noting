@@ -101,6 +101,7 @@ export class TestState {
 
   copy() {
     this.clipboard = this.selection.content();
+    return this;
   }
 
   cut() {
