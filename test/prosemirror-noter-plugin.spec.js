@@ -252,14 +252,13 @@ describe("Noter Plugin", () => {
   );
 
   testIO(
-    "can handle cutting and pasting a split note",
+    "can handle cutting and pasting a split note after it",
     t(p("foo", note({ id: 1 }, "no<a>te"), "mo<b>re")),
     s =>
       s
         .cut()
         .right()
-        .paste()
-        .paste(),
+        .paste(2),
     t(
       p(
         "foo",
@@ -276,14 +275,13 @@ describe("Noter Plugin", () => {
   );
 
   testIO(
-    "can handle copying and pasting a split note",
+    "can handle copying and pasting a split note after it",
     t(p("foo", note({ id: 1 }, "no<a>te"), "mo<b>re")),
     s =>
       s
         .copy()
         .right(4)
-        .paste()
-        .paste(),
+        .paste(2),
     t(
       p(
         "foo",
@@ -293,6 +291,26 @@ describe("Noter Plugin", () => {
         "mo",
         note({ id: 3 }, "te"),
         "more"
+      )
+    ),
+    3
+  );
+
+  testIO(
+    "can handle cutting and pasting a split note before it",
+    t(p("test", note({ id: 1 }, "no<a>te"), "te<b>st")),
+    s =>
+      s
+        .cut()
+        .left(4)
+        .paste(),
+    t(
+      p(
+        "te",
+        note({ id: 1 }, "te"),
+        "test",
+        note({ id: 2 }, "no"),
+        "st"
       )
     ),
     3

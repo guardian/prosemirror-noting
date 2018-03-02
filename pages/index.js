@@ -39,7 +39,7 @@ const mySchema = new Schema({
   marks: Object.assign({}, marks, {
     note: createNoteMark(
       {
-        note: "span.note"
+        note: "mynote"
       },
       meta => ({
         class: meta.hidden ? "note--collapsed" : "",
