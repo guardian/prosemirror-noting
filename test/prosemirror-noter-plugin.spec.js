@@ -252,6 +252,53 @@ describe("Noter Plugin", () => {
   );
 
   testIO(
+    "can handle cutting and pasting a split note",
+    t(p("foo", note({ id: 1 }, "no<a>te"), "mo<b>re")),
+    s =>
+      s
+        .cut()
+        .right()
+        .paste()
+        .paste(),
+    t(
+      p(
+        "foo",
+        note({ id: 1 }, "no"),
+        "r",
+        note({ id: 2 }, "te"),
+        "mo",
+        note({ id: 3 }, "te"),
+        "mo",
+        "e"
+      )
+    ),
+    3
+  );
+
+  testIO(
+    "can handle copying and pasting a split note",
+    t(p("foo", note({ id: 1 }, "no<a>te"), "mo<b>re")),
+    s =>
+      s
+        .copy()
+        .right(4)
+        .paste()
+        .paste(),
+    t(
+      p(
+        "foo",
+        note({ id: 1 }, "note"),
+        "mo",
+        note({ id: 2 }, "te"),
+        "mo",
+        note({ id: 3 }, "te"),
+        "more"
+      )
+    ),
+    3
+  );
+
+  testIO(
     "can handle pasting a note into a note",
     t(
       p(
