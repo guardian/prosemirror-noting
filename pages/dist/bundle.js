@@ -15261,9 +15261,12 @@ class NoteTracker {
 
     if (start) {
       const end = oldState.doc.content.findDiffEnd(state.doc.content).b;
-      const mergeableRange = this.mergeableRange(start, end);
       if (start < end) {
-        return mergeableRange;
+        return this.mergeableRange(start, end);
+      } else if (oldState.doc.nodeSize < state.doc.nodeSize) {
+        // make sure we're over-zealous with our rebuild size
+        const diff = state.doc.nodeSize - oldState.doc.nodeSize;
+        return this.mergeableRange(start, start + diff);
       }
     }
     return false;
@@ -15638,7 +15641,6 @@ const hyphenatePascal = str =>
     .replace(/([A-Z]{2})[a-z]/, "$1-")
     .toLowerCase();
 
-// Coerce trues
 const attToVal = att => (att === "true" ? true : att);
 
 const noteToAttrs = (id, meta, attrGenerator = () => {}) => {
@@ -15816,7 +15818,7 @@ const mySchema = new dist_8$1({
   marks: Object.assign({}, schemaBasic_2, {
     note: createNoteMark(
       {
-        note: "span.note"
+        note: "mynote"
       },
       meta => ({
         class: meta.hidden ? "note--collapsed" : "",

@@ -104,13 +104,20 @@ export class TestState {
     return this;
   }
 
-  cut() {
-    this.copy();
-    return this.deleteSelection();
+  cut(n = 1) {
+    for (let i = 0; i < n; i += 1) {
+      this.copy();
+      this.deleteSelection();
+    }
+    return this;
   }
 
-  paste() {
-    return this.replaceSelection(this.clipboard, true);
+  paste(n = 1) {
+    for (let i = 0; i < n; i += 1) {
+      this.replaceSelection(this.clipboard, true);
+    }
+
+    return this;
   }
 
   type(text) {
