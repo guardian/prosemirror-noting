@@ -14920,10 +14920,10 @@ class Note {
     * Writes
     */
 
-  mapPositions(mapFunc) {
+  mapPositions(startFunc, endFunc = startFunc) {
     return new Note(
-      mapFunc(this.start),
-      mapFunc(this.end),
+      startFunc(this.start),
+      endFunc(this.end),
       this.id,
       cloneDeep(this.meta)
     );
@@ -14952,18 +14952,20 @@ class Note {
     ];
   }
 
-  containsPosition(pos) {
-    return this.start <= pos && this.end > pos;
+  containsPosition(pos, inside = false) {
+    return this.coversRange(pos, pos, inside);
   }
 
   // End is exclusive
-  coversRange(from, to) {
-    return this.start <= from && this.end >= to;
+  coversRange(from, to, inside = false) {
+    return inside
+      ? this.start <= from && this.end >= to
+      : this.start < from && this.end > from;
   }
 
   // End is exclusive
   touchesRange(from, to) {
-    return this.start < to && this.end > from;
+    return this.start <= to && this.end >= from;
   }
 
   eq({ start, end }) {
@@ -15190,9 +15192,9 @@ class NoteTracker {
     );
   }
 
-  mapPositions(mapFunc) {
+  mapPositions(startFunc, endFunc = startFunc) {
     this.notes = this.notes
-      .map(note => note.mapPositions(mapFunc))
+      .map(note => note.mapPositions(startFunc, endFunc))
       .filter(note => !note.isEmpty);
   }
 
@@ -15212,12 +15214,12 @@ class NoteTracker {
     return !!this.getNote(noteId);
   }
 
-  noteAt(pos) {
+  noteAt(pos, inside = false) {
     const { notes } = this;
 
     for (let i = 0; i < notes.length; i += 1) {
       const note = notes[i];
-      if (note.containsPosition(pos)) {
+      if (note.containsPosition(pos, inside)) {
         return note;
       }
     }
@@ -15225,12 +15227,12 @@ class NoteTracker {
     return false;
   }
 
-  noteCoveringRange(from, to) {
+  noteCoveringRange(from, to, inside = false) {
     const { notes } = this;
 
     for (let i = 0; i < notes.length; i += 1) {
       const note = notes[i];
-      if (note.coversRange(from, to)) {
+      if (note.coversRange(from, to, inside)) {
         return note;
       }
     }
@@ -15353,15 +15355,21 @@ class NoteTransaction {
     const { noteTracker } = this;
     const { $cursor, from, to } = tr.selection;
 
+    // set's whether we're inclusive or exclusive
+    const inside = false;
+
     /*
          * Do all the position mapping, this handle deleted notes, we only ever
          * need to add and rebuild
          */
-    noteTracker.mapPositions(pos => tr.mapping.mapResult(pos).pos);
+    noteTracker.mapPositions(
+      pos => tr.mapping.mapResult(pos, inside ? -1 : 1).pos,
+      pos => tr.mapping.mapResult(pos, inside ? 1 : -1).pos
+    );
 
     const note = $cursor
-      ? noteTracker.noteAt($cursor.pos - 1)
-      : noteTracker.noteCoveringRange(from, to);
+      ? noteTracker.noteAt($cursor.pos, inside)
+      : noteTracker.noteCoveringRange(from, to, true);
 
     this.note = note;
     this.tr = tr.setMeta("current-note", note);
@@ -15464,7 +15472,7 @@ class NoteTransaction {
           notes
         );
       }
-      return this.addNotes([{ from, to, meta: { type } }]);
+      return this.addNotes([{ from, to, meta: { type } }], true);
     }
   }
 
@@ -15543,7 +15551,7 @@ class NoteTransaction {
     return this.removeRanges([range]).addNotes(noteRanges);
   }
 
-  addNotes(ranges) {
+  addNotes(ranges, cursorToEnd = false) {
     const { tr, noteTracker, markType } = this;
     this.tr = ranges
       .map(({ from, to, meta, id }) => noteTracker.addNote(from, to, meta, id))
@@ -15554,6 +15562,14 @@ class NoteTransaction {
           .removeMark(start, end, markType)
           .addMark(start, end, newMark);
       }, tr);
+
+    if (cursorToEnd && ranges.length) {
+      const { to } = ranges[ranges.length - 1];
+      const { end } = noteTracker.noteAt(to, true);
+      const $end = this.tr.doc.resolve(end);
+      this.tr = this.tr.setSelection(dist_1.near($end), 1);
+    }
+
     return this;
   }
 
@@ -15583,7 +15599,10 @@ const markSpec = (id, positions) => ({
 });
 
 const noteWrapper = (id, { start, end }, ...positions) =>
-  dist_2$3.inline(start, end, markSpec(id, positions));
+  dist_2$3.inline(start, end, markSpec(id, positions), {
+    inclusiveStart: false,
+    inclusiveEnd: false
+  });
 
 const createDecorateNotes = markType => ({ doc }) =>
   dist_3$3.create(
@@ -15693,6 +15712,7 @@ const createNoteMark = (typeTagMap, attrGenerator = () => {}) => ({
       default: {}
     }
   },
+  inclusive: false,
   // Create a rule for every type
   parseDOM: Object.keys(filterTagTypeMap(typeTagMap)).map(type => ({
     tag: typeTagMap[type],
