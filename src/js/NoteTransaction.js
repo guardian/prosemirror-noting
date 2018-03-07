@@ -1,3 +1,4 @@
+import { Selection } from "prosemirror-state";
 import { cloneDeep } from "./utils/helpers";
 import { charsAdded, notesFromDoc } from "./utils/StateUtils";
 
@@ -34,15 +35,21 @@ export default class NoteTransaction {
     const { noteTracker } = this;
     const { $cursor, from, to } = tr.selection;
 
+    // set's whether we're inclusive or exclusive
+    const inside = false;
+
     /*
          * Do all the position mapping, this handle deleted notes, we only ever
          * need to add and rebuild
          */
-    noteTracker.mapPositions(pos => tr.mapping.mapResult(pos).pos);
+    noteTracker.mapPositions(
+      pos => tr.mapping.mapResult(pos, inside ? -1 : 1).pos,
+      pos => tr.mapping.mapResult(pos, inside ? 1 : -1).pos
+    );
 
     const note = $cursor
-      ? noteTracker.noteAt($cursor.pos - 1)
-      : noteTracker.noteCoveringRange(from, to);
+      ? noteTracker.noteAt($cursor.pos, inside)
+      : noteTracker.noteCoveringRange(from, to, true);
 
     this.note = note;
     this.tr = tr.setMeta("current-note", note);
@@ -145,7 +152,7 @@ export default class NoteTransaction {
           notes
         );
       }
-      return this.addNotes([{ from, to, meta: { type } }]);
+      return this.addNotes([{ from, to, meta: { type } }], true);
     }
   }
 
@@ -224,7 +231,7 @@ export default class NoteTransaction {
     return this.removeRanges([range]).addNotes(noteRanges);
   }
 
-  addNotes(ranges) {
+  addNotes(ranges, cursorToEnd = false) {
     const { tr, noteTracker, markType } = this;
     this.tr = ranges
       .map(({ from, to, meta, id }) => noteTracker.addNote(from, to, meta, id))
@@ -235,6 +242,14 @@ export default class NoteTransaction {
           .removeMark(start, end, markType)
           .addMark(start, end, newMark);
       }, tr);
+
+    if (cursorToEnd && ranges.length) {
+      const { to } = ranges[ranges.length - 1];
+      const { end } = noteTracker.noteAt(to, true);
+      const $end = this.tr.doc.resolve(end);
+      this.tr = this.tr.setSelection(Selection.near($end), 1);
+    }
+
     return this;
   }
 

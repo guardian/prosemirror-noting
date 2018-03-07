@@ -47,7 +47,7 @@ describe("NoteTracker", () => {
       noteTracker.addNote(7, 9);
       noteTracker.addNote(12, 20);
 
-      const firstNote = noteTracker.noteAt(2);
+      const firstNote = noteTracker.noteAt(2, true);
 
       expect(noteTracker.notes).toHaveLength(1);
       expect(firstNote.start).toBe(2);
@@ -100,9 +100,10 @@ describe("NoteTracker", () => {
       const note1 = noteTracker.addNote(3, 7);
       const note2 = noteTracker.addNote(11, 15);
 
-      expect(noteTracker.noteAt(3).eq(note1)).toBe(true);
+      expect(noteTracker.noteAt(3)).toBe(false);
+      expect(noteTracker.noteAt(3, true).eq(note1)).toBe(true);
       expect(noteTracker.noteAt(14).eq(note2)).toBe(true);
-      expect(noteTracker.noteAt(15)).toBe(false); // Note ranges are exlusive
+      expect(noteTracker.noteAt(16)).toBe(false);
       expect(noteTracker.noteAt(19)).toBe(false);
     });
   });

@@ -233,10 +233,10 @@ describe("Noter Plugin", () => {
   );
 
   testIO(
-    "does extend note at the end",
+    "doesn't extend note at the end",
     t(p("foo", note({ id: 1 }, "note<a>"), "more")),
     s => s.type("bar"),
-    t(p("foo", note({ id: 1 }, "notebar"), "more"))
+    t(p("foo", note({ id: 1 }, "note"), "barmore"))
   );
 
   testIO(

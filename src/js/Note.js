@@ -18,10 +18,10 @@ export default class Note {
     * Writes
     */
 
-  mapPositions(mapFunc) {
+  mapPositions(startFunc, endFunc = startFunc) {
     return new Note(
-      mapFunc(this.start),
-      mapFunc(this.end),
+      startFunc(this.start),
+      endFunc(this.end),
       this.id,
       cloneDeep(this.meta)
     );
@@ -50,18 +50,20 @@ export default class Note {
     ];
   }
 
-  containsPosition(pos) {
-    return this.start <= pos && this.end > pos;
+  containsPosition(pos, inside = false) {
+    return this.coversRange(pos, pos, inside);
   }
 
   // End is exclusive
-  coversRange(from, to) {
-    return this.start <= from && this.end >= to;
+  coversRange(from, to, inside = false) {
+    return inside
+      ? this.start <= from && this.end >= to
+      : this.start < from && this.end > from;
   }
 
   // End is exclusive
   touchesRange(from, to) {
-    return this.start < to && this.end > from;
+    return this.start <= to && this.end >= from;
   }
 
   eq({ start, end }) {

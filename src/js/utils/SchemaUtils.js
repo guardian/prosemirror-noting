@@ -53,6 +53,7 @@ export const createNoteMark = (typeTagMap, attrGenerator = () => {}) => ({
       default: {}
     }
   },
+  inclusive: false,
   // Create a rule for every type
   parseDOM: Object.keys(filterTagTypeMap(typeTagMap)).map(type => ({
     tag: typeTagMap[type],

@@ -12,7 +12,10 @@ const markSpec = (id, positions) => ({
 });
 
 const noteWrapper = (id, { start, end }, ...positions) =>
-  Decoration.inline(start, end, markSpec(id, positions));
+  Decoration.inline(start, end, markSpec(id, positions), {
+    inclusiveStart: false,
+    inclusiveEnd: false
+  });
 
 export const createDecorateNotes = markType => ({ doc }) =>
   DecorationSet.create(

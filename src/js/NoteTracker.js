@@ -70,9 +70,9 @@ export default class NoteTracker {
     );
   }
 
-  mapPositions(mapFunc) {
+  mapPositions(startFunc, endFunc = startFunc) {
     this.notes = this.notes
-      .map(note => note.mapPositions(mapFunc))
+      .map(note => note.mapPositions(startFunc, endFunc))
       .filter(note => !note.isEmpty);
   }
 
@@ -92,12 +92,12 @@ export default class NoteTracker {
     return !!this.getNote(noteId);
   }
 
-  noteAt(pos) {
+  noteAt(pos, inside = false) {
     const { notes } = this;
 
     for (let i = 0; i < notes.length; i += 1) {
       const note = notes[i];
-      if (note.containsPosition(pos)) {
+      if (note.containsPosition(pos, inside)) {
         return note;
       }
     }
@@ -105,12 +105,12 @@ export default class NoteTracker {
     return false;
   }
 
-  noteCoveringRange(from, to) {
+  noteCoveringRange(from, to, inside = false) {
     const { notes } = this;
 
     for (let i = 0; i < notes.length; i += 1) {
       const note = notes[i];
-      if (note.coversRange(from, to)) {
+      if (note.coversRange(from, to, inside)) {
         return note;
       }
     }
