@@ -1,38 +1,23 @@
 import { DecorationSet, Decoration } from "prosemirror-view";
 import { notesFromDoc } from "./StateUtils";
 
-const noteWrapperClasses = (id, positions) => [
-  ...positions.map(pos => `note--${pos}`),
-  `note-${id}`
-];
-
-const markSpec = (id, positions) => ({
-  nodeName: "span",
-  class: noteWrapperClasses(id, positions).join(" ")
-});
-
-const noteWrapper = (id, { start, end }, ...positions) =>
-  Decoration.inline(start, end, markSpec(id, positions), {
-    inclusiveStart: false,
-    inclusiveEnd: false
+const noteWrapper = (id, pos, side, inside) => {
+  const span = document.createElement("span");
+  span.classList.add(`note-${id}`, `note--${side < 0 ? "start" : "end"}`);
+  return Decoration.widget(pos, span, {
+    side: inside ? side : 0 - side,
+    marks: []
   });
+};
 
-export const createDecorateNotes = markType => ({ doc }) =>
+export const createDecorateNotes = (markType, noteTransaction) => ({ doc }) =>
   DecorationSet.create(
     doc,
     notesFromDoc(doc, markType).reduce(
       (out, { id, nodes }) => [
         ...out,
-        ...nodes.map((node, i) => {
-          if (nodes.length === 1) {
-            return noteWrapper(id, node, "start", "end");
-          } else if (i === 0) {
-            return noteWrapper(id, node, "start");
-          } else if (i === nodes.length - 1) {
-            return noteWrapper(id, node, "end");
-          }
-          return noteWrapper(id, node, "inner");
-        })
+        noteWrapper(id, nodes[0].start, -1, noteTransaction.inside),
+        noteWrapper(id, nodes[nodes.length - 1].end, 1, noteTransaction.inside)
       ],
       []
     )

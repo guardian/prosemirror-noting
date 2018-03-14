@@ -251,39 +251,7 @@ li.ProseMirror-selectednode:after {
   background-color: #F8FBFD;
   color: #626262;
   padding: 2px 0;
-  pointer-events: none;
-  display: inline; }
-  .note .note--start,
-  .note .note--end,
-  .note .note--inner {
-    display: inline;
-    position: relative; }
-  .note .note--start {
-    padding-left: 8px; }
-  .note .note--end {
-    padding-right: 8px; }
-  .note .note--start:before,
-  .note .note--end:after,
-  .note--collapsed .note--start:after {
-    cursor: pointer;
-    content: '|';
-    line-height: 1.25;
-    overflow: hidden;
-    pointer-events: all;
-    position: absolute;
-    text-indent: 10px;
-    width: 8px; }
-  .note .note--start:before {
-    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' viewBox='0 0 8 20' version='1.1'><path d='M 0 0 L 6 0 L 0 6 L 0 0 L 2 0 L 2 20 L 0 20' fill='%232983b6' stroke='none'/></svg>") top left/contain no-repeat;
-    left: 0;
-    top: -2px; }
-  .note .note--end:after,
-  .note--collapsed .note--start:after {
-    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' viewBox='0 0 8 20' version='1.1'><path d='M 8 20 L 2 20 L 8 14 L 8 20 L 6 20 L 6 0 L 8 0' fill='%232983b6' stroke='none'/></svg>") top right/contain no-repeat;
-    bottom: -1px;
-    right: 0; }
-  * + .note {
-    margin: 0 2px; }
+  display: inline-block; }
   .note--collapsed {
     pointer-events: all;
     cursor: pointer; }
@@ -303,3 +271,20 @@ li.ProseMirror-selectednode:after {
         top: 0; }
       .note--collapsed .note--start:after {
         bottom: 2px; }
+
+.note--start,
+.note--end {
+  cursor: pointer;
+  display: inline-block;
+  height: 1.45em;
+  vertical-align: top; }
+
+.note--start {
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' viewBox='0 0 2 1' version='1.1'><line x1='0' y1='0' x2='2' y2='0' stroke='%232983b6' stroke-dasharray='1'/></svg>") top/2px repeat-x, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' viewBox='0 0 2 1' version='1.1'><line x1='0' y1='0' x2='2' y2='0' stroke='%232983b6' stroke-dasharray='1'/></svg>") bottom/2px repeat-x, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' viewBox='0 0 8 22' version='1.1'><path d='M 0 0 L 6 0 L 0 6 L 0 0 L 2 0 L 2 22 L 0 22' fill='%232983b6' stroke='none'/></svg>") top left/contain no-repeat;
+  background-color: #F8FBFD;
+  padding-left: 8px; }
+
+.note--end {
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' viewBox='0 0 2 1' version='1.1'><line x1='0' y1='0' x2='2' y2='0' stroke='%232983b6' stroke-dasharray='1'/></svg>") top/2px repeat-x, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' viewBox='0 0 2 1' version='1.1'><line x1='0' y1='0' x2='2' y2='0' stroke='%232983b6' stroke-dasharray='1'/></svg>") bottom/2px repeat-x, url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' viewBox='0 0 8 22' version='1.1'><path d='M 8 22 L 2 22 L 8 14 L 8 22 L 6 22 L 6 0 L 8 0' fill='%232983b6' stroke='none'/></svg>") top right/contain no-repeat;
+  background-color: #F8FBFD;
+  padding-right: 8px; }
