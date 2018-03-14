@@ -11,15 +11,23 @@ const noteWrapper = (id, pos, side, inside) => {
   });
 };
 
-export const createDecorateNotes = (markType, noteTransaction) => ({ doc }) =>
-  DecorationSet.create(
-    doc,
-    notesFromDoc(doc, markType).reduce(
+const placeholderDecos = (noteTransaction, state) =>
+  state.selection.$cursor && noteTransaction.hasPlaceholder(state)
+    ? [
+        noteWrapper("NONE", state.selection.$cursor.pos, -1, true),
+        noteWrapper("NONE", state.selection.$cursor.pos, 1, true)
+      ]
+    : [];
+
+export const createDecorateNotes = (markType, noteTransaction) => state =>
+  DecorationSet.create(state.doc, [
+    ...notesFromDoc(state.doc, markType).reduce(
       (out, { id, nodes }) => [
         ...out,
         noteWrapper(id, nodes[0].start, -1, noteTransaction.inside),
         noteWrapper(id, nodes[nodes.length - 1].end, 1, noteTransaction.inside)
       ],
       []
-    )
-  );
+    ),
+    ...placeholderDecos(noteTransaction, state)
+  ]);

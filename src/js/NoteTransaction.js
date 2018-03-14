@@ -16,7 +16,7 @@ export default class NoteTransaction {
   }
 
   filterTransaction(tr, oldState) {
-    this.init(tr, oldState).setCorrectMark();
+    this.init(tr, oldState);
     if (tr.getMeta("set-notes-meta")) {
       const specs = tr.getMeta("set-notes-meta");
       specs.forEach(({ id, meta }) => this.updateMeta(id, meta));
@@ -28,17 +28,19 @@ export default class NoteTransaction {
     } else {
       this.handleInput(oldState);
     }
+    this.setCorrectMark();
     return this.tr;
   }
 
-  init(tr, { selection: { $cursor: $oldCursor } }) {
+  init(tr, oldState) {
     const { noteTracker, inside } = this;
+    const { selection: { $cursor: $oldCursor } } = oldState;
     const { $cursor } = tr.selection;
 
-    /*
-         * Do all the position mapping, this handle deleted notes, we only ever
-         * need to add and rebuild
-         */
+    /**
+     * Do all the position mapping, this handle deleted notes, we only ever
+     * need to add and rebuild
+     */
     noteTracker.mapPositions(
       pos => tr.mapping.mapResult(pos, inside ? -1 : 1).pos,
       pos => tr.mapping.mapResult(pos, inside ? 1 : -1).pos
@@ -62,7 +64,7 @@ export default class NoteTransaction {
       } else {
         note = noteTracker.noteAt($cursor.pos, this.inside);
 
-        if (note) {
+        if (note || this.hasPlaceholder(oldState)) {
           this.inside = true;
         } else {
           this.inside = false;
@@ -70,7 +72,7 @@ export default class NoteTransaction {
       }
     }
 
-    this.tr = tr.setMeta("current-note", note);
+    this.tr = tr;
     return this;
   }
 
@@ -85,7 +87,7 @@ export default class NoteTransaction {
         if (!newMark.isInSet(tr.storedMarks || $cursor.marks())) {
           this.tr = tr.addStoredMark(newMark);
         }
-      } else {
+      } else if (!this.hasPlaceholder(this.tr)) {
         this.tr = tr.removeStoredMark(markType);
       }
     }
@@ -123,11 +125,11 @@ export default class NoteTransaction {
      * If we have a selection decide whether to grow the note or slice it
      */
   handleToggle(type, oldState) {
-    const { noteTracker, tr, markType } = this;
+    const { noteTracker, tr, markType, inside } = this;
     const { $cursor, from, to } = tr.selection;
 
     if ($cursor) {
-      const note = noteTracker.noteAt($cursor.pos);
+      const note = noteTracker.noteAt($cursor.pos, inside);
       if (note) {
         const { start, end } = note;
         return this.removeRanges([{ from: start, to: end }]);
@@ -286,6 +288,7 @@ export default class NoteTransaction {
 
   startNote(type) {
     this.tr = this.tr.addStoredMark(this.placeholder(type));
+    this.inside = true;
     return this;
   }
 }
