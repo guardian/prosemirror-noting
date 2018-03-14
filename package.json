@@ -1,6 +1,6 @@
 {
   "name": "prosemirror-noting",
-  "version": "0.2.4",
+  "version": "1.0.0",
   "description": "A plugin to allow noting in prosemirror",
   "main": "dist/noting.js",
   "license": "MIT",
