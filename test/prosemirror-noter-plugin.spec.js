@@ -302,7 +302,7 @@ describe("Noter Plugin", () => {
     s =>
       s
         .cut()
-        .left(5)
+        .left(6)
         .paste(),
     t(
       p(

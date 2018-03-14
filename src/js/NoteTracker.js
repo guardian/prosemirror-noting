@@ -81,10 +81,10 @@ export default class NoteTracker {
     const offset = inclusive ? 0 : 1;
     if (!note) {
       return false;
-    } else if (pos - offset === note.start) {
-      return prevPos === pos - 1 && note;
-    } else if (pos + offset === note.end) {
-      return prevPos === pos + 1 && note;
+    } else if (pos - offset === note.start && prevPos === pos - 1) {
+      return note;
+    } else if (pos + offset === note.end && prevPos === pos + 1) {
+      return note;
     }
     return false;
   }
@@ -95,10 +95,10 @@ export default class NoteTracker {
 
     if (!note) {
       return false;
-    } else if (prevPos - offset === note.start) {
-      return prevPos === pos + 1 && note;
-    } else if (prevPos + offset === note.end) {
-      return prevPos === pos - 1 && note;
+    } else if (prevPos - offset === note.start && prevPos === pos + 1) {
+      return note;
+    } else if (prevPos + offset === note.end && prevPos === pos - 1) {
+      return note;
     }
     return false;
   }
