@@ -15314,15 +15314,19 @@ class NoteTracker {
       .filter(note => !note.isEmpty);
   }
 
+  /**
+   * Reads
+   */
+
   movingIntoNote(prevPos, pos, inclusive = false) {
     const note = this.noteAt(pos, inclusive);
     const offset = inclusive ? 0 : 1;
     if (!note) {
       return false;
-    } else if (pos - offset === note.start) {
-      return prevPos === pos - 1 && note;
-    } else if (pos + offset === note.end) {
-      return prevPos === pos + 1 && note;
+    } else if (pos - offset === note.start && prevPos === pos - 1) {
+      return note;
+    } else if (pos + offset === note.end && prevPos === pos + 1) {
+      return note;
     }
     return false;
   }
@@ -15333,17 +15337,13 @@ class NoteTracker {
 
     if (!note) {
       return false;
-    } else if (prevPos - offset === note.start) {
-      return prevPos === pos + 1 && note;
-    } else if (prevPos + offset === note.end) {
-      return prevPos === pos - 1 && note;
+    } else if (prevPos - offset === note.start && prevPos === pos + 1) {
+      return note;
+    } else if (prevPos + offset === note.end && prevPos === pos - 1) {
+      return note;
     }
     return false;
   }
-
-  /*
-     * Reads
-     */
 
   getNote(noteId) {
     return this.notes.filter(({ id }) => id === noteId)[0];
@@ -15479,7 +15479,7 @@ class NoteTransaction {
   }
 
   filterTransaction(tr, oldState) {
-    this.init(tr, oldState).setCorrectMark();
+    this.init(tr, oldState);
     if (tr.getMeta("set-notes-meta")) {
       const specs = tr.getMeta("set-notes-meta");
       specs.forEach(({ id, meta }) => this.updateMeta(id, meta));
@@ -15491,17 +15491,19 @@ class NoteTransaction {
     } else {
       this.handleInput(oldState);
     }
+    this.setCorrectMark();
     return this.tr;
   }
 
-  init(tr, { selection: { $cursor: $oldCursor } }) {
+  init(tr, oldState) {
     const { noteTracker, inside } = this;
+    const { selection: { $cursor: $oldCursor } } = oldState;
     const { $cursor } = tr.selection;
 
-    /*
-         * Do all the position mapping, this handle deleted notes, we only ever
-         * need to add and rebuild
-         */
+    /**
+     * Do all the position mapping, this handle deleted notes, we only ever
+     * need to add and rebuild
+     */
     noteTracker.mapPositions(
       pos => tr.mapping.mapResult(pos, inside ? -1 : 1).pos,
       pos => tr.mapping.mapResult(pos, inside ? 1 : -1).pos
@@ -15525,7 +15527,7 @@ class NoteTransaction {
       } else {
         note = noteTracker.noteAt($cursor.pos, this.inside);
 
-        if (note) {
+        if (note || this.hasPlaceholder(oldState)) {
           this.inside = true;
         } else {
           this.inside = false;
@@ -15533,7 +15535,7 @@ class NoteTransaction {
       }
     }
 
-    this.tr = tr.setMeta("current-note", note);
+    this.tr = tr;
     return this;
   }
 
@@ -15548,7 +15550,7 @@ class NoteTransaction {
         if (!newMark.isInSet(tr.storedMarks || $cursor.marks())) {
           this.tr = tr.addStoredMark(newMark);
         }
-      } else {
+      } else if (!this.hasPlaceholder(this.tr)) {
         this.tr = tr.removeStoredMark(markType);
       }
     }
@@ -15586,11 +15588,11 @@ class NoteTransaction {
      * If we have a selection decide whether to grow the note or slice it
      */
   handleToggle(type, oldState) {
-    const { noteTracker, tr, markType } = this;
+    const { noteTracker, tr, markType, inside } = this;
     const { $cursor, from, to } = tr.selection;
 
     if ($cursor) {
-      const note = noteTracker.noteAt($cursor.pos);
+      const note = noteTracker.noteAt($cursor.pos, inside);
       if (note) {
         const { start, end } = note;
         return this.removeRanges([{ from: start, to: end }]);
@@ -15749,6 +15751,7 @@ class NoteTransaction {
 
   startNote(type) {
     this.tr = this.tr.addStoredMark(this.placeholder(type));
+    this.inside = true;
     return this;
   }
 }
@@ -15763,18 +15766,26 @@ const noteWrapper = (id, pos, side, inside) => {
   });
 };
 
-const createDecorateNotes = (markType, noteTransaction) => ({ doc }) =>
-  dist_3$3.create(
-    doc,
-    notesFromDoc(doc, markType).reduce(
+const placeholderDecos = (noteTransaction, state) =>
+  state.selection.$cursor && noteTransaction.hasPlaceholder(state)
+    ? [
+        noteWrapper("NONE", state.selection.$cursor.pos, -1, true),
+        noteWrapper("NONE", state.selection.$cursor.pos, 1, true)
+      ]
+    : [];
+
+const createDecorateNotes = (markType, noteTransaction) => state =>
+  dist_3$3.create(state.doc, [
+    ...notesFromDoc(state.doc, markType).reduce(
       (out, { id, nodes }) => [
         ...out,
         noteWrapper(id, nodes[0].start, -1, noteTransaction.inside),
         noteWrapper(id, nodes[nodes.length - 1].end, 1, noteTransaction.inside)
       ],
       []
-    )
-  );
+    ),
+    ...placeholderDecos(noteTransaction, state)
+  ]);
 
 const clickHandler = ({ dispatch, state, dom }, pos, { target }) => {
   const { toggleNoteId } = target.dataset || {};
