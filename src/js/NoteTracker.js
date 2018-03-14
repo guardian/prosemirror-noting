@@ -76,6 +76,10 @@ export default class NoteTracker {
       .filter(note => !note.isEmpty);
   }
 
+  /**
+   * Reads
+   */
+
   movingIntoNote(prevPos, pos, inclusive = false) {
     const note = this.noteAt(pos, inclusive);
     const offset = inclusive ? 0 : 1;
@@ -102,10 +106,6 @@ export default class NoteTracker {
     }
     return false;
   }
-
-  /*
-     * Reads
-     */
 
   getNote(noteId) {
     return this.notes.filter(({ id }) => id === noteId)[0];
