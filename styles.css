@@ -253,24 +253,7 @@ li.ProseMirror-selectednode:after {
   padding: 2px 0;
   display: inline-block; }
   .note--collapsed {
-    pointer-events: all;
-    cursor: pointer; }
-    .note--collapsed .note--inner,
-    .note--collapsed .note--end {
-      display: none; }
-    .note--collapsed .note--start {
-      display: inline-block;
-      margin-top: -2px;
-      overflow: hidden;
-      padding-bottom: 4px;
-      text-indent: 24px;
-      vertical-align: top;
-      width: 0;
-      white-space: nowrap; }
-      .note--collapsed .note--start:before {
-        top: 0; }
-      .note--collapsed .note--start:after {
-        bottom: 2px; }
+    display: none; }
 
 .note--start,
 .note--end {
