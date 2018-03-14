@@ -3480,7 +3480,7 @@ exports.MarkType = MarkType;
 exports.ContentMatch = ContentMatch;
 exports.DOMParser = DOMParser;
 exports.DOMSerializer = DOMSerializer;
-
+//# sourceMappingURL=index.js.map
 });
 
 unwrapExports(dist$1);
@@ -5183,7 +5183,7 @@ exports.RemoveMarkStep = RemoveMarkStep;
 exports.ReplaceStep = ReplaceStep;
 exports.ReplaceAroundStep = ReplaceAroundStep;
 exports.replaceStep = replaceStep;
-
+//# sourceMappingURL=index.js.map
 });
 
 unwrapExports(dist$2);
@@ -6340,7 +6340,7 @@ exports.Transaction = Transaction;
 exports.EditorState = EditorState;
 exports.Plugin = Plugin;
 exports.PluginKey = PluginKey;
-
+//# sourceMappingURL=index.js.map
 });
 
 unwrapExports(dist);
@@ -10972,7 +10972,7 @@ exports.Decoration = Decoration;
 exports.DecorationSet = DecorationSet;
 exports.__serializeForClipboard = serializeForClipboard;
 exports.__parseFromClipboard = parseFromClipboard;
-
+//# sourceMappingURL=index.js.map
 });
 
 unwrapExports(dist$3);
@@ -11143,7 +11143,7 @@ var schema = new dist$1.Schema({nodes: nodes, marks: marks});
 exports.nodes = nodes;
 exports.marks = marks;
 exports.schema = schema;
-
+//# sourceMappingURL=schema-basic.js.map
 });
 
 unwrapExports(schemaBasic);
@@ -11798,7 +11798,7 @@ exports.undo = undo;
 exports.redo = redo;
 exports.undoDepth = undoDepth;
 exports.redoDepth = redoDepth;
-
+//# sourceMappingURL=history.js.map
 });
 
 unwrapExports(history_1);
@@ -12038,7 +12038,7 @@ function keydownHandler(bindings) {
 
 exports.keymap = keymap;
 exports.keydownHandler = keydownHandler;
-
+//# sourceMappingURL=keymap.js.map
 });
 
 unwrapExports(keymap_1);
@@ -12704,7 +12704,7 @@ exports.chainCommands = chainCommands;
 exports.pcBaseKeymap = pcBaseKeymap;
 exports.macBaseKeymap = macBaseKeymap;
 exports.baseKeymap = baseKeymap;
-
+//# sourceMappingURL=commands.js.map
 });
 
 unwrapExports(commands);
@@ -12847,7 +12847,7 @@ function dropPos(slice, $pos) {
 }
 
 exports.dropCursor = dropCursor;
-
+//# sourceMappingURL=dropcursor.js.map
 });
 
 unwrapExports(dropcursor);
@@ -13043,7 +13043,7 @@ function drawGapCursor(state) {
 
 exports.gapCursor = gapCursor;
 exports.GapCursor = GapCursor;
-
+//# sourceMappingURL=index.js.map
 });
 
 unwrapExports(dist$7);
@@ -13887,7 +13887,7 @@ exports.redoItem = redoItem;
 exports.wrapItem = wrapItem;
 exports.blockTypeItem = blockTypeItem;
 exports.menuBar = menuBar;
-
+//# sourceMappingURL=index.js.map
 });
 
 unwrapExports(dist$8);
@@ -14152,7 +14152,7 @@ exports.wrapInList = wrapInList;
 exports.splitListItem = splitListItem;
 exports.liftListItem = liftListItem;
 exports.sinkListItem = sinkListItem;
-
+//# sourceMappingURL=schema-list.js.map
 });
 
 unwrapExports(schemaList);
@@ -14338,7 +14338,7 @@ exports.closeSingleQuote = closeSingleQuote;
 exports.smartQuotes = smartQuotes;
 exports.wrappingInputRule = wrappingInputRule;
 exports.textblockTypeInputRule = textblockTypeInputRule;
-
+//# sourceMappingURL=index.js.map
 });
 
 unwrapExports(dist$9);
@@ -14982,7 +14982,7 @@ exports.buildMenuItems = buildMenuItems;
 exports.buildKeymap = buildKeymap;
 exports.buildInputRules = buildInputRules;
 exports.exampleSetup = exampleSetup;
-
+//# sourceMappingURL=index.js.map
 });
 
 unwrapExports(dist$6);
@@ -15007,10 +15007,6 @@ const cloneDeep = val => {
   }
   return val;
 };
-
-/*
- * NOTE: All ends for ranges are EXCLUSIVE
- */
 
 const clamp = (num, min, max) => Math.max(Math.min(num, max), min);
 
@@ -15141,11 +15137,6 @@ function bytesToUuid(buf, offset) {
 }
 
 var bytesToUuid_1 = bytesToUuid;
-
-// **`v1()` - Generate time-based UUID**
-//
-// Inspired by https://github.com/LiosK/UUID.js
-// and http://docs.python.org/library/uuid.html
 
 var _nodeId;
 var _clockseq;
@@ -15765,6 +15756,7 @@ class NoteTransaction {
 const noteWrapper = (id, pos, side, inside) => {
   const span = document.createElement("span");
   span.classList.add(`note-${id}`, `note--${side < 0 ? "start" : "end"}`);
+  span.dataset.toggleNoteId = id;
   return dist_2$3.widget(pos, span, {
     side: inside ? side : 0 - side,
     marks: []
@@ -15784,19 +15776,9 @@ const createDecorateNotes = (markType, noteTransaction) => ({ doc }) =>
     )
   );
 
-const closest = ({ parentNode }, predicate, topNode = null) =>
-  parentNode && parentNode !== topNode
-    ? predicate(parentNode)
-      ? parentNode
-      : closest(parentNode, predicate, topNode)
-    : false;
-
 const clickHandler = ({ dispatch, state, dom }, pos, { target }) => {
-  const el = closest(
-    target,
-    node => (node.dataset ? node.dataset.noteId : false),
-    dom
-  );
+  const { toggleNoteId } = target.dataset || {};
+  const el = document.querySelector(`[data-note-id=${toggleNoteId}]`);
   if (el) {
     const toggleTypes = ["flag", "correct"];
     const toggleIndex = toggleTypes.indexOf(el.dataset.type);
@@ -15819,7 +15801,6 @@ const hyphenatePascal = str =>
     .replace(/([A-Z]{2})[a-z]/, "$1-")
     .toLowerCase();
 
-// Coerce trues
 const attToVal = att => (att === "true" ? true : att);
 
 const noteToAttrs = (id, meta, attrGenerator = () => {}) => {

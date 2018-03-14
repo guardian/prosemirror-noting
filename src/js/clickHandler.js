@@ -2,11 +2,8 @@ import { closest } from "./utils/DOMUtils";
 import { setNoteMeta } from "./index";
 
 const clickHandler = ({ dispatch, state, dom }, pos, { target }) => {
-  const el = closest(
-    target,
-    node => (node.dataset ? node.dataset.noteId : false),
-    dom
-  );
+  const { toggleNoteId } = target.dataset || {};
+  const el = document.querySelector(`[data-note-id=${toggleNoteId}]`);
   if (el) {
     const toggleTypes = ["flag", "correct"];
     const toggleIndex = toggleTypes.indexOf(el.dataset.type);

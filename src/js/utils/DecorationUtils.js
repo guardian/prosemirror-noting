@@ -4,6 +4,7 @@ import { notesFromDoc } from "./StateUtils";
 const noteWrapper = (id, pos, side, inside) => {
   const span = document.createElement("span");
   span.classList.add(`note-${id}`, `note--${side < 0 ? "start" : "end"}`);
+  span.dataset.toggleNoteId = id;
   return Decoration.widget(pos, span, {
     side: inside ? side : 0 - side,
     marks: []

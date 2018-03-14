@@ -9,32 +9,7 @@
     // note, allowing them to collapse
 
     &--collapsed {
-        pointer-events: all;
-        cursor: pointer;
-
-        .note--inner,
-        .note--end {
-            display: none;
-        }
-
-        .note--start {
-            display: inline-block;
-            margin-top: -2px;
-            overflow: hidden;
-            padding-bottom: 4px;
-            text-indent: 24px;
-            vertical-align: top;
-            width: 0; // use the padding
-            white-space: nowrap;
-
-            &:before {
-                top: 0;
-            }
-
-            &:after {
-                bottom: 2px;
-            }
-        }
+        display: none;
     }
 }
 
