@@ -245,7 +245,7 @@ describe("Noter Plugin", () => {
     s =>
       s
         .cut()
-        .right()
+        .right(2)
         .paste(),
     t(p(note({ id: 1 }, "nfooote"), "more")),
     2
@@ -302,7 +302,7 @@ describe("Noter Plugin", () => {
     s =>
       s
         .cut()
-        .left(4)
+        .left(5)
         .paste(),
     t(
       p(
@@ -332,7 +332,7 @@ describe("Noter Plugin", () => {
     s =>
       s
         .cut()
-        .right()
+        .right(2)
         .paste(),
     t(p(note({ id: 1 }, "nfooooote"), "more")),
     2

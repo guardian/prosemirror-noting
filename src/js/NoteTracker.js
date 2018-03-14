@@ -76,6 +76,33 @@ export default class NoteTracker {
       .filter(note => !note.isEmpty);
   }
 
+  movingIntoNote(prevPos, pos, inclusive = false) {
+    const note = this.noteAt(pos, inclusive);
+    const offset = inclusive ? 0 : 1;
+    if (!note) {
+      return false;
+    } else if (pos - offset === note.start) {
+      return prevPos === pos - 1 && note;
+    } else if (pos + offset === note.end) {
+      return prevPos === pos + 1 && note;
+    }
+    return false;
+  }
+
+  movingOutOfNote(prevPos, pos, inclusive = false) {
+    const note = this.noteAt(prevPos, inclusive);
+    const offset = inclusive ? 0 : 1;
+
+    if (!note) {
+      return false;
+    } else if (prevPos - offset === note.start) {
+      return prevPos === pos + 1 && note;
+    } else if (prevPos + offset === note.end) {
+      return prevPos === pos - 1 && note;
+    }
+    return false;
+  }
+
   /*
      * Reads
      */

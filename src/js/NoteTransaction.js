@@ -8,7 +8,7 @@ export default class NoteTransaction {
     this.markType = markType;
     this.historyPlugin = historyPlugin;
     this.tr = null;
-    this.note = false;
+    this.inside = false;
   }
 
   static get PLACEHOLDER_ID() {
@@ -16,7 +16,7 @@ export default class NoteTransaction {
   }
 
   filterTransaction(tr, oldState) {
-    this.init(tr).setCorrectMark();
+    this.init(tr, oldState).setCorrectMark();
     if (tr.getMeta("set-notes-meta")) {
       const specs = tr.getMeta("set-notes-meta");
       specs.forEach(({ id, meta }) => this.updateMeta(id, meta));
@@ -31,12 +31,9 @@ export default class NoteTransaction {
     return this.tr;
   }
 
-  init(tr) {
-    const { noteTracker } = this;
-    const { $cursor, from, to } = tr.selection;
-
-    // set's whether we're inclusive or exclusive
-    const inside = false;
+  init(tr, { selection: { $cursor: $oldCursor } }) {
+    const { noteTracker, inside } = this;
+    const { $cursor } = tr.selection;
 
     /*
          * Do all the position mapping, this handle deleted notes, we only ever
@@ -47,19 +44,41 @@ export default class NoteTransaction {
       pos => tr.mapping.mapResult(pos, inside ? 1 : -1).pos
     );
 
-    const note = $cursor
-      ? noteTracker.noteAt($cursor.pos, inside)
-      : noteTracker.noteCoveringRange(from, to, true);
+    let note = false; // are we inside or moving into a note
 
-    this.note = note;
+    if ($cursor && $oldCursor) {
+      if (
+        !inside &&
+        (note = noteTracker.movingIntoNote($oldCursor.pos, $cursor.pos, false))
+      ) {
+        tr.setSelection(Selection.near($oldCursor));
+        this.inside = true;
+      } else if (
+        inside &&
+        (note = noteTracker.movingOutOfNote($oldCursor.pos, $cursor.pos, true))
+      ) {
+        tr.setSelection(Selection.near($oldCursor));
+        this.inside = false;
+      } else {
+        note = noteTracker.noteAt($cursor.pos, this.inside);
+
+        if (note) {
+          this.inside = true;
+        } else {
+          this.inside = false;
+        }
+      }
+    }
+
     this.tr = tr.setMeta("current-note", note);
     return this;
   }
 
   setCorrectMark() {
-    const { tr, note, markType } = this;
+    const { tr, noteTracker, markType, inside } = this;
     const { $cursor } = tr.selection;
     if ($cursor) {
+      const note = noteTracker.noteAt($cursor.pos, inside);
       if (note) {
         const { id, meta } = note;
         const newMark = markType.create({ id, meta });
@@ -104,10 +123,11 @@ export default class NoteTransaction {
      * If we have a selection decide whether to grow the note or slice it
      */
   handleToggle(type, oldState) {
-    const { note, tr, markType } = this;
+    const { noteTracker, tr, markType } = this;
     const { $cursor, from, to } = tr.selection;
 
     if ($cursor) {
+      const note = noteTracker.noteAt($cursor.pos);
       if (note) {
         const { start, end } = note;
         return this.removeRanges([{ from: start, to: end }]);
@@ -116,6 +136,7 @@ export default class NoteTransaction {
       }
       return this.startNote(type);
     } else {
+      const note = noteTracker.noteCoveringRange(from, to, true);
       if (note) {
         const { start, end, meta } = note;
 
@@ -196,11 +217,12 @@ export default class NoteTransaction {
      * placeholder
      */
   handleInput(oldState) {
-    const { tr, note } = this;
+    const { tr, noteTracker } = this;
     const { $cursor } = tr.selection;
     if ($cursor) {
       const { pos } = $cursor;
       const type = this.hasPlaceholder(oldState);
+      const note = noteTracker.noteAt(pos);
       if (!note && type) {
         const addedChars = charsAdded(oldState, tr);
 
