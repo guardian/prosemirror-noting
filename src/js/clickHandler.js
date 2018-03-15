@@ -2,7 +2,7 @@ import { setNoteMeta } from "./index";
 
 const clickHandler = ({ dispatch, state }, pos, { target }) => {
   const { toggleNoteId } = target.dataset || {};
-  const el = document.querySelector(`[data-note-id=${toggleNoteId}]`);
+  const el = document.querySelector(`[data-note-id="${toggleNoteId}"]`);
   if (el) {
     // TODO remove from the package
     const toggleTypes = ["flag", "correct"];
