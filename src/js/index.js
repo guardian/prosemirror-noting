@@ -7,8 +7,15 @@ import { notesFromDoc } from "./utils/StateUtils";
 import { createNoteMark } from "./utils/SchemaUtils";
 import "../css/noting.scss";
 
-const toggleNote = type => (state, dispatch) =>
-  dispatch ? dispatch(state.tr.setMeta("toggle-note", type)) : true;
+const toggleNote = (type, cursorToEnd = false) => (state, dispatch) =>
+  dispatch
+    ? dispatch(
+        state.tr.setMeta("toggle-note", {
+          type,
+          cursorToEnd
+        })
+      )
+    : true;
 
 const setNotesMeta = (specs = []) => (state, dispatch) =>
   dispatch ? dispatch(state.tr.setMeta("set-notes-meta", specs)) : true;

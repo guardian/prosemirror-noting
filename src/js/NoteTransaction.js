@@ -21,8 +21,8 @@ export default class NoteTransaction {
       const specs = tr.getMeta("set-notes-meta");
       specs.forEach(({ id, meta }) => this.updateMeta(id, meta));
     } else if (tr.getMeta("toggle-note")) {
-      const type = tr.getMeta("toggle-note");
-      this.handleToggle(type, oldState);
+      const { type, cursorToEnd } = tr.getMeta("toggle-note");
+      this.handleToggle(type, cursorToEnd, oldState);
     } else if (tr.getMeta("paste") || tr.getMeta(this.historyPlugin)) {
       this.handlePaste(oldState);
     } else {
@@ -124,7 +124,7 @@ export default class NoteTransaction {
      *
      * If we have a selection decide whether to grow the note or slice it
      */
-  handleToggle(type, oldState) {
+  handleToggle(type, cursorToEnd, oldState) {
     const { noteTracker, tr, markType, inside } = this;
     const { $cursor, from, to } = tr.selection;
 
@@ -175,7 +175,7 @@ export default class NoteTransaction {
           notes
         );
       }
-      return this.addNotes([{ from, to, meta: { type } }], true);
+      return this.addNotes([{ from, to, meta: { type } }], cursorToEnd);
     }
   }
 

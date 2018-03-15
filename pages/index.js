@@ -89,7 +89,7 @@ new EditorView(document.querySelector("#editor"), {
         ]
       }),
       keymap({
-        F10: toggleNote("note")
+        F10: toggleNote("note", true)
       }),
       historyPlugin,
       noterPlugin

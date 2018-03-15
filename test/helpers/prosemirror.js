@@ -10,7 +10,9 @@ export class TestState {
   }
 
   toggleNote(type = "note") {
-    return this.apply(this.tr.setMeta("toggle-note", type));
+    return this.apply(
+      this.tr.setMeta("toggle-note", { type, cursorToEnd: true })
+    );
   }
 
   enter(n = 1) {

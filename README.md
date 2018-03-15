@@ -57,10 +57,11 @@ Returns a mark to be added to the schema.
 - `typeTagMap` - if this is passed with an object it expects a map between a "note type" and a dom tag (e.g. `{ note: "span.note"}`). Otherwise if a string is passed it will expect that string to be simply a tag name and the type will default to a type of `note`. Good for styling.
 - `attrGenerator` - this will run when rendering the note to add derived DOM attributes from the meta data.
 
-### toggleNote(type: string = "note"): CommandFunction
+### toggleNote(type: string = "note", cursorToEnd = false): CommandFunction
 Returns a command used for toggling notes based on the cursor position.
 
 - `type` - this will use the type to decide which note type to toggle if there are more than one.
+- `cursorToEnd` - this will make the cursor skip to after the note when adding a new note
 
 Toggle note works in the following way:
 - Selections
