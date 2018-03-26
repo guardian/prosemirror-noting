@@ -2,14 +2,19 @@ import { DecorationSet, Decoration } from "prosemirror-view";
 import { notesFromDoc } from "./StateUtils";
 
 const noteWrapper = (id, pos, type, side, inside) => {
-  const span = document.createElement("span");
-  span.classList.add(
+  const dom = document.createElement("dom");
+
+  // fixes a firefox bug that makes the decos appear selected
+  const content = document.createElement("span");
+  dom.appendChild(content);
+
+  dom.classList.add(
     `note-${id}`,
     `note-wrapper--${side < 0 ? "start" : "end"}`,
     `note-wrapper--${type}`
   );
-  span.dataset.toggleNoteId = id;
-  return Decoration.widget(pos, span, {
+  dom.dataset.toggleNoteId = id;
+  return Decoration.widget(pos, dom, {
     side: inside ? side : 0 - side,
     marks: []
   });
