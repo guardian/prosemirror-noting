@@ -2,6 +2,7 @@ import resolve from "rollup-plugin-node-resolve";
 import commonjs from "rollup-plugin-commonjs";
 import eslint from "rollup-plugin-eslint";
 import scss from "rollup-plugin-scss";
+import babel from "rollup-plugin-babel";
 
 export default [
   {
@@ -16,7 +17,8 @@ export default [
       }),
       eslint({
         exclude: ["node_modules/**"]
-      })
+      }),
+      babel()
     ]
   },
   {
@@ -35,7 +37,7 @@ export default [
         exclude: ["node_modules/**"]
       }),
       resolve({ browser: true }),
-      commonjs(),
+      commonjs()
     ]
   }
 ];
