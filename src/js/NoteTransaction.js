@@ -15,6 +15,10 @@ export default class NoteTransaction {
     return "@@PLACEHOLDER_ID";
   }
 
+  get insideNote() {
+    return !!this.inside && this.noteTracker.getNote(this.inside);
+  }
+
   filterTransaction(tr, oldState) {
     this.init(tr, oldState);
     if (tr.getMeta("set-notes-meta")) {
@@ -49,38 +53,63 @@ export default class NoteTransaction {
     let note = false; // are we inside or moving into a note
 
     if ($cursor && $oldCursor) {
-      if (
-        !inside &&
-        (note = noteTracker.movingIntoNote($oldCursor.pos, $cursor.pos, false))
-      ) {
-        tr.setSelection(Selection.near($oldCursor));
-        this.inside = true;
-      } else if (
-        inside &&
-        (note = noteTracker.movingOutOfNote($oldCursor.pos, $cursor.pos, true))
-      ) {
-        tr.setSelection(Selection.near($oldCursor));
-        this.inside = false;
-      } else {
-        note = noteTracker.noteAt($cursor.pos, this.inside);
+      const movement = Math.sign($cursor.pos - $oldCursor.pos);
 
+      if (inside && noteTracker.noteAt($oldCursor.pos) && !noteTracker.noteAt($oldCursor.pos + movement)) {
+        console.log('inside, moving outside but inclusive')
+        // We're inside a note, moving to a position where the cursor is outside
+        // the note but inclusive.
+      } else if (this.inside && !noteTracker.noteAt($oldCursor.pos) && noteTracker.noteAt($oldCursor.pos + movement).id !== this.inside) {
+        // We're moving from an inclusive position to a neutral position.
+        console.log('outside but inclusive, moving neutral')
+        this.inside = false;
+        tr.setSelection(Selection.near($oldCursor));
+      } else if (!this.inside && !noteTracker.noteAt($oldCursor.pos) && noteTracker.noteAt($oldCursor.pos + movement)) {
+        // We're moving from a neutral position to an inclusive position.
+        console.log('neutral, moving outside inclusive')
+        this.inside = noteTracker.noteAt($oldCursor.pos + movement).id;
+        tr.setSelection(Selection.near($oldCursor));
+      } else if (this.inside && !noteTracker.noteAt($oldCursor.pos) && noteTracker.noteAt($oldCursor.pos + movement).id === this.inside) {
+        // We're moving from an inclusive position to inside a note
+        console.log('outside inclusive, moving inside')
+      } else {
+        note = noteTracker.noteAt($cursor.pos);
+        console.log("else", note, inside);
         if (note || this.hasPlaceholder(oldState)) {
-          this.inside = true;
+          this.inside = note.id;
         } else {
           this.inside = false;
         }
       }
+
+      // if (
+      //   !inside &&
+      //   (note = noteTracker.movingIntoNote($oldCursor.pos, $cursor.pos, false))
+      // ) {
+      //   console.log("moving in", note);
+      //   tr.setSelection(Selection.near($oldCursor));
+      //   this.inside = note.id;
+      // } else if (
+      //   (note = noteTracker.movingOutOfNote($oldCursor.pos, $cursor.pos, true)) &&
+      //   inside === note.id
+      // ) {
+      //   console.log("moving out", note);
+      //   tr.setSelection(Selection.near($oldCursor));
+      //   this.inside = false;
+      // }
     }
+
+    console.log(this.inside);
 
     this.tr = tr;
     return this;
   }
 
   setCorrectMark() {
-    const { tr, noteTracker, markType, inside } = this;
+    const { tr, noteTracker, markType } = this;
     const { $cursor } = tr.selection;
     if ($cursor) {
-      const note = noteTracker.noteAt($cursor.pos, inside);
+      const note = noteTracker.noteAt($cursor.pos);
       if (note) {
         const { id, meta } = note;
         const newMark = markType.create({ id, meta });

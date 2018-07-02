@@ -46,30 +46,37 @@ const datasetToAttrs = (dataset, defaults = {}) => ({
 const filterTagTypeMap = tagTypeMap =>
   typeof tagTypeMap === "string" ? { note: tagTypeMap } : tagTypeMap;
 
-export const createNoteMark = (typeTagMap, attrGenerator = () => {}) => ({
-  attrs: {
-    id: {},
-    meta: {
-      default: {}
+  export const createNoteMark = (typeTagMap, attrGenerator = () => {}) => {
+    const values = Object.keys(typeTagMap).map(key => typeTagMap[key]);
+    if (values.length !== new Set(values).size) {
+      throw new Error(
+        "[prosemirror-noting]: type tags: element types must be unique"
+      );
     }
-  },
-  inclusive: false,
-  // Create a rule for every type
-  parseDOM: Object.keys(filterTagTypeMap(typeTagMap)).map(type => ({
-    tag: typeTagMap[type],
-    getAttrs: ({ dataset }) => {
-      const attrs = datasetToAttrs(dataset);
-
-      return Object.assign({}, attrs, {
-        meta: Object.assign({}, attrs.meta, {
-          type
-        })
-      });
-    }
-  })),
-  // Spit out the node based on the type
-  toDOM: ({ attrs: { id, meta } }) => [
-    typeTagMap[meta.type],
-    noteToAttrs(id, meta, attrGenerator)
-  ]
-});
+    return {
+      attrs: {
+        id: {},
+        meta: {
+          default: {}
+        }
+      },
+      inclusive: false,
+      // Create a rule for every type
+      parseDOM: Object.keys(filterTagTypeMap(typeTagMap)).map(type => ({
+        tag: typeTagMap[type],
+        getAttrs: ({ dataset }) => {
+          const attrs = datasetToAttrs(dataset);
+          return Object.assign({}, attrs, {
+            meta: Object.assign({}, attrs.meta, {
+              type
+            })
+          });
+        }
+      })),
+      // Spit out the node based on the type
+      toDOM: ({ attrs: { id, meta } }) => [
+        typeTagMap[meta.type],
+        noteToAttrs(id, meta, attrGenerator)
+      ]
+    };
+  };

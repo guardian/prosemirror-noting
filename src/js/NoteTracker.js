@@ -80,33 +80,6 @@ export default class NoteTracker {
    * Reads
    */
 
-  movingIntoNote(prevPos, pos, inclusive = false) {
-    const note = this.noteAt(pos, inclusive);
-    const offset = inclusive ? 0 : 1;
-    if (!note) {
-      return false;
-    } else if (pos - offset === note.start && prevPos === pos - 1) {
-      return note;
-    } else if (pos + offset === note.end && prevPos === pos + 1) {
-      return note;
-    }
-    return false;
-  }
-
-  movingOutOfNote(prevPos, pos, inclusive = false) {
-    const note = this.noteAt(prevPos, inclusive);
-    const offset = inclusive ? 0 : 1;
-
-    if (!note) {
-      return false;
-    } else if (prevPos - offset === note.start && prevPos === pos + 1) {
-      return note;
-    } else if (prevPos + offset === note.end && prevPos === pos - 1) {
-      return note;
-    }
-    return false;
-  }
-
   getNote(noteId) {
     return this.notes.filter(({ id }) => id === noteId)[0];
   }
@@ -119,12 +92,13 @@ export default class NoteTracker {
     return !!this.getNote(noteId);
   }
 
-  noteAt(pos, inside = false) {
-    const { notes } = this;
+  noteAt(pos) {
+
+    const notes = this.notes.filter(note => note.containsPosition(pos, true))
 
     for (let i = 0; i < notes.length; i += 1) {
       const note = notes[i];
-      if (note.containsPosition(pos, inside)) {
+      if (note.containsPosition(pos)) {
         return note;
       }
     }
