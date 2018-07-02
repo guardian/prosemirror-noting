@@ -84,6 +84,17 @@ export class TestState {
     return this;
   }
 
+  selectRight(n = 1) {
+    const { $from } = this.state.selection;
+    let { $to } = this.state.selection;
+    for (let i = 0; i < n; i += 1) {
+      const $pos = this.state.doc.resolve($to.pos + 1);
+      $to = Selection.near($pos).$to;
+    }
+    
+    return this.setSelection(new Selection($from, $to));
+  }
+
   setSelection(sel) {
     return this.apply(this.tr.setSelection(sel));
   }
@@ -93,7 +104,7 @@ export class TestState {
     if (paste) {
       tr = tr.setMeta("paste", true);
     }
-
+  
     return this.apply(tr);
   }
 
