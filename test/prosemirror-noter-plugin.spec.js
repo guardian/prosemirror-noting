@@ -208,6 +208,19 @@ describe("Noter Plugin", () => {
       s => s.toggleNote(),
       t(p("foo", note({ id: 1 }, "notebarnote"), "more"))
     );
+
+    testIO(
+      "does not merge notes of different types when they touch",
+      t(
+       p("foo",
+          note({ id: 1}, "not<a>eA"),
+          note({ id: 2, meta: {type: "flag"}}, "no<b>teB"),
+          "bar"
+        )
+      ),
+      s => s.toggleNote(),
+      t(p("foo", note({ id: 1}, "noteAno"), note({ id: 2, meta: {type: "flag"}}, "teB"), "bar"))
+    )
   });
 
   testIO(
@@ -335,6 +348,84 @@ describe("Noter Plugin", () => {
         .right(2)
         .paste(),
     t(p(note({ id: 1 }, "nfooooote"), "more")),
+    2
+  );
+
+  testIO(
+    "can handle pasting notes of different types into a note",
+    t(
+      p(
+        "<a>f",
+        note({ id: 1 }, "o"),
+        "o",
+        note({ id: 2, meta: { type: 'flag '}}, "o"),
+        "o<b>",
+        note({ id: 3 }, "note"),
+        "more"
+      )
+    ),
+    s =>
+      s
+        .cut()
+        .right(2)
+        .paste(),
+    t(p(note({ id: 1 }, "nfooooote"), "more")),
+    2
+  );
+
+  testIO(
+    "can handle pasting notes into selections that abut different types of note",
+    t(
+      p(
+        note({ id: 1 }, "<a>foo<b>"),
+        "o",
+        note({ id: 2, meta: { type: 'flag'}}, "bar"),
+        "o",
+        note({ id: 3 }, "baz"),
+        "more"
+      )
+    ),
+    s =>
+      s
+        .cut()
+        // An additional step right to move us inside the note,
+        // and then one character forward
+        .right(3)
+        .selectRight(4)
+        .paste(),
+    t(p(
+      "o",
+      note({ id: 1, meta: { type: 'flag'} }, "b"),
+      note({ id: 2 }, "fooaz"),
+      "more")),
+    2
+  );
+
+  testIO(
+    "can handle pasting notes of different types",
+    t(
+      p(note({ id: 1, meta: { type: 'flag' }}, "<a>bar<b>"))
+    ),
+    s => s.cut().paste(),
+    t(
+      p(note({ id: 1, meta: { type: 'flag' }}, "bar"))
+    )
+  )
+
+  testIO(
+    "TestState selects right properly",
+    t(
+      p(
+        "m<a>o<b>remore"
+      )
+    ),
+    s =>
+      s
+        .cut()
+        .right(1)
+        .selectRight(4)
+        .paste(),
+    t(p("mroe")),
     2
   );
 

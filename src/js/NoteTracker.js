@@ -145,12 +145,13 @@ export default class NoteTracker {
     return false;
   }
 
-  notesTouchingRange(from, to) {
-    return this.notes.filter(note => note.touchesRange(from, to));
+  notesTouchingRange(from, to, type) {
+    return this.notes.filter(note => (!type || note.meta.type === type) && note.touchesRange(from, to));
   }
 
-  mergeableRange(from, to) {
-    const mergingNotes = this.notesTouchingRange(from, to);
+  mergeableRange(from, to, type) {
+    // We filter by type to ensure that only notes of the same type are merged.
+    const mergingNotes = this.notesTouchingRange(from, to, type);
 
     const [min, max] = mergingNotes.reduce(
       (out, { start, end }) => [Math.min(out[0], start), Math.max(out[1], end)],
