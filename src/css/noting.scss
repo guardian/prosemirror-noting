@@ -3,7 +3,7 @@
     background-color: #F8FBFD;
     color: #626262;
     padding: 2px 0;
-    display: inline-block;
+    display: inline;
 
     // Stops margins being added for lines that are completely blank apart from
     // note, allowing them to collapse
@@ -16,8 +16,8 @@
 .note-wrapper--start,
 .note-wrapper--end {
     cursor: pointer;
-    display: inline-block;
-    height: 1.45em;
+    display: inline;
+    padding: 2px;
     vertical-align: top;
 }
 

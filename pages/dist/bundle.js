@@ -15491,10 +15491,6 @@ class NoteTransaction {
       (pos, id) => tr.mapping.mapResult(pos, id === insideID ? 1 : -1).pos
     );
 
-    console.log(
-      JSON.stringify(noteTracker.notes.map(({ start, end }) => [start, end]))
-    );
-
     if (!tr.docChanged && $cursor && $oldCursor) {
       const movement = $cursor.pos - $oldCursor.pos;
 
