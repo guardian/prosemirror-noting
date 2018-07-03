@@ -27,8 +27,20 @@
       display: none;
     }
 
-    myflag.note {
+    gu-flag.note {
       background-color: #fea;
+    }
+
+    .note-wrapper--flag {
+      background-color: #fea;
+    }
+
+    gu-correct.note {
+      background-color: #afa;
+    }
+
+    .note-wrapper--correct {
+      background-color: #afa;
     }
   </style>
 </head>
@@ -39,7 +51,7 @@
   <div id="editor" class="editor"></div>
   <div id="content" class="hide">
     <p>Let's do some
-      <mynote data-note-id="note-id" class="note">noting</mynote><myflag data-note-id="flag-id" class="note">flagging</myflag> in Prosemirror</p>
+      <gu-note data-note-id="note-id" class="note">noting</gu-note><gu-flag data-note-id="flag-id" class="note">flagging</gu-flag> in Prosemirror</p>
   </div>
   <script src="./bundle.js"></script>
   </script>

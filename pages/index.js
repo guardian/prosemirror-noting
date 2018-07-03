@@ -30,19 +30,15 @@ import { createNoteMark, buildNoter } from "../src/js/index";
 const mySchema = new Schema({
   nodes,
   marks: Object.assign({}, marks, {
-    note: createNoteMark(
-      {
-        note: "mynote"
-      },
-      meta => ({
-        class: meta.hidden ? "note--collapsed" : "",
-        title: "My Title",
-        contenteditable: !meta.hidden
-      })
-    ),
+    note: createNoteMark("gu-note", meta => ({
+      class: meta.hidden ? "note--collapsed" : "",
+      title: "My Title",
+      contenteditable: !meta.hidden
+    })),
     flag: createNoteMark(
       {
-        flag: "myflag"
+        flag: "gu-flag",
+        correct: "gu-correct"
       },
       meta => ({
         class: meta.hidden ? "note--collapsed" : "",
@@ -80,7 +76,11 @@ const {
     })
 );
 
-const { plugin: flagPlugin, toggleNote: toggleFlag } = buildNoter(
+const {
+  plugin: flagPlugin,
+  toggleNote: toggleFlag,
+  setNoteMeta: setFlagMeta
+} = buildNoter(
   mySchema.marks.flag,
   doc,
   "flagger",
@@ -91,10 +91,11 @@ const { plugin: flagPlugin, toggleNote: toggleFlag } = buildNoter(
     });
   },
   note => {
+    console.log(note);
     const toggleTypes = ["flag", "correct"];
     const toggleIndex = toggleTypes.indexOf(note.meta.type);
     return toggleIndex > -1
-      ? setNoteMeta(note.id, {
+      ? setFlagMeta(note.id, {
           type: toggleTypes[1 - toggleIndex]
         })
       : null;
@@ -130,6 +131,7 @@ new EditorView(document.querySelector("#editor"), {
       }),
       keymap({
         F6: toggleFlag("flag", true),
+        F7: toggleFlag("correct", true),
         F10: toggleNote("note", true)
       }),
       historyPlugin,

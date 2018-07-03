@@ -15825,10 +15825,10 @@ const clickHandler = (noteTracker, handleClick) => (
 
       if (command) {
         command(state, dispatch);
+        return true;
       }
     }
   }
-  return true;
 };
 
 const hyphenatePascal = str =>
@@ -15882,40 +15882,41 @@ const datasetToAttrs = (dataset, defaults = {}) => ({
 const filterTagTypeMap = tagTypeMap =>
   typeof tagTypeMap === "string" ? { note: tagTypeMap } : tagTypeMap;
 
-  const createNoteMark = (typeTagMap, attrGenerator = () => {}) => {
-    const values = Object.keys(typeTagMap).map(key => typeTagMap[key]);
-    if (values.length !== new Set(values).size) {
-      throw new Error(
-        "[prosemirror-noting]: type tags: element types must be unique"
-      );
-    }
-    return {
-      attrs: {
-        id: {},
-        meta: {
-          default: {}
-        }
-      },
-      inclusive: false,
-      // Create a rule for every type
-      parseDOM: Object.keys(filterTagTypeMap(typeTagMap)).map(type => ({
-        tag: typeTagMap[type],
-        getAttrs: ({ dataset }) => {
-          const attrs = datasetToAttrs(dataset);
-          return Object.assign({}, attrs, {
-            meta: Object.assign({}, attrs.meta, {
-              type
-            })
-          });
-        }
-      })),
-      // Spit out the node based on the type
-      toDOM: ({ attrs: { id, meta } }) => [
-        typeTagMap[meta.type],
-        noteToAttrs(id, meta, attrGenerator)
-      ]
-    };
+const createNoteMark = (_typeTagMap, attrGenerator = () => {}) => {
+  const typeTagMap = filterTagTypeMap(_typeTagMap);
+  const values = Object.keys(typeTagMap).map(key => typeTagMap[key]);
+  if (values.length !== new Set(values).size) {
+    throw new Error(
+      "[prosemirror-noting]: type tags: element types must be unique"
+    );
+  }
+  return {
+    attrs: {
+      id: {},
+      meta: {
+        default: {}
+      }
+    },
+    inclusive: false,
+    // Create a rule for every type
+    parseDOM: Object.keys(typeTagMap).map(type => ({
+      tag: typeTagMap[type],
+      getAttrs: ({ dataset }) => {
+        const attrs = datasetToAttrs(dataset);
+        return Object.assign({}, attrs, {
+          meta: Object.assign({}, attrs.meta, {
+            type
+          })
+        });
+      }
+    })),
+    // Spit out the node based on the type
+    toDOM: ({ attrs: { id, meta } }) => [
+      typeTagMap[meta.type],
+      noteToAttrs(id, meta, attrGenerator)
+    ]
   };
+};
 
 const toggleNote$1 = key => (type, cursorToEnd = false) => (state, dispatch) =>
   dispatch
@@ -16050,19 +16051,15 @@ const collapseNoteIcon = {
 const mySchema = new dist_8$1({
   nodes: schemaBasic_1,
   marks: Object.assign({}, schemaBasic_2, {
-    note: createNoteMark(
-      {
-        note: "mynote"
-      },
-      meta => ({
-        class: meta.hidden ? "note--collapsed" : "",
-        title: "My Title",
-        contenteditable: !meta.hidden
-      })
-    ),
+    note: createNoteMark("gu-note", meta => ({
+      class: meta.hidden ? "note--collapsed" : "",
+      title: "My Title",
+      contenteditable: !meta.hidden
+    })),
     flag: createNoteMark(
       {
-        flag: "myflag"
+        flag: "gu-flag",
+        correct: "gu-correct"
       },
       meta => ({
         class: meta.hidden ? "note--collapsed" : "",
@@ -16100,7 +16097,11 @@ const {
     })
 );
 
-const { plugin: flagPlugin, toggleNote: toggleFlag } = buildNoter(
+const {
+  plugin: flagPlugin,
+  toggleNote: toggleFlag,
+  setNoteMeta: setFlagMeta
+} = buildNoter(
   mySchema.marks.flag,
   doc,
   "flagger",
@@ -16111,10 +16112,11 @@ const { plugin: flagPlugin, toggleNote: toggleFlag } = buildNoter(
     });
   },
   note => {
+    console.log(note);
     const toggleTypes = ["flag", "correct"];
     const toggleIndex = toggleTypes.indexOf(note.meta.type);
     return toggleIndex > -1
-      ? setNoteMeta(note.id, {
+      ? setFlagMeta(note.id, {
           type: toggleTypes[1 - toggleIndex]
         })
       : null;
@@ -16150,6 +16152,7 @@ new dist_1$3(document.querySelector("#editor"), {
       }),
       keymap_2({
         F6: toggleFlag("flag", true),
+        F7: toggleFlag("correct", true),
         F10: toggleNote("note", true)
       }),
       historyPlugin,
