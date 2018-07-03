@@ -85,22 +85,6 @@ export default class NoteTransaction {
         console.log("inside a note");
         this.insideID = noteTracker.noteAt($cursor.pos).id;
       }
-
-      // if (
-      //   !inside &&
-      //   (note = noteTracker.movingIntoNote($oldCursor.pos, $cursor.pos, false))
-      // ) {
-      //   console.log("moving in", note);
-      //   tr.setSelection(Selection.near($oldCursor));
-      //   this.inside = note.id;
-      // } else if (
-      //   (note = noteTracker.movingOutOfNote($oldCursor.pos, $cursor.pos, true)) &&
-      //   inside === note.id
-      // ) {
-      //   console.log("moving out", note);
-      //   tr.setSelection(Selection.near($oldCursor));
-      //   this.inside = false;
-      // }
     }
 
     this.tr = tr;
