@@ -15494,7 +15494,8 @@ class NoteTransaction {
     if (!tr.docChanged && $cursor && $oldCursor) {
       const movement = $cursor.pos - $oldCursor.pos;
       if (movement === 0) {
-        // ignore toggling
+        this.insideID =
+          this.insideID || (noteTracker.noteAt($cursor.pos) || {}).id;
       } else if (Math.abs(movement) !== 1) {
         this.insideID = (noteTracker.noteAt($cursor.pos) || {}).id;
       } else if (
