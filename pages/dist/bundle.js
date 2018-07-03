@@ -15509,7 +15509,7 @@ class NoteTransaction {
           insideID
       ) {
         // We're moving from an inclusive position to a neutral position.
-        console.log("outside but inclusive, moving neutral");
+        // console.log("outside but inclusive, moving neutral");
         this.insideID = false;
         tr.setSelection(dist_1.near($oldCursor));
       } else if (
@@ -15518,14 +15518,14 @@ class NoteTransaction {
         noteTracker.noteAt($oldCursor.pos + movement, -movement)
       ) {
         // We're moving from a neutral position to an inclusive position.
-        console.log("neutral, moving outside inclusive");
+        // console.log("neutral, moving outside inclusive");
         this.insideID = noteTracker.noteAt(
           $oldCursor.pos + movement,
           -movement
         ).id;
         tr.setSelection(dist_1.near($oldCursor));
       } else if (noteTracker.noteAt($cursor.pos)) {
-        console.log("inside a note");
+        // console.log("inside a note");
         this.insideID = noteTracker.noteAt($cursor.pos).id;
       }
     }
