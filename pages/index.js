@@ -62,12 +62,23 @@ const {
   plugin: noterPlugin,
   toggleAllNotes,
   showAllNotes,
-  toggleNote
-} = buildNoter(mySchema.marks.note, doc, "noter", historyPlugin, note => {
-  note.meta = Object.assign({}, note.meta, {
-    createdAt: Date.now()
-  });
-});
+  toggleNote,
+  setNoteMeta
+} = buildNoter(
+  mySchema.marks.note,
+  doc,
+  "noter",
+  historyPlugin,
+  note => {
+    note.meta = Object.assign({}, note.meta, {
+      createdAt: Date.now()
+    });
+  },
+  note =>
+    setNoteMeta(note.id, {
+      hidden: !note.meta.hidden
+    })
+);
 
 const { plugin: flagPlugin, toggleNote: toggleFlag } = buildNoter(
   mySchema.marks.flag,
@@ -78,6 +89,15 @@ const { plugin: flagPlugin, toggleNote: toggleFlag } = buildNoter(
     note.meta = Object.assign({}, note.meta, {
       createdAt: Date.now()
     });
+  },
+  note => {
+    const toggleTypes = ["flag", "correct"];
+    const toggleIndex = toggleTypes.indexOf(note.meta.type);
+    return toggleIndex > -1
+      ? setNoteMeta(note.id, {
+          type: toggleTypes[1 - toggleIndex]
+        })
+      : null;
   }
 );
 

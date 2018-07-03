@@ -123,7 +123,9 @@ export default class NoteTracker {
   }
 
   notesTouchingRange(from, to, type) {
-    return this.notes.filter(note => (!type || note.meta.type === type) && note.touchesRange(from, to));
+    return this.notes.filter(
+      note => (!type || note.meta.type === type) && note.touchesRange(from, to)
+    );
   }
 
   mergeableRange(from, to, type) {

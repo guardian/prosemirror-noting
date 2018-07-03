@@ -1,21 +1,22 @@
-const clickHandler = setNoteMeta => ({ dispatch, state }, pos, { target }) => {
+const clickHandler = (noteTracker, handleClick) => (
+  { dispatch, state },
+  _,
+  { target }
+) => {
   const { toggleNoteId } = target.dataset || {};
   const el = document.querySelector(`[data-note-id="${toggleNoteId}"]`);
   if (el) {
-    // TODO remove from the package
-    const toggleTypes = ["flag", "correct"];
-    const toggleIndex = toggleTypes.indexOf(el.dataset.type);
-    if (toggleIndex > -1) {
-      setNoteMeta(el.dataset.noteId, {
-        type: toggleTypes[1 - toggleIndex]
-      })(state, dispatch);
-    } else {
-      setNoteMeta(el.dataset.noteId, {
-        hidden: !el.dataset.hidden
-      })(state, dispatch);
+    const note = noteTracker.getNote(toggleNoteId);
+    if (note) {
+      // may be from another note mark
+      const command = handleClick(note);
+
+      if (command) {
+        command(state, dispatch);
+        return true;
+      }
     }
   }
-  return true;
 };
 
 export default clickHandler;

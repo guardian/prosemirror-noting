@@ -84,7 +84,8 @@ const buildNoter = (
   initDoc,
   key,
   historyPlugin,
-  onNoteCreate = () => {}
+  onNoteCreate = () => {},
+  handleClick = null
 ) => {
   const noteTracker = new NoteTracker([], onNoteCreate);
   const noteTransaction = new NoteTransaction(
@@ -109,7 +110,7 @@ const buildNoter = (
     plugin: new Plugin({
       props: {
         decorations: noteDecorator,
-        handleClick: clickHandler(setNoteMeta(key))
+        handleClick: handleClick && clickHandler(noteTracker, handleClick)
       },
       filterTransaction: (tr, oldState) =>
         noteTransaction.filterTransaction(tr, oldState)
