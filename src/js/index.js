@@ -6,22 +6,30 @@ import clickHandler from "./clickHandler";
 import { notesFromDoc } from "./utils/StateUtils";
 import { createNoteMark } from "./utils/SchemaUtils";
 
-const toggleNote = (type, cursorToEnd = false) => (state, dispatch) =>
+const toggleNote = key => (type, cursorToEnd = false) => (state, dispatch) =>
   dispatch
     ? dispatch(
         state.tr.setMeta("toggle-note", {
+          key,
           type,
           cursorToEnd
         })
       )
     : true;
 
-const setNotesMeta = (specs = []) => (state, dispatch) =>
-  dispatch ? dispatch(state.tr.setMeta("set-notes-meta", specs)) : true;
+const setNotesMeta = key => (specs = []) => (state, dispatch) =>
+  dispatch
+    ? dispatch(
+        state.tr.setMeta("set-notes-meta", {
+          key,
+          specs
+        })
+      )
+    : true;
 
-const setNoteMeta = (id, meta) => setNotesMeta([{ id, meta }]);
+const setNoteMeta = key => (id, meta) => setNotesMeta(key)([{ id, meta }]);
 
-const collapseAllNotes = (state, dispatch) => {
+const collapseAllNotes = key => () => (state, dispatch) => {
   // @TODO: This is searching the entire doc for notes every time.
   // NoteTracker is essentially the state of the Noter plugin, in
   // order to make it act like others, and to clean this up, we
@@ -40,10 +48,10 @@ const collapseAllNotes = (state, dispatch) => {
     }
   }));
 
-  return setNotesMeta(specs)(state, dispatch);
+  return setNotesMeta(key)(specs)(state, dispatch);
 };
 
-const showAllNotes = (state, dispatch) => {
+const showAllNotes = key => () => (state, dispatch) => {
   const allNotes = notesFromDoc(state.doc, state.config.schema.marks.note);
   let hidden = !allNotes.every(note => note.meta.hidden === true);
 
@@ -58,27 +66,35 @@ const showAllNotes = (state, dispatch) => {
     }
   }));
 
-  return setNotesMeta(specs)(state, dispatch);
+  return setNotesMeta(key)(specs)(state, dispatch);
 };
 
-const toggleAllNotes = (state, dispatch) =>
-  collapseAllNotes(state)
-    ? collapseAllNotes(state, dispatch)
-    : showAllNotes(state, dispatch);
+const toggleAllNotes = key => () => (state, dispatch) =>
+  collapseAllNotes(key)()(state)
+    ? collapseAllNotes(key)()(state, dispatch)
+    : showAllNotes(key)()(state, dispatch);
 
 /*
  * The main plugin that setups the noter
  * TODO: maybe NoteTracker could extend Plugin which would mean we could
  * use the plugin instance more normally rather than notePlugin.props.noteTracker
  */
-const noter = (markType, initDoc, historyPlugin, onNoteCreate = () => {}) => {
+const buildNoter = (
+  markType,
+  initDoc,
+  key,
+  historyPlugin,
+  onNoteCreate = () => {},
+  handleClick = null
+) => {
   const noteTracker = new NoteTracker([], onNoteCreate);
   const noteTransaction = new NoteTransaction(
     noteTracker,
     markType,
+    key,
     historyPlugin
   );
-  const noteDecorator = createDecorateNotes(markType, noteTransaction);
+  const noteDecorator = createDecorateNotes(noteTransaction, noteTracker);
 
   notesFromDoc(initDoc, markType).forEach(({ start, end, meta, id }) =>
     /*
@@ -90,22 +106,21 @@ const noter = (markType, initDoc, historyPlugin, onNoteCreate = () => {}) => {
     noteTracker.addNote(start, end, meta, id, true)
   );
 
-  return new Plugin({
-    props: {
-      decorations: noteDecorator,
-      handleClick: clickHandler
-    },
-    filterTransaction: (tr, oldState) =>
-      noteTransaction.filterTransaction(tr, oldState)
-  });
+  return {
+    plugin: new Plugin({
+      props: {
+        decorations: noteDecorator,
+        handleClick: handleClick && clickHandler(noteTracker, handleClick)
+      },
+      filterTransaction: (tr, oldState) =>
+        noteTransaction.filterTransaction(tr, oldState)
+    }),
+    toggleNote: toggleNote(key),
+    setNoteMeta: setNoteMeta(key),
+    collapseAllNotes: collapseAllNotes(key),
+    showAllNotes: showAllNotes(key),
+    toggleAllNotes: toggleAllNotes(key)
+  };
 };
 
-export {
-  createNoteMark,
-  toggleNote,
-  setNoteMeta,
-  collapseAllNotes,
-  showAllNotes,
-  toggleAllNotes,
-  noter
-};
+export { createNoteMark, buildNoter };

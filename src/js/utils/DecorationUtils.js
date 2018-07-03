@@ -1,8 +1,7 @@
 import { DecorationSet, Decoration } from "prosemirror-view";
-import { notesFromDoc } from "./StateUtils";
 
 const noteWrapper = (id, pos, type, side, inside) => {
-  const dom = document.createElement("dom");
+  const dom = document.createElement("span");
 
   // fixes a firefox bug that makes the decos appear selected
   const content = document.createElement("span");
@@ -20,27 +19,23 @@ const noteWrapper = (id, pos, type, side, inside) => {
   });
 };
 
-const placeholderDecos = (noteTransaction, state) =>
-  state.selection.$cursor && noteTransaction.hasPlaceholder(state)
+const placeholderDecos = (noteTransaction, state) => {
+  const type = noteTransaction.hasPlaceholder(state);
+  return state.selection.$cursor && type
     ? [
-        noteWrapper("NONE", state.selection.$cursor.pos, -1, true),
-        noteWrapper("NONE", state.selection.$cursor.pos, 1, true)
+        noteWrapper("NONE", state.selection.$cursor.pos, type, -1, true),
+        noteWrapper("NONE", state.selection.$cursor.pos, type, 1, true)
       ]
     : [];
+};
 
-export const createDecorateNotes = (markType, noteTransaction) => state =>
+export const createDecorateNotes = (noteTransaction, noteTracker) => state =>
   DecorationSet.create(state.doc, [
-    ...notesFromDoc(state.doc, markType).reduce(
-      (out, { id, meta: { type }, nodes }) => [
+    ...noteTracker.notes.reduce(
+      (out, { id, start, end, meta: { type } }) => [
         ...out,
-        noteWrapper(id, nodes[0].start, type, -1, noteTransaction.inside === id),
-        noteWrapper(
-          id,
-          nodes[nodes.length - 1].end,
-          type,
-          1,
-          noteTransaction.inside === id
-        )
+        noteWrapper(id, start, type, -1, noteTransaction.insideID === id),
+        noteWrapper(id, end, type, 1, noteTransaction.insideID === id)
       ],
       []
     ),

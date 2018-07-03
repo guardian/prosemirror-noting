@@ -9,7 +9,7 @@ import {
 } from "prosemirror-state";
 import { nodes, marks } from "prosemirror-schema-basic";
 import { TestState, removeTags } from "./helpers/prosemirror";
-import { noter, createNoteMark } from "../src/js";
+import { createNoteMark, buildNoter } from "../src/js";
 
 const noteSchema = new Schema({
   nodes: nodes,
@@ -58,16 +58,19 @@ const selFor = initDoc => {
 
 const initPM = initDoc => {
   const historyPlugin = history();
+  const { plugin: noter, ...rest } = buildNoter(
+    noteSchema.marks.note,
+    initDoc,
+    "noter",
+    historyPlugin
+  );
   const state = EditorState.create({
     doc: initDoc,
     schema: noteSchema,
     selection: selFor(initDoc),
-    plugins: [
-      historyPlugin,
-      noter(noteSchema.marks.note, initDoc, historyPlugin)
-    ]
+    plugins: [historyPlugin, noter]
   });
-  return new TestState(state);
+  return new TestState(state, rest);
 };
 
 let _id = 1;
@@ -122,7 +125,7 @@ describe("Noter Plugin", () => {
     testIO(
       "adds a note when at a cursor then typing",
       t(p("foo<a>")),
-      s => s.toggleNote().type("hi"),
+      s => s.runCommand("toggleNote", "note", true).type("hi"),
       t(p("foo", note({ id: 1 }, "hi")))
     );
 
@@ -131,8 +134,8 @@ describe("Noter Plugin", () => {
       t(p("foo<a>")),
       s =>
         s
-          .toggleNote()
-          .toggleNote()
+          .runCommand("toggleNote", "note", true)
+          .runCommand("toggleNote", "note", true)
           .type("hi"),
       t(p("foohi"))
     );
@@ -140,42 +143,70 @@ describe("Noter Plugin", () => {
     testIO(
       "removes a note when cursor inside one",
       t(p("foo", note({ id: 1 }, "no<a>te"), "more")),
-      s => s.toggleNote(),
+      s => s.runCommand("toggleNote", "note", true),
       t(p("foonotemore"))
+    );
+
+    testIO(
+      "removes a note when cursor on the right edge of and inside one",
+      t(p("foo", note({ id: 1 }, "note"), "<a>more")),
+      s => s.left().runCommand("toggleNote", "note", true),
+      t(p("foonotemore"))
+    );
+
+    testIO(
+      "removes a note when cursor on the left edge of and inside one",
+      t(p("foo<a>", note({ id: 1 }, "note"), "more")),
+      s => s.right().runCommand("toggleNote", "note", true),
+      t(p("foonotemore"))
+    );
+
+    testIO(
+      "does note remove a note when cursor on the right edge and outside of one",
+      t(p("foo", note({ id: 1 }, "note"), "<a>more")),
+      s => s.runCommand("toggleNote", "note", true),
+      t(p("foo", note({ id: 1 }, "note"), "more"))
+    );
+
+    testIO(
+      "does note remove a note when cursor on the left edge and outside of one",
+      t(p("foo<a>", note({ id: 1 }, "note"), "more")),
+      s => s.runCommand("toggleNote", "note", true),
+      t(p("foo", note({ id: 1 }, "note"), "more"))
     );
 
     testIO(
       "enlarges a note when selection outside one",
       t(p("f<a>oo", note({ id: 1 }, "note"), "mo<b>re")),
-      s => s.toggleNote(),
+      s => s.runCommand("toggleNote", "note", true),
       t(p("f", note({ id: 1 }, "oonotemo"), "re"))
     );
 
     testIO(
       "slices a note when selection inside one",
       t(p("foo", note({ id: 1 }, "n<a>ot<b>e"), "more")),
-      s => s.toggleNote(),
+      s => s.runCommand("toggleNote", "note", true),
       t(p("foo", note({ id: 1 }, "n"), "ot", note({ id: 2 }, "e"), "more"))
     );
 
     testIO(
       "slices a note when selection at the front and inside",
       t(p("foo", note({ id: 1 }, "<a>not<b>e"), "more")),
-      s => s.toggleNote(),
+      s => s.runCommand("toggleNote", "note", true),
       t(p("foonot", note({ id: 1 }, "e"), "more"))
     );
 
     testIO(
       "slices a note when selection at the back and inside",
       t(p("foo", note({ id: 1 }, "n<a>ote<b>"), "more")),
-      s => s.toggleNote(),
+      s => s.runCommand("toggleNote", "note", true),
       t(p("foo", note({ id: 1 }, "n"), "otemore"))
     );
 
     testIO(
       "deletes a note when covering one",
       t(p("foo", note({ id: 1 }, "<a>note<b>"), "more")),
-      s => s.toggleNote(),
+      s => s.runCommand("toggleNote", "note", true),
       t(p("foonotemore"))
     );
 
@@ -190,7 +221,7 @@ describe("Noter Plugin", () => {
           "more"
         )
       ),
-      s => s.toggleNote(),
+      s => s.runCommand("toggleNote", "note", true),
       t(p("foo", note({ id: 1 }, "notebarnote"), "more"))
     );
 
@@ -205,22 +236,30 @@ describe("Noter Plugin", () => {
           "more"
         )
       ),
-      s => s.toggleNote(),
+      s => s.runCommand("toggleNote", "note", true),
       t(p("foo", note({ id: 1 }, "notebarnote"), "more"))
     );
 
     testIO(
       "does not merge notes of different types when they touch",
       t(
-       p("foo",
-          note({ id: 1}, "not<a>eA"),
-          note({ id: 2, meta: {type: "flag"}}, "no<b>teB"),
+        p(
+          "foo",
+          note({ id: 1 }, "not<a>eA"),
+          note({ id: 2, meta: { type: "flag" } }, "no<b>teB"),
           "bar"
         )
       ),
-      s => s.toggleNote(),
-      t(p("foo", note({ id: 1}, "noteAno"), note({ id: 2, meta: {type: "flag"}}, "teB"), "bar"))
-    )
+      s => s.runCommand("toggleNote", "note", true),
+      t(
+        p(
+          "foo",
+          note({ id: 1 }, "noteAno"),
+          note({ id: 2, meta: { type: "flag" } }, "teB"),
+          "bar"
+        )
+      )
+    );
   });
 
   testIO(
@@ -317,15 +356,7 @@ describe("Noter Plugin", () => {
         .cut()
         .left(6)
         .paste(),
-    t(
-      p(
-        "te",
-        note({ id: 1 }, "te"),
-        "test",
-        note({ id: 2 }, "no"),
-        "st"
-      )
-    ),
+    t(p("te", note({ id: 1 }, "te"), "test", note({ id: 2 }, "no"), "st")),
     3
   );
 
@@ -358,7 +389,7 @@ describe("Noter Plugin", () => {
         "<a>f",
         note({ id: 1 }, "o"),
         "o",
-        note({ id: 2, meta: { type: 'flag '}}, "o"),
+        note({ id: 2, meta: { type: "flag " } }, "o"),
         "o<b>",
         note({ id: 3 }, "note"),
         "more"
@@ -379,7 +410,7 @@ describe("Noter Plugin", () => {
       p(
         note({ id: 1 }, "<a>foo<b>"),
         "o",
-        note({ id: 2, meta: { type: 'flag'}}, "bar"),
+        note({ id: 2, meta: { type: "flag" } }, "bar"),
         "o",
         note({ id: 3 }, "baz"),
         "more"
@@ -393,32 +424,29 @@ describe("Noter Plugin", () => {
         .right(3)
         .selectRight(4)
         .paste(),
-    t(p(
-      "o",
-      note({ id: 1, meta: { type: 'flag'} }, "b"),
-      note({ id: 2 }, "fooaz"),
-      "more")),
+    t(
+      p(
+        "o",
+        note({ id: 1, meta: { type: "flag" } }, "b"),
+        note({ id: 2 }, "fooaz"),
+        "more"
+      )
+    ),
     2
   );
 
   testIO(
     "can handle pasting notes of different types",
-    t(
-      p(note({ id: 1, meta: { type: 'flag' }}, "<a>bar<b>"))
-    ),
+    t(p(note({ id: 1, meta: { type: "flag" } }, "<a>bar<b>"))),
     s => s.cut().paste(),
-    t(
-      p(note({ id: 1, meta: { type: 'flag' }}, "bar"))
-    )
-  )
+    t(p(note({ id: 1, meta: { type: "flag" } }, "bar")))
+  );
+
+  // TODO: This should be moved into a `TestState` tester
 
   testIO(
     "TestState selects right properly",
-    t(
-      p(
-        "m<a>o<b>remore"
-      )
-    ),
+    t(p("m<a>o<b>remore")),
     s =>
       s
         .cut()
