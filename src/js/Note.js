@@ -58,7 +58,7 @@ export default class Note {
   coversRange(from, to, inside = false) {
     return inside
       ? this.start <= from && this.end >= to
-      : this.start < from && this.end > from;
+      : this.start < from && this.end > to;
   }
 
   // End is exclusive
