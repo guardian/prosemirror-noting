@@ -78,7 +78,7 @@ const noter = (markType, initDoc, historyPlugin, onNoteCreate = () => {}) => {
     markType,
     historyPlugin
   );
-  const noteDecorator = createDecorateNotes(markType, noteTransaction);
+  const noteDecorator = createDecorateNotes(noteTransaction, noteTracker);
 
   notesFromDoc(initDoc, markType).forEach(({ start, end, meta, id }) =>
     /*
