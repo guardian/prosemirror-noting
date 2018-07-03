@@ -20,8 +20,8 @@ export default class Note {
 
   mapPositions(startFunc, endFunc = startFunc) {
     return new Note(
-      startFunc(this.start),
-      endFunc(this.end),
+      startFunc(this.start, this.id),
+      endFunc(this.end, this.id),
       this.id,
       cloneDeep(this.meta)
     );

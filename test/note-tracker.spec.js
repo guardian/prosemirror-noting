@@ -47,7 +47,7 @@ describe("NoteTracker", () => {
       noteTracker.addNote(7, 9);
       noteTracker.addNote(12, 20);
 
-      const firstNote = noteTracker.noteAt(2, true);
+      const firstNote = noteTracker.noteAt(2, 1);
 
       expect(noteTracker.notes).toHaveLength(1);
       expect(firstNote.start).toBe(2);
@@ -101,7 +101,7 @@ describe("NoteTracker", () => {
       const note2 = noteTracker.addNote(11, 15);
 
       expect(noteTracker.noteAt(3)).toBe(false);
-      expect(noteTracker.noteAt(3, true).eq(note1)).toBe(true);
+      expect(noteTracker.noteAt(3, 1).eq(note1)).toBe(true);
       expect(noteTracker.noteAt(14).eq(note2)).toBe(true);
       expect(noteTracker.noteAt(16)).toBe(false);
       expect(noteTracker.noteAt(19)).toBe(false);
@@ -141,80 +141,6 @@ describe("NoteTracker", () => {
       noteTracker.mapPositions(pos => Math.max(pos, 5));
 
       expect(getNoteRanges(noteTracker.notes)).toEqual([[5, 8], [11, 19]]);
-    });
-  });
-
-  describe("movingIntoNote", () => {
-    it("returns the note when cursoring into a note", () => {
-      noteTracker.addNote(3, 5);
-
-      let note;
-
-      note = noteTracker.movingIntoNote(2, 3, true);
-      expect(note).toBeTruthy();
-
-      note = noteTracker.movingIntoNote(6, 5, true);
-      expect(note).toBeTruthy();
-
-      note = noteTracker.movingIntoNote(3, 4, false);
-      expect(note).toBeTruthy();
-
-      note = noteTracker.movingIntoNote(5, 4, false);
-    });
-
-    it("does not return a note when not cursoring in", () => {
-      noteTracker.addNote(3, 5);
-
-      let note;
-
-      note = noteTracker.movingIntoNote(1, 3, true);
-      expect(note).toBeFalsy();
-
-      note = noteTracker.movingIntoNote(7, 5, false);
-      expect(note).toBeFalsy();
-
-      note = noteTracker.movingIntoNote(2, 4, true);
-      expect(note).toBeFalsy();
-
-      note = noteTracker.movingIntoNote(6, 4, false);
-      expect(note).toBeFalsy();
-    });
-  });
-
-  describe("movingOutOfNote", () => {
-    it("returns the note when cursoring out of a note", () => {
-      noteTracker.addNote(3, 5);
-
-      let note;
-
-      note = noteTracker.movingOutOfNote(5, 6, true);
-      expect(note).toBeTruthy();
-
-      note = noteTracker.movingOutOfNote(3, 2, true);
-      expect(note).toBeTruthy();
-
-      note = noteTracker.movingOutOfNote(4, 3, false);
-      expect(note).toBeTruthy();
-
-      note = noteTracker.movingOutOfNote(4, 5, false);
-    });
-
-    it("does not return a note when not cursoring out", () => {
-      noteTracker.addNote(3, 5);
-
-      let note;
-
-      note = noteTracker.movingOutOfNote(5, 7, true);
-      expect(note).toBeFalsy();
-
-      note = noteTracker.movingOutOfNote(3, 1, false);
-      expect(note).toBeFalsy();
-
-      note = noteTracker.movingOutOfNote(4, 6, true);
-      expect(note).toBeFalsy();
-
-      note = noteTracker.movingOutOfNote(4, 2, false);
-      expect(note).toBeFalsy();
     });
   });
 });

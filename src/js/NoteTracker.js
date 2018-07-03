@@ -29,6 +29,12 @@ export default class NoteTracker {
     this.notes = [];
   }
 
+  sortNotes() {
+    const toSort = this.notes.slice();
+    toSort.sort((a, b) => a.start - b.start);
+    this.notes = toSort;
+  }
+
   addNote(from, to, _meta, id = null, ignoreCallback = false) {
     if (from >= to) {
       return false;
@@ -45,6 +51,7 @@ export default class NoteTracker {
       this.onNoteCreate(note); // may mutate the note
     }
     this.notes.push(note);
+    this.sortNotes();
     return note;
   }
 
@@ -92,18 +99,14 @@ export default class NoteTracker {
     return !!this.getNote(noteId);
   }
 
-  noteAt(pos) {
-
-    const notes = this.notes.filter(note => note.containsPosition(pos, true))
-
-    for (let i = 0; i < notes.length; i += 1) {
-      const note = notes[i];
-      if (note.containsPosition(pos)) {
-        return note;
-      }
-    }
-
-    return false;
+  noteAt(pos, _bias = 0) {
+    const bias = Math.sign(_bias);
+    const range = [pos, pos + bias];
+    range.sort();
+    const [from, to] = range;
+    return (
+      this.notes.find(note => note.coversRange(from, to, bias !== 0)) || false
+    );
   }
 
   noteCoveringRange(from, to, inside = false) {
