@@ -53,6 +53,12 @@ const doc = DOMParser.fromSchema(mySchema).parse(
   document.querySelector("#content")
 );
 
+const onNoteCreate = note => {
+  note.meta = Object.assign({}, note.meta, {
+    createdAt: Date.now()
+  });
+};
+
 const historyPlugin = history();
 const {
   plugin: noterPlugin,
@@ -65,11 +71,7 @@ const {
   doc,
   "noter",
   historyPlugin,
-  note => {
-    note.meta = Object.assign({}, note.meta, {
-      createdAt: Date.now()
-    });
-  },
+  onNoteCreate,
   note =>
     setNoteMeta(note.id, {
       hidden: !note.meta.hidden
@@ -85,13 +87,8 @@ const {
   doc,
   "flagger",
   historyPlugin,
+  onNoteCreate,
   note => {
-    note.meta = Object.assign({}, note.meta, {
-      createdAt: Date.now()
-    });
-  },
-  note => {
-    console.log(note);
     const toggleTypes = ["flag", "correct"];
     const toggleIndex = toggleTypes.indexOf(note.meta.type);
     return toggleIndex > -1
