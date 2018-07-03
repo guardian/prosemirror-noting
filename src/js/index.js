@@ -70,9 +70,9 @@ const showAllNotes = key => () => (state, dispatch) => {
 };
 
 const toggleAllNotes = key => () => (state, dispatch) =>
-  collapseAllNotes(state)
-    ? collapseAllNotes(key)(state, dispatch)
-    : showAllNotes(key)(state, dispatch);
+  collapseAllNotes(key)()(state)
+    ? collapseAllNotes(key)()(state, dispatch)
+    : showAllNotes(key)()(state, dispatch);
 
 /*
  * The main plugin that setups the noter

@@ -15966,9 +15966,9 @@ const showAllNotes$1 = key => () => (state, dispatch) => {
 };
 
 const toggleAllNotes$1 = key => () => (state, dispatch) =>
-  collapseAllNotes(state)
-    ? collapseAllNotes(key)(state, dispatch)
-    : showAllNotes$1(key)(state, dispatch);
+  collapseAllNotes(key)()(state)
+    ? collapseAllNotes(key)()(state, dispatch)
+    : showAllNotes$1(key)()(state, dispatch);
 
 /*
  * The main plugin that setups the noter
@@ -16058,6 +16058,12 @@ const doc = dist_12.fromSchema(mySchema).parse(
   document.querySelector("#content")
 );
 
+const onNoteCreate = note => {
+  note.meta = Object.assign({}, note.meta, {
+    createdAt: Date.now()
+  });
+};
+
 const historyPlugin = history_4();
 const {
   plugin: noterPlugin,
@@ -16070,11 +16076,7 @@ const {
   doc,
   "noter",
   historyPlugin,
-  note => {
-    note.meta = Object.assign({}, note.meta, {
-      createdAt: Date.now()
-    });
-  },
+  onNoteCreate,
   note =>
     setNoteMeta(note.id, {
       hidden: !note.meta.hidden
@@ -16090,13 +16092,8 @@ const {
   doc,
   "flagger",
   historyPlugin,
+  onNoteCreate,
   note => {
-    note.meta = Object.assign({}, note.meta, {
-      createdAt: Date.now()
-    });
-  },
-  note => {
-    console.log(note);
     const toggleTypes = ["flag", "correct"];
     const toggleIndex = toggleTypes.indexOf(note.meta.type);
     return toggleIndex > -1
@@ -16128,8 +16125,8 @@ new dist_1$3(document.querySelector("#editor"), {
             new dist_1$6({
               title: "Collapse Notes",
               icon: collapseNoteIcon,
-              run: toggleAllNotes,
-              active: showAllNotes
+              run: toggleAllNotes(),
+              active: showAllNotes()
             })
           ]
         ]

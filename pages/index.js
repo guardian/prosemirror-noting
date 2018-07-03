@@ -120,8 +120,8 @@ new EditorView(document.querySelector("#editor"), {
             new MenuItem({
               title: "Collapse Notes",
               icon: collapseNoteIcon,
-              run: toggleAllNotes,
-              active: showAllNotes
+              run: toggleAllNotes(),
+              active: showAllNotes()
             })
           ]
         ]
