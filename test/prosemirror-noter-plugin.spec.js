@@ -145,6 +145,34 @@ describe("Noter Plugin", () => {
     );
 
     testIO(
+      "removes a note when cursor on the right edge of and inside one",
+      t(p("foo", note({ id: 1 }, "note"), "<a>more")),
+      s => s.left().toggleNote(),
+      t(p("foonotemore"))
+    );
+
+    testIO(
+      "removes a note when cursor on the left edge of and inside one",
+      t(p("foo<a>", note({ id: 1 }, "note"), "more")),
+      s => s.right().toggleNote(),
+      t(p("foonotemore"))
+    );
+
+    testIO(
+      "does note remove a note when cursor on the right edge and outside of one",
+      t(p("foo", note({ id: 1 }, "note"), "<a>more")),
+      s => s.toggleNote(),
+      t(p("foo", note({ id: 1 }, "note"), "more"))
+    );
+
+    testIO(
+      "does note remove a note when cursor on the left edge and outside of one",
+      t(p("foo<a>", note({ id: 1 }, "note"), "more")),
+      s => s.toggleNote(),
+      t(p("foo", note({ id: 1 }, "note"), "more"))
+    );    
+
+    testIO(
       "enlarges a note when selection outside one",
       t(p("f<a>oo", note({ id: 1 }, "note"), "mo<b>re")),
       s => s.toggleNote(),
@@ -411,6 +439,8 @@ describe("Noter Plugin", () => {
       p(note({ id: 1, meta: { type: 'flag' }}, "bar"))
     )
   )
+
+  // TODO: This should be moved into a `TestState` tester
 
   testIO(
     "TestState selects right properly",
