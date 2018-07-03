@@ -1,6 +1,4 @@
-import { setNoteMeta } from "./index";
-
-const clickHandler = ({ dispatch, state }, pos, { target }) => {
+const clickHandler = setNoteMeta => ({ dispatch, state }, pos, { target }) => {
   const { toggleNoteId } = target.dataset || {};
   const el = document.querySelector(`[data-note-id="${toggleNoteId}"]`);
   if (el) {

@@ -4,15 +4,19 @@ import { Selection, TextSelection } from "prosemirror-state";
 import { Fragment } from "prosemirror-model";
 
 export class TestState {
-  constructor(state) {
+  constructor(state, cmds = {}) {
     this.state = state;
+    this.cmds = cmds;
     this.clipboard = null;
   }
 
-  toggleNote(type = "note") {
-    return this.apply(
-      this.tr.setMeta("toggle-note", { type, cursorToEnd: true })
-    );
+  runCommand(name, ...runArgs) {
+    const cmd = this.cmds[name];
+    if (!cmd) {
+      throw new Error(`Command ${name} not registered with TestState`);
+    }
+    cmd(...runArgs)(this.state, tr => this.apply(tr));
+    return this;
   }
 
   enter(n = 1) {
@@ -91,7 +95,7 @@ export class TestState {
       const $pos = this.state.doc.resolve($to.pos + 1);
       $to = Selection.near($pos).$to;
     }
-    
+
     return this.setSelection(new TextSelection($from, $to));
   }
 
@@ -104,7 +108,7 @@ export class TestState {
     if (paste) {
       tr = tr.setMeta("paste", true);
     }
-  
+
     return this.apply(tr);
   }
 

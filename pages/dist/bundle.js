@@ -15444,9 +15444,10 @@ const notesFromDoc = (doc, markType, min = false, max = false) => {
 };
 
 class NoteTransaction {
-  constructor(noteTracker, markType, historyPlugin) {
+  constructor(noteTracker, markType, key, historyPlugin) {
     this.noteTracker = noteTracker;
     this.markType = markType;
+    this.key = key;
     this.historyPlugin = historyPlugin;
     this.tr = null;
     this.insideID = false;
@@ -15462,10 +15463,11 @@ class NoteTransaction {
 
   filterTransaction(tr, oldState) {
     this.init(tr, oldState);
-    if (tr.getMeta("set-notes-meta")) {
-      const specs = tr.getMeta("set-notes-meta");
+    let meta;
+    if ((meta = tr.getMeta("set-notes-meta")) && meta.key === this.key) {
+      const { specs } = tr.getMeta("set-notes-meta");
       specs.forEach(({ id, meta }) => this.updateMeta(id, meta));
-    } else if (tr.getMeta("toggle-note")) {
+    } else if ((meta = tr.getMeta("toggle-note")) && meta.key === this.key) {
       const { type, cursorToEnd } = tr.getMeta("toggle-note");
       this.handleToggle(type, cursorToEnd, oldState);
     } else if (tr.getMeta("paste") || tr.getMeta(this.historyPlugin)) {
@@ -15806,7 +15808,7 @@ const createDecorateNotes = (noteTransaction, noteTracker) => state =>
     ...placeholderDecos(noteTransaction, state)
   ]);
 
-const clickHandler = ({ dispatch, state }, pos, { target }) => {
+const clickHandler = setNoteMeta => ({ dispatch, state }, pos, { target }) => {
   const { toggleNoteId } = target.dataset || {};
   const el = document.querySelector(`[data-note-id="${toggleNoteId}"]`);
   if (el) {
@@ -15912,22 +15914,30 @@ const filterTagTypeMap = tagTypeMap =>
     };
   };
 
-const toggleNote = (type, cursorToEnd = false) => (state, dispatch) =>
+const toggleNote$1 = key => (type, cursorToEnd = false) => (state, dispatch) =>
   dispatch
     ? dispatch(
         state.tr.setMeta("toggle-note", {
+          key,
           type,
           cursorToEnd
         })
       )
     : true;
 
-const setNotesMeta = (specs = []) => (state, dispatch) =>
-  dispatch ? dispatch(state.tr.setMeta("set-notes-meta", specs)) : true;
+const setNotesMeta = key => (specs = []) => (state, dispatch) =>
+  dispatch
+    ? dispatch(
+        state.tr.setMeta("set-notes-meta", {
+          key,
+          specs
+        })
+      )
+    : true;
 
-const setNoteMeta = (id, meta) => setNotesMeta([{ id, meta }]);
+const setNoteMeta = key => (id, meta) => setNotesMeta(key)([{ id, meta }]);
 
-const collapseAllNotes = (state, dispatch) => {
+const collapseAllNotes = key => () => (state, dispatch) => {
   // @TODO: This is searching the entire doc for notes every time.
   // NoteTracker is essentially the state of the Noter plugin, in
   // order to make it act like others, and to clean this up, we
@@ -15946,10 +15956,10 @@ const collapseAllNotes = (state, dispatch) => {
     }
   }));
 
-  return setNotesMeta(specs)(state, dispatch);
+  return setNotesMeta(key)(specs)(state, dispatch);
 };
 
-const showAllNotes = (state, dispatch) => {
+const showAllNotes$1 = key => () => (state, dispatch) => {
   const allNotes = notesFromDoc(state.doc, state.config.schema.marks.note);
   let hidden = !allNotes.every(note => note.meta.hidden === true);
 
@@ -15964,24 +15974,31 @@ const showAllNotes = (state, dispatch) => {
     }
   }));
 
-  return setNotesMeta(specs)(state, dispatch);
+  return setNotesMeta(key)(specs)(state, dispatch);
 };
 
-const toggleAllNotes = (state, dispatch) =>
+const toggleAllNotes$1 = key => () => (state, dispatch) =>
   collapseAllNotes(state)
-    ? collapseAllNotes(state, dispatch)
-    : showAllNotes(state, dispatch);
+    ? collapseAllNotes(key)(state, dispatch)
+    : showAllNotes$1(key)(state, dispatch);
 
 /*
  * The main plugin that setups the noter
  * TODO: maybe NoteTracker could extend Plugin which would mean we could
  * use the plugin instance more normally rather than notePlugin.props.noteTracker
  */
-const noter = (markType, initDoc, historyPlugin, onNoteCreate = () => {}) => {
+const buildNoter = (
+  markType,
+  initDoc,
+  key,
+  historyPlugin,
+  onNoteCreate = () => {}
+) => {
   const noteTracker = new NoteTracker([], onNoteCreate);
   const noteTransaction = new NoteTransaction(
     noteTracker,
     markType,
+    key,
     historyPlugin
   );
   const noteDecorator = createDecorateNotes(noteTransaction, noteTracker);
@@ -15996,14 +16013,21 @@ const noter = (markType, initDoc, historyPlugin, onNoteCreate = () => {}) => {
     noteTracker.addNote(start, end, meta, id, true)
   );
 
-  return new dist_8({
-    props: {
-      decorations: noteDecorator,
-      handleClick: clickHandler
-    },
-    filterTransaction: (tr, oldState) =>
-      noteTransaction.filterTransaction(tr, oldState)
-  });
+  return {
+    plugin: new dist_8({
+      props: {
+        decorations: noteDecorator,
+        handleClick: clickHandler(setNoteMeta(key))
+      },
+      filterTransaction: (tr, oldState) =>
+        noteTransaction.filterTransaction(tr, oldState)
+    }),
+    toggleNote: toggleNote$1(key),
+    setNoteMeta: setNoteMeta(key),
+    collapseAllNotes: collapseAllNotes(key),
+    showAllNotes: showAllNotes$1(key),
+    toggleAllNotes: toggleAllNotes$1(key)
+  };
 };
 
 const toggleNoteIcon = {
@@ -16024,7 +16048,16 @@ const mySchema = new dist_8$1({
   marks: Object.assign({}, schemaBasic_2, {
     note: createNoteMark(
       {
-        note: "mynote",
+        note: "mynote"
+      },
+      meta => ({
+        class: meta.hidden ? "note--collapsed" : "",
+        title: "My Title",
+        contenteditable: !meta.hidden
+      })
+    ),
+    flag: createNoteMark(
+      {
         flag: "myflag"
       },
       meta => ({
@@ -16041,11 +16074,28 @@ const doc = dist_12.fromSchema(mySchema).parse(
 );
 
 const historyPlugin = history_4();
-const noterPlugin = noter(mySchema.marks.note, doc, historyPlugin, note => {
+const {
+  plugin: noterPlugin,
+  toggleAllNotes,
+  showAllNotes,
+  toggleNote
+} = buildNoter(mySchema.marks.note, doc, "noter", historyPlugin, note => {
   note.meta = Object.assign({}, note.meta, {
     createdAt: Date.now()
   });
 });
+
+const { plugin: flagPlugin, toggleNote: toggleFlag } = buildNoter(
+  mySchema.marks.flag,
+  doc,
+  "flagger",
+  historyPlugin,
+  note => {
+    note.meta = Object.assign({}, note.meta, {
+      createdAt: Date.now()
+    });
+  }
+);
 
 new dist_1$3(document.querySelector("#editor"), {
   state: dist_7.create({
@@ -16075,13 +16125,15 @@ new dist_1$3(document.querySelector("#editor"), {
         ]
       }),
       keymap_2({
-        F6: toggleNote("flag", true),
+        F6: toggleFlag("flag", true),
         F10: toggleNote("note", true)
       }),
       historyPlugin,
-      noterPlugin
+      noterPlugin,
+      flagPlugin
     ]
   })
 });
 
 }());
+//# sourceMappingURL=bundle.js.map

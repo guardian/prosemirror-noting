@@ -3,9 +3,10 @@ import { cloneDeep } from "./utils/helpers";
 import { charsAdded, notesFromDoc } from "./utils/StateUtils";
 
 export default class NoteTransaction {
-  constructor(noteTracker, markType, historyPlugin) {
+  constructor(noteTracker, markType, key, historyPlugin) {
     this.noteTracker = noteTracker;
     this.markType = markType;
+    this.key = key;
     this.historyPlugin = historyPlugin;
     this.tr = null;
     this.insideID = false;
@@ -21,10 +22,11 @@ export default class NoteTransaction {
 
   filterTransaction(tr, oldState) {
     this.init(tr, oldState);
-    if (tr.getMeta("set-notes-meta")) {
-      const specs = tr.getMeta("set-notes-meta");
+    let meta;
+    if ((meta = tr.getMeta("set-notes-meta")) && meta.key === this.key) {
+      const { specs } = tr.getMeta("set-notes-meta");
       specs.forEach(({ id, meta }) => this.updateMeta(id, meta));
-    } else if (tr.getMeta("toggle-note")) {
+    } else if ((meta = tr.getMeta("toggle-note")) && meta.key === this.key) {
       const { type, cursorToEnd } = tr.getMeta("toggle-note");
       this.handleToggle(type, cursorToEnd, oldState);
     } else if (tr.getMeta("paste") || tr.getMeta(this.historyPlugin)) {

@@ -25,21 +25,23 @@ const collapseNoteIcon = {
   path: `M39.637 53.63H8.69l-.01 10.105h30.945L25.68 81.865l4.468 4.46L56.07 60.41v-3.476l-25.918-25.91-4.46 4.47zm48.504 10.1h30.27l.008-10.1-30.266-.007 13.942-18.13-4.465-4.47L71.714 56.94l-.008 3.484 25.91 25.902 4.47-4.468z`
 };
 
-import {
-  createNoteMark,
-  toggleNote,
-  // setNoteMeta,
-  noter,
-  showAllNotes,
-  toggleAllNotes
-} from "../src/js/index";
+import { createNoteMark, buildNoter } from "../src/js/index";
 
 const mySchema = new Schema({
   nodes,
   marks: Object.assign({}, marks, {
     note: createNoteMark(
       {
-        note: "mynote",
+        note: "mynote"
+      },
+      meta => ({
+        class: meta.hidden ? "note--collapsed" : "",
+        title: "My Title",
+        contenteditable: !meta.hidden
+      })
+    ),
+    flag: createNoteMark(
+      {
         flag: "myflag"
       },
       meta => ({
@@ -56,11 +58,28 @@ const doc = DOMParser.fromSchema(mySchema).parse(
 );
 
 const historyPlugin = history();
-const noterPlugin = noter(mySchema.marks.note, doc, historyPlugin, note => {
+const {
+  plugin: noterPlugin,
+  toggleAllNotes,
+  showAllNotes,
+  toggleNote
+} = buildNoter(mySchema.marks.note, doc, "noter", historyPlugin, note => {
   note.meta = Object.assign({}, note.meta, {
     createdAt: Date.now()
   });
 });
+
+const { plugin: flagPlugin, toggleNote: toggleFlag } = buildNoter(
+  mySchema.marks.flag,
+  doc,
+  "flagger",
+  historyPlugin,
+  note => {
+    note.meta = Object.assign({}, note.meta, {
+      createdAt: Date.now()
+    });
+  }
+);
 
 new EditorView(document.querySelector("#editor"), {
   state: EditorState.create({
@@ -90,11 +109,12 @@ new EditorView(document.querySelector("#editor"), {
         ]
       }),
       keymap({
-        F6: toggleNote("flag", true),
+        F6: toggleFlag("flag", true),
         F10: toggleNote("note", true)
       }),
       historyPlugin,
-      noterPlugin
+      noterPlugin,
+      flagPlugin
     ]
   })
 });
