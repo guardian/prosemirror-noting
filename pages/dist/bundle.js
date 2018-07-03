@@ -3480,7 +3480,7 @@ exports.MarkType = MarkType;
 exports.ContentMatch = ContentMatch;
 exports.DOMParser = DOMParser;
 exports.DOMSerializer = DOMSerializer;
-
+//# sourceMappingURL=index.js.map
 });
 
 unwrapExports(dist$1);
@@ -5183,7 +5183,7 @@ exports.RemoveMarkStep = RemoveMarkStep;
 exports.ReplaceStep = ReplaceStep;
 exports.ReplaceAroundStep = ReplaceAroundStep;
 exports.replaceStep = replaceStep;
-
+//# sourceMappingURL=index.js.map
 });
 
 unwrapExports(dist$2);
@@ -6340,7 +6340,7 @@ exports.Transaction = Transaction;
 exports.EditorState = EditorState;
 exports.Plugin = Plugin;
 exports.PluginKey = PluginKey;
-
+//# sourceMappingURL=index.js.map
 });
 
 unwrapExports(dist);
@@ -10972,7 +10972,7 @@ exports.Decoration = Decoration;
 exports.DecorationSet = DecorationSet;
 exports.__serializeForClipboard = serializeForClipboard;
 exports.__parseFromClipboard = parseFromClipboard;
-
+//# sourceMappingURL=index.js.map
 });
 
 unwrapExports(dist$3);
@@ -11143,7 +11143,7 @@ var schema = new dist$1.Schema({nodes: nodes, marks: marks});
 exports.nodes = nodes;
 exports.marks = marks;
 exports.schema = schema;
-
+//# sourceMappingURL=schema-basic.js.map
 });
 
 unwrapExports(schemaBasic);
@@ -11798,7 +11798,7 @@ exports.undo = undo;
 exports.redo = redo;
 exports.undoDepth = undoDepth;
 exports.redoDepth = redoDepth;
-
+//# sourceMappingURL=history.js.map
 });
 
 unwrapExports(history_1);
@@ -12038,7 +12038,7 @@ function keydownHandler(bindings) {
 
 exports.keymap = keymap;
 exports.keydownHandler = keydownHandler;
-
+//# sourceMappingURL=keymap.js.map
 });
 
 unwrapExports(keymap_1);
@@ -12704,7 +12704,7 @@ exports.chainCommands = chainCommands;
 exports.pcBaseKeymap = pcBaseKeymap;
 exports.macBaseKeymap = macBaseKeymap;
 exports.baseKeymap = baseKeymap;
-
+//# sourceMappingURL=commands.js.map
 });
 
 unwrapExports(commands);
@@ -12847,7 +12847,7 @@ function dropPos(slice, $pos) {
 }
 
 exports.dropCursor = dropCursor;
-
+//# sourceMappingURL=dropcursor.js.map
 });
 
 unwrapExports(dropcursor);
@@ -13043,7 +13043,7 @@ function drawGapCursor(state) {
 
 exports.gapCursor = gapCursor;
 exports.GapCursor = GapCursor;
-
+//# sourceMappingURL=index.js.map
 });
 
 unwrapExports(dist$7);
@@ -13887,7 +13887,7 @@ exports.redoItem = redoItem;
 exports.wrapItem = wrapItem;
 exports.blockTypeItem = blockTypeItem;
 exports.menuBar = menuBar;
-
+//# sourceMappingURL=index.js.map
 });
 
 unwrapExports(dist$8);
@@ -14152,7 +14152,7 @@ exports.wrapInList = wrapInList;
 exports.splitListItem = splitListItem;
 exports.liftListItem = liftListItem;
 exports.sinkListItem = sinkListItem;
-
+//# sourceMappingURL=schema-list.js.map
 });
 
 unwrapExports(schemaList);
@@ -14338,7 +14338,7 @@ exports.closeSingleQuote = closeSingleQuote;
 exports.smartQuotes = smartQuotes;
 exports.wrappingInputRule = wrappingInputRule;
 exports.textblockTypeInputRule = textblockTypeInputRule;
-
+//# sourceMappingURL=index.js.map
 });
 
 unwrapExports(dist$9);
@@ -14982,7 +14982,7 @@ exports.buildMenuItems = buildMenuItems;
 exports.buildKeymap = buildKeymap;
 exports.buildInputRules = buildInputRules;
 exports.exampleSetup = exampleSetup;
-
+//# sourceMappingURL=index.js.map
 });
 
 unwrapExports(dist$6);
@@ -15008,10 +15008,6 @@ const cloneDeep = val => {
   return val;
 };
 
-/*
- * NOTE: All ends for ranges are EXCLUSIVE
- */
-
 const clamp = (num, min, max) => Math.max(Math.min(num, max), min);
 
 class Note {
@@ -15028,8 +15024,8 @@ class Note {
 
   mapPositions(startFunc, endFunc = startFunc) {
     return new Note(
-      startFunc(this.start),
-      endFunc(this.end),
+      startFunc(this.start, this.id),
+      endFunc(this.end, this.id),
       this.id,
       cloneDeep(this.meta)
     );
@@ -15066,7 +15062,7 @@ class Note {
   coversRange(from, to, inside = false) {
     return inside
       ? this.start <= from && this.end >= to
-      : this.start < from && this.end > from;
+      : this.start < from && this.end > to;
   }
 
   // End is exclusive
@@ -15141,11 +15137,6 @@ function bytesToUuid(buf, offset) {
 }
 
 var bytesToUuid_1 = bytesToUuid;
-
-// **`v1()` - Generate time-based UUID**
-//
-// Inspired by https://github.com/LiosK/UUID.js
-// and http://docs.python.org/library/uuid.html
 
 var _nodeId;
 var _clockseq;
@@ -15276,6 +15267,12 @@ class NoteTracker {
     this.notes = [];
   }
 
+  sortNotes() {
+    const toSort = this.notes.slice();
+    toSort.sort((a, b) => a.start - b.start);
+    this.notes = toSort;
+  }
+
   addNote(from, to, _meta, id = null, ignoreCallback = false) {
     if (from >= to) {
       return false;
@@ -15292,6 +15289,7 @@ class NoteTracker {
       this.onNoteCreate(note); // may mutate the note
     }
     this.notes.push(note);
+    this.sortNotes();
     return note;
   }
 
@@ -15327,33 +15325,6 @@ class NoteTracker {
    * Reads
    */
 
-  movingIntoNote(prevPos, pos, inclusive = false) {
-    const note = this.noteAt(pos, inclusive);
-    const offset = inclusive ? 0 : 1;
-    if (!note) {
-      return false;
-    } else if (pos - offset === note.start && prevPos === pos - 1) {
-      return note;
-    } else if (pos + offset === note.end && prevPos === pos + 1) {
-      return note;
-    }
-    return false;
-  }
-
-  movingOutOfNote(prevPos, pos, inclusive = false) {
-    const note = this.noteAt(prevPos, inclusive);
-    const offset = inclusive ? 0 : 1;
-
-    if (!note) {
-      return false;
-    } else if (prevPos - offset === note.start && prevPos === pos + 1) {
-      return note;
-    } else if (prevPos + offset === note.end && prevPos === pos - 1) {
-      return note;
-    }
-    return false;
-  }
-
   getNote(noteId) {
     return this.notes.filter(({ id }) => id === noteId)[0];
   }
@@ -15366,17 +15337,14 @@ class NoteTracker {
     return !!this.getNote(noteId);
   }
 
-  noteAt(pos, inside = false) {
-    const { notes } = this;
-
-    for (let i = 0; i < notes.length; i += 1) {
-      const note = notes[i];
-      if (note.containsPosition(pos, inside)) {
-        return note;
-      }
-    }
-
-    return false;
+  noteAt(pos, _bias = 0) {
+    const bias = Math.sign(_bias);
+    const range = [pos, pos + bias];
+    range.sort();
+    const [from, to] = range;
+    return (
+      this.notes.find(note => note.coversRange(from, to, bias !== 0)) || false
+    );
   }
 
   noteCoveringRange(from, to, inside = false) {
@@ -15392,12 +15360,13 @@ class NoteTracker {
     return false;
   }
 
-  notesTouchingRange(from, to) {
-    return this.notes.filter(note => note.touchesRange(from, to));
+  notesTouchingRange(from, to, type) {
+    return this.notes.filter(note => (!type || note.meta.type === type) && note.touchesRange(from, to));
   }
 
-  mergeableRange(from, to) {
-    const mergingNotes = this.notesTouchingRange(from, to);
+  mergeableRange(from, to, type) {
+    // We filter by type to ensure that only notes of the same type are merged.
+    const mergingNotes = this.notesTouchingRange(from, to, type);
 
     const [min, max] = mergingNotes.reduce(
       (out, { start, end }) => [Math.min(out[0], start), Math.max(out[1], end)],
@@ -15480,11 +15449,15 @@ class NoteTransaction {
     this.markType = markType;
     this.historyPlugin = historyPlugin;
     this.tr = null;
-    this.inside = false;
+    this.insideID = false;
   }
 
   static get PLACEHOLDER_ID() {
     return "@@PLACEHOLDER_ID";
+  }
+
+  get insideNote() {
+    return !!this.insideID && this.noteTracker.getNote(this.insideID);
   }
 
   filterTransaction(tr, oldState) {
@@ -15505,7 +15478,7 @@ class NoteTransaction {
   }
 
   init(tr, oldState) {
-    const { noteTracker, inside } = this;
+    const { noteTracker, insideID } = this;
     const { selection: { $cursor: $oldCursor } } = oldState;
     const { $cursor } = tr.selection;
 
@@ -15514,34 +15487,61 @@ class NoteTransaction {
      * need to add and rebuild
      */
     noteTracker.mapPositions(
-      pos => tr.mapping.mapResult(pos, inside ? -1 : 1).pos,
-      pos => tr.mapping.mapResult(pos, inside ? 1 : -1).pos
+      (pos, id) => tr.mapping.mapResult(pos, id === insideID ? -1 : 1).pos,
+      (pos, id) => tr.mapping.mapResult(pos, id === insideID ? 1 : -1).pos
     );
 
-    let note = false; // are we inside or moving into a note
+    console.log(
+      JSON.stringify(noteTracker.notes.map(({ start, end }) => [start, end]))
+    );
 
-    if ($cursor && $oldCursor) {
-      if (
-        !inside &&
-        (note = noteTracker.movingIntoNote($oldCursor.pos, $cursor.pos, false))
-      ) {
-        tr.setSelection(dist_1.near($oldCursor));
-        this.inside = true;
+    if (!tr.docChanged && $cursor && $oldCursor) {
+      const movement = $cursor.pos - $oldCursor.pos;
+
+      if (Math.abs(movement) !== 1) {
+        this.insideID = (noteTracker.noteAt($cursor.pos) || {}).id;
       } else if (
-        inside &&
-        (note = noteTracker.movingOutOfNote($oldCursor.pos, $cursor.pos, true))
+        insideID &&
+        !noteTracker.noteAt($oldCursor.pos) &&
+        (noteTracker.noteAt($oldCursor.pos + movement, -movement) || {}).id !==
+          insideID
       ) {
+        // We're moving from an inclusive position to a neutral position.
+        console.log("outside but inclusive, moving neutral");
+        this.insideID = false;
         tr.setSelection(dist_1.near($oldCursor));
-        this.inside = false;
-      } else {
-        note = noteTracker.noteAt($cursor.pos, this.inside);
-
-        if (note || this.hasPlaceholder(oldState)) {
-          this.inside = true;
-        } else {
-          this.inside = false;
-        }
+      } else if (
+        !insideID &&
+        !noteTracker.noteAt($oldCursor.pos) &&
+        noteTracker.noteAt($oldCursor.pos + movement, -movement)
+      ) {
+        // We're moving from a neutral position to an inclusive position.
+        console.log("neutral, moving outside inclusive");
+        this.insideID = noteTracker.noteAt(
+          $oldCursor.pos + movement,
+          -movement
+        ).id;
+        tr.setSelection(dist_1.near($oldCursor));
+      } else if (noteTracker.noteAt($cursor.pos)) {
+        console.log("inside a note");
+        this.insideID = noteTracker.noteAt($cursor.pos).id;
       }
+
+      // if (
+      //   !inside &&
+      //   (note = noteTracker.movingIntoNote($oldCursor.pos, $cursor.pos, false))
+      // ) {
+      //   console.log("moving in", note);
+      //   tr.setSelection(Selection.near($oldCursor));
+      //   this.inside = note.id;
+      // } else if (
+      //   (note = noteTracker.movingOutOfNote($oldCursor.pos, $cursor.pos, true)) &&
+      //   inside === note.id
+      // ) {
+      //   console.log("moving out", note);
+      //   tr.setSelection(Selection.near($oldCursor));
+      //   this.inside = false;
+      // }
     }
 
     this.tr = tr;
@@ -15549,10 +15549,10 @@ class NoteTransaction {
   }
 
   setCorrectMark() {
-    const { tr, noteTracker, markType, inside } = this;
+    const { tr, markType } = this;
     const { $cursor } = tr.selection;
     if ($cursor) {
-      const note = noteTracker.noteAt($cursor.pos, inside);
+      const note = this.insideNote;
       if (note) {
         const { id, meta } = note;
         const newMark = markType.create({ id, meta });
@@ -15597,11 +15597,11 @@ class NoteTransaction {
      * If we have a selection decide whether to grow the note or slice it
      */
   handleToggle(type, cursorToEnd, oldState) {
-    const { noteTracker, tr, markType, inside } = this;
+    const { noteTracker, tr, markType } = this;
     const { $cursor, from, to } = tr.selection;
 
     if ($cursor) {
-      const note = noteTracker.noteAt($cursor.pos, inside);
+      const note = this.insideNote;
       if (note) {
         const { start, end } = note;
         return this.removeRanges([{ from: start, to: end }]);
@@ -15691,19 +15691,19 @@ class NoteTransaction {
      * placeholder
      */
   handleInput(oldState) {
-    const { tr, noteTracker } = this;
+    const { tr } = this;
     const { $cursor } = tr.selection;
     if ($cursor) {
       const { pos } = $cursor;
       const type = this.hasPlaceholder(oldState);
-      const note = noteTracker.noteAt(pos);
+      const note = this.insideNote;
       if (!note && type) {
         const addedChars = charsAdded(oldState, tr);
 
         if (addedChars > 0) {
           const from = pos - addedChars;
           const to = pos;
-          return this.addNotes([{ from, to, meta: { type } }]);
+          return this.addNotes([{ from, to, meta: { type } }], false, true);
         }
       }
     }
@@ -15727,23 +15727,24 @@ class NoteTransaction {
     return this.removeRanges([range]).addNotes(noteRanges);
   }
 
-  addNotes(ranges, cursorToEnd = false) {
+  addNotes(ranges, cursorToEnd = false, insideLast = false) {
     const { tr, noteTracker, markType } = this;
-    this.tr = ranges
+    const notes = ranges
       .map(({ from, to, meta, id }) => noteTracker.addNote(from, to, meta, id))
-      .filter(note => note) // remove notes that couldn't be added
-      .reduce((_tr, { id, meta, start, end }) => {
-        const newMark = markType.create({ id, meta });
-        return _tr
-          .removeMark(start, end, markType)
-          .addMark(start, end, newMark);
-      }, tr);
+      .filter(note => note); // remove notes that couldn't be added
+
+    this.tr = notes.reduce((_tr, { id, meta, start, end }) => {
+      const newMark = markType.create({ id, meta });
+      return _tr.removeMark(start, end, markType).addMark(start, end, newMark);
+    }, tr);
 
     if (cursorToEnd && ranges.length) {
       const { to } = ranges[ranges.length - 1];
-      const { end } = noteTracker.noteAt(to, true);
+      const { end } = noteTracker.noteAt(to, -1);
       const $end = this.tr.doc.resolve(end);
       this.tr = this.tr.setSelection(dist_1.near($end), 1);
+    } else if (insideLast && notes.length) {
+      this.insideID = notes[notes.length - 1].id;
     }
 
     return this;
@@ -15760,13 +15761,13 @@ class NoteTransaction {
 
   startNote(type) {
     this.tr = this.tr.addStoredMark(this.placeholder(type));
-    this.inside = true;
+    this.insideID = this.constructor.PLACEHOLDER_ID;
     return this;
   }
 }
 
 const noteWrapper = (id, pos, type, side, inside) => {
-  const dom = document.createElement("dom");
+  const dom = document.createElement("span");
 
   // fixes a firefox bug that makes the decos appear selected
   const content = document.createElement("span");
@@ -15784,27 +15785,23 @@ const noteWrapper = (id, pos, type, side, inside) => {
   });
 };
 
-const placeholderDecos = (noteTransaction, state) =>
-  state.selection.$cursor && noteTransaction.hasPlaceholder(state)
+const placeholderDecos = (noteTransaction, state) => {
+  const type = noteTransaction.hasPlaceholder(state);
+  return state.selection.$cursor && type
     ? [
-        noteWrapper("NONE", state.selection.$cursor.pos, -1, true),
-        noteWrapper("NONE", state.selection.$cursor.pos, 1, true)
+        noteWrapper("NONE", state.selection.$cursor.pos, type, -1, true),
+        noteWrapper("NONE", state.selection.$cursor.pos, type, 1, true)
       ]
     : [];
+};
 
-const createDecorateNotes = (markType, noteTransaction) => state =>
+const createDecorateNotes = (noteTransaction, noteTracker) => state =>
   dist_3$3.create(state.doc, [
-    ...notesFromDoc(state.doc, markType).reduce(
-      (out, { id, meta: { type }, nodes }) => [
+    ...noteTracker.notes.reduce(
+      (out, { id, start, end, meta: { type } }) => [
         ...out,
-        noteWrapper(id, nodes[0].start, type, -1, noteTransaction.inside),
-        noteWrapper(
-          id,
-          nodes[nodes.length - 1].end,
-          type,
-          1,
-          noteTransaction.inside
-        )
+        noteWrapper(id, start, type, -1, noteTransaction.insideID === id),
+        noteWrapper(id, end, type, 1, noteTransaction.insideID === id)
       ],
       []
     ),
@@ -15837,7 +15834,6 @@ const hyphenatePascal = str =>
     .replace(/([A-Z]{2})[a-z]/, "$1-")
     .toLowerCase();
 
-// Coerce trues
 const attToVal = att => (att === "true" ? true : att);
 
 const noteToAttrs = (id, meta, attrGenerator = () => {}) => {
@@ -15883,33 +15879,40 @@ const datasetToAttrs = (dataset, defaults = {}) => ({
 const filterTagTypeMap = tagTypeMap =>
   typeof tagTypeMap === "string" ? { note: tagTypeMap } : tagTypeMap;
 
-const createNoteMark = (typeTagMap, attrGenerator = () => {}) => ({
-  attrs: {
-    id: {},
-    meta: {
-      default: {}
+  const createNoteMark = (typeTagMap, attrGenerator = () => {}) => {
+    const values = Object.keys(typeTagMap).map(key => typeTagMap[key]);
+    if (values.length !== new Set(values).size) {
+      throw new Error(
+        "[prosemirror-noting]: type tags: element types must be unique"
+      );
     }
-  },
-  inclusive: false,
-  // Create a rule for every type
-  parseDOM: Object.keys(filterTagTypeMap(typeTagMap)).map(type => ({
-    tag: typeTagMap[type],
-    getAttrs: ({ dataset }) => {
-      const attrs = datasetToAttrs(dataset);
-
-      return Object.assign({}, attrs, {
-        meta: Object.assign({}, attrs.meta, {
-          type
-        })
-      });
-    }
-  })),
-  // Spit out the node based on the type
-  toDOM: ({ attrs: { id, meta } }) => [
-    typeTagMap[meta.type],
-    noteToAttrs(id, meta, attrGenerator)
-  ]
-});
+    return {
+      attrs: {
+        id: {},
+        meta: {
+          default: {}
+        }
+      },
+      inclusive: false,
+      // Create a rule for every type
+      parseDOM: Object.keys(filterTagTypeMap(typeTagMap)).map(type => ({
+        tag: typeTagMap[type],
+        getAttrs: ({ dataset }) => {
+          const attrs = datasetToAttrs(dataset);
+          return Object.assign({}, attrs, {
+            meta: Object.assign({}, attrs.meta, {
+              type
+            })
+          });
+        }
+      })),
+      // Spit out the node based on the type
+      toDOM: ({ attrs: { id, meta } }) => [
+        typeTagMap[meta.type],
+        noteToAttrs(id, meta, attrGenerator)
+      ]
+    };
+  };
 
 const toggleNote = (type, cursorToEnd = false) => (state, dispatch) =>
   dispatch
@@ -15983,7 +15986,7 @@ const noter = (markType, initDoc, historyPlugin, onNoteCreate = () => {}) => {
     markType,
     historyPlugin
   );
-  const noteDecorator = createDecorateNotes(markType, noteTransaction);
+  const noteDecorator = createDecorateNotes(noteTransaction, noteTracker);
 
   notesFromDoc(initDoc, markType).forEach(({ start, end, meta, id }) =>
     /*
@@ -16023,7 +16026,8 @@ const mySchema = new dist_8$1({
   marks: Object.assign({}, schemaBasic_2, {
     note: createNoteMark(
       {
-        note: "mynote"
+        note: "mynote",
+        flag: "myflag"
       },
       meta => ({
         class: meta.hidden ? "note--collapsed" : "",
@@ -16073,6 +16077,7 @@ new dist_1$3(document.querySelector("#editor"), {
         ]
       }),
       keymap_2({
+        F6: toggleNote("flag", true),
         F10: toggleNote("note", true)
       }),
       historyPlugin,

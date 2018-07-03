@@ -39,7 +39,8 @@ const mySchema = new Schema({
   marks: Object.assign({}, marks, {
     note: createNoteMark(
       {
-        note: "mynote"
+        note: "mynote",
+        flag: "myflag"
       },
       meta => ({
         class: meta.hidden ? "note--collapsed" : "",
@@ -89,6 +90,7 @@ new EditorView(document.querySelector("#editor"), {
         ]
       }),
       keymap({
+        F6: toggleNote("flag", true),
         F10: toggleNote("note", true)
       }),
       historyPlugin,

@@ -8,25 +8,29 @@
   <title>Document</title>
   <link rel="stylesheet" href="./styles.css">
   <style>
-  .ProseMirror {
-    padding: 4px 8px 4px 14px;
-    line-height: 1.2;
-    outline: none;
-  }
+    .ProseMirror {
+      padding: 4px 8px 4px 14px;
+      line-height: 1.2;
+      outline: none;
+    }
 
-  .editor {
-    background: white;
-    color: black;
-    background-clip: padding-box;
-    border-radius: 4px;
-    border: 2px solid rgba(0, 0, 0, 0.2);
-    padding: 5px 0;
-  }
+    .editor {
+      background: white;
+      color: black;
+      background-clip: padding-box;
+      border-radius: 4px;
+      border: 2px solid rgba(0, 0, 0, 0.2);
+      padding: 5px 0;
+    }
 
-  .hide {
-    display: none;
-  }
-</style>
+    .hide {
+      display: none;
+    }
+
+    myflag.note {
+      background-color: #fea;
+    }
+  </style>
 </head>
 
 <body>
@@ -34,10 +38,11 @@
   <p>This plugin allows you to add notes as marks to prosemirror.</p>
   <div id="editor" class="editor"></div>
   <div id="content" class="hide">
-    <p>Let's do some <mynote data-note-id="note-id" class="note">noting</mynote> in Prosemirror</p>
+    <p>Let's do some
+      <mynote data-note-id="note-id" class="note">noting</mynote><myflag data-note-id="flag-id" class="note">flagging</myflag> in Prosemirror</p>
   </div>
   <script src="./bundle.js"></script>
-</script>
+  </script>
 </body>
 
 </html>
