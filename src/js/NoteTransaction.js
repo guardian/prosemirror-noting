@@ -52,8 +52,9 @@ export default class NoteTransaction {
 
     if (!tr.docChanged && $cursor && $oldCursor) {
       const movement = $cursor.pos - $oldCursor.pos;
-
-      if (Math.abs(movement) !== 1) {
+      if (movement === 0) {
+        // ignore toggling
+      } else if (Math.abs(movement) !== 1) {
         this.insideID = (noteTracker.noteAt($cursor.pos) || {}).id;
       } else if (
         insideID &&
