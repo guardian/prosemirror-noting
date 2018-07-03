@@ -1,6 +1,6 @@
 import { undo, redo } from "prosemirror-history";
 import { Slice } from "prosemirror-model";
-import { Selection } from "prosemirror-state";
+import { Selection, TextSelection } from "prosemirror-state";
 import { Fragment } from "prosemirror-model";
 
 export class TestState {
@@ -92,7 +92,7 @@ export class TestState {
       $to = Selection.near($pos).$to;
     }
     
-    return this.setSelection(new Selection($from, $to));
+    return this.setSelection(new TextSelection($from, $to));
   }
 
   setSelection(sel) {
