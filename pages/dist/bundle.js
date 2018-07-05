@@ -15879,6 +15879,7 @@ const hyphenatePascal = str =>
     .replace(/([A-Z]{2})[a-z]/, "$1-")
     .toLowerCase();
 
+// Coerce trues
 const attToVal = att => (att === "true" ? true : att);
 
 const noteToAttrs = (id, meta, attrGenerator = () => {}) => {
@@ -15941,7 +15942,7 @@ const createNoteMark = (_typeTagMap, attrGenerator = () => {}) => {
     },
     inclusive: false,
     // Create a rule for every type
-    parseDOM: Object.keys(typeTagMap).map(type => ({
+    parseDOM: Object.keys(filterTagTypeMap(typeTagMap)).map(type => ({
       tag: typeTagMap[type],
       getAttrs: ({ dataset }) => {
         const attrs = datasetToAttrs(dataset);
