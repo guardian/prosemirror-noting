@@ -15446,21 +15446,24 @@ const notesFromDoc = (doc, markType, min = false, max = false) => {
 };
 
 class NoteTransaction {
-  constructor(noteTracker, markType, key, historyPlugin) {
+  constructor(noteTracker, markType, key, historyPlugin, currentNoteTracker) {
     this.noteTracker = noteTracker;
     this.markType = markType;
     this.key = key;
     this.historyPlugin = historyPlugin;
     this.tr = null;
-    this.insideID = false;
+    this.currentNoteID = false;
+    this.currentNoteTracker = currentNoteTracker;
+    currentNoteTracker.addNoteTracker(noteTracker);
+    currentNoteTracker.setCurrentNoteByKey(this.markType.name, false);
   }
 
   static get PLACEHOLDER_ID() {
     return "@@PLACEHOLDER_ID";
   }
 
-  get insideNote() {
-    return !!this.insideID && this.noteTracker.getNote(this.insideID);
+  get currentNote() {
+    return !!this.currentNoteID && this.noteTracker.getNote(this.currentNoteID);
   }
 
   filterTransaction(tr, oldState) {
@@ -15478,11 +15481,27 @@ class NoteTransaction {
       this.handleInput(oldState);
     }
     this.setCorrectMark();
+    this.currentNoteTracker.setCurrentNoteByKey(
+      this.markType.name,
+      this.currentNoteID
+    );
     return this.tr;
   }
 
+  appendTransaction(tr, oldState, newState) {
+    // If this and another noter plugin is maintaining a note ID - that is to say, it
+    // considers itself to be within or without but inclusive of a note - but there's
+    // no note present at the current position, we must be in a position where two notes
+    // of different types touch but do not overlap. This is necessarily a neutral position,
+    // and we reset the note ID to account for this fact.
+    // @todo -- is this the correct place for this hook?
+    if (this.currentNoteTracker.isCursorBetweenTouchingNotes(newState)) {
+      this.currentNoteID = false;
+    }
+  }
+
   init(tr, oldState) {
-    const { noteTracker, insideID } = this;
+    const { noteTracker, currentNoteID } = this;
     const { selection: { $cursor: $oldCursor } } = oldState;
     const { $cursor } = tr.selection;
 
@@ -15491,42 +15510,45 @@ class NoteTransaction {
      * need to add and rebuild
      */
     noteTracker.mapPositions(
-      (pos, id) => tr.mapping.mapResult(pos, id === insideID ? -1 : 1).pos,
-      (pos, id) => tr.mapping.mapResult(pos, id === insideID ? 1 : -1).pos
+      (pos, id) => tr.mapping.mapResult(pos, id === currentNoteID ? -1 : 1).pos,
+      (pos, id) => tr.mapping.mapResult(pos, id === currentNoteID ? 1 : -1).pos
     );
 
     if (!tr.docChanged && $cursor && $oldCursor) {
       const movement = $cursor.pos - $oldCursor.pos;
       if (movement === 0) {
-        this.insideID =
-          this.insideID || (noteTracker.noteAt($cursor.pos) || {}).id;
+        // A static cursor change, e.g. selecting into text from an unfocused state.
+        this.currentNoteID =
+          this.currentNoteID || (noteTracker.noteAt($cursor.pos) || {}).id;
       } else if (Math.abs(movement) !== 1) {
-        this.insideID = (noteTracker.noteAt($cursor.pos) || {}).id;
+        // A cursor change larger than 1, e.g. selecting another position from a
+        // previous position.
+        this.currentNoteID = (noteTracker.noteAt($cursor.pos) || {}).id;
       } else if (
-        insideID &&
+        currentNoteID &&
         !noteTracker.noteAt($oldCursor.pos) &&
         (noteTracker.noteAt($oldCursor.pos + movement, -movement) || {}).id !==
-          insideID
+          currentNoteID
       ) {
-        // We're moving from an inclusive position to a neutral position.
-        // console.log("outside but inclusive, moving neutral");
-        this.insideID = false;
+        // A move from an inclusive position to a neutral position.
+        this.currentNoteID = false;
         tr.setSelection(dist_1.near($oldCursor));
       } else if (
-        !insideID &&
+        !currentNoteID &&
         !noteTracker.noteAt($oldCursor.pos) &&
         noteTracker.noteAt($oldCursor.pos + movement, -movement)
       ) {
-        // We're moving from a neutral position to an inclusive position.
-        // console.log("neutral, moving outside inclusive");
-        this.insideID = noteTracker.noteAt(
+        // A move from a neutral position to an inclusive position.
+        this.currentNoteID = noteTracker.noteAt(
           $oldCursor.pos + movement,
           -movement
         ).id;
         tr.setSelection(dist_1.near($oldCursor));
       } else if (noteTracker.noteAt($cursor.pos)) {
-        // console.log("inside a note");
-        this.insideID = noteTracker.noteAt($cursor.pos).id;
+        // A move inside of a note.
+        this.currentNoteID = noteTracker.noteAt($cursor.pos).id;
+      } else {
+        // A move outside of a note.
       }
     }
 
@@ -15538,7 +15560,7 @@ class NoteTransaction {
     const { tr, markType } = this;
     const { $cursor } = tr.selection;
     if ($cursor) {
-      const note = this.insideNote;
+      const note = this.currentNote;
       if (note) {
         const { id, meta } = note;
         const newMark = markType.create({ id, meta });
@@ -15587,7 +15609,7 @@ class NoteTransaction {
     const { $cursor, from, to } = tr.selection;
 
     if ($cursor) {
-      const note = this.insideNote;
+      const note = this.currentNote;
       if (note) {
         const { start, end } = note;
         return this.removeRanges([{ from: start, to: end }]);
@@ -15682,7 +15704,7 @@ class NoteTransaction {
     if ($cursor) {
       const { pos } = $cursor;
       const type = this.hasPlaceholder(oldState);
-      const note = this.insideNote;
+      const note = this.currentNote;
       if (!note && type) {
         const addedChars = charsAdded(oldState, tr);
 
@@ -15730,7 +15752,7 @@ class NoteTransaction {
       const $end = this.tr.doc.resolve(end);
       this.tr = this.tr.setSelection(dist_1.near($end), 1);
     } else if (insideLast && notes.length) {
-      this.insideID = notes[notes.length - 1].id;
+      this.currentNoteID = notes[notes.length - 1].id;
     }
 
     return this;
@@ -15747,12 +15769,12 @@ class NoteTransaction {
 
   startNote(type) {
     this.tr = this.tr.addStoredMark(this.placeholder(type));
-    this.insideID = this.constructor.PLACEHOLDER_ID;
+    this.currentNoteID = this.constructor.PLACEHOLDER_ID;
     return this;
   }
 }
 
-const noteWrapper = (id, pos, type, side, inside) => {
+const noteWrapper = (id, notePos, cursorPos, type, side, inside) => {
   const dom = document.createElement("span");
 
   // fixes a firefox bug that makes the decos appear selected
@@ -15765,8 +15787,16 @@ const noteWrapper = (id, pos, type, side, inside) => {
     `note-wrapper--${type}`
   );
   dom.dataset.toggleNoteId = id;
-  return dist_2$3.widget(pos, dom, {
-    side: inside ? side : 0 - side,
+  const cursorAtWidgetAndInsideNote = inside && cursorPos === notePos;
+  // If we have a cursor at the note widget position and we're inside a note,
+  // we need to ensure that other widgets don't alter its render order, so
+  // we keep the sign of the side value and shrink it to ensure it keeps its
+  // precedence.
+  const sideToRender = cursorAtWidgetAndInsideNote
+    ? side - Math.sign(side) / 2
+    : 0 - side;
+  return dist_2$3.widget(notePos, dom, {
+    side: sideToRender,
     marks: []
   });
 };
@@ -15775,8 +15805,22 @@ const placeholderDecos = (noteTransaction, state) => {
   const type = noteTransaction.hasPlaceholder(state);
   return state.selection.$cursor && type
     ? [
-        noteWrapper("NONE", state.selection.$cursor.pos, type, -1, true),
-        noteWrapper("NONE", state.selection.$cursor.pos, type, 1, true)
+        noteWrapper(
+          "NONE",
+          state.selection.$cursor.pos,
+          state.selection.$cursor.pos,
+          type,
+          -1,
+          true
+        ),
+        noteWrapper(
+          "NONE",
+          state.selection.$cursor.pos,
+          state.selection.$cursor.pos,
+          type,
+          1,
+          true
+        )
       ]
     : [];
 };
@@ -15786,8 +15830,22 @@ const createDecorateNotes = (noteTransaction, noteTracker) => state =>
     ...noteTracker.notes.reduce(
       (out, { id, start, end, meta: { type } }) => [
         ...out,
-        noteWrapper(id, start, type, -1, noteTransaction.insideID === id),
-        noteWrapper(id, end, type, 1, noteTransaction.insideID === id)
+        noteWrapper(
+          id,
+          start,
+          state.selection.$cursor && state.selection.$cursor.pos,
+          type,
+          -1,
+          noteTransaction.insideID === id
+        ),
+        noteWrapper(
+          id,
+          end,
+          state.selection.$cursor && state.selection.$cursor.pos,
+          type,
+          1,
+          noteTransaction.insideID === id
+        )
       ],
       []
     ),
@@ -15970,6 +16028,73 @@ const toggleAllNotes$1 = key => () => (state, dispatch) =>
     ? collapseAllNotes(key)()(state, dispatch)
     : showAllNotes$1(key)()(state, dispatch);
 
+/**
+ * @class CurrentNoteTracker
+ *
+ * Registers NoteTrackers and current note selections from multiple plugins,
+ * to enable us to reason about their interactions.
+ */
+class CurrentNoteTracker {
+  constructor() {
+    this.currentNotesByKey = {};
+    this.noteTrackers = [];
+  }
+
+  /**
+   * @param {NoteTracker} noteTracker
+   */
+  addNoteTracker(noteTracker) {
+    this.noteTrackers.push(noteTracker);
+  }
+
+  /**
+   * Is the cursor placed between two touching notes?
+   *
+   * @param {EditorState} state
+   */
+  isCursorBetweenTouchingNotes(state) {
+    return (
+      state.selection.$cursor &&
+      this.getCurrentNotes().length > 1 &&
+      !this.notesAt(state.selection.$cursor.pos).length
+    );
+  }
+
+  /**
+   * Set the current note for a given key, which should correspond to the appropriate mark.
+   *
+   * @param {string} key
+   * @param {string} currentNoteId
+   */
+  setCurrentNoteByKey(key, currentNoteId) {
+    this.currentNotesByKey[key] = currentNoteId;
+  }
+
+  /**
+   * Return the note ids for all registered noteTrackers at this position.
+   *
+   * @param {pos} number The cursor position.
+   */
+  notesAt(pos) {
+    return this.noteTrackers
+      .map(noteTracker => noteTracker.noteAt(pos))
+      .filter(noteOption => !!noteOption);
+  }
+
+  /**
+   * Is there more than one note plugin reporting a current note?
+   */
+  getCurrentNotes() {
+    return (
+      Object.keys(this.currentNotesByKey).filter(
+        key => this.currentNotesByKey[key]
+      )
+    );
+  }
+}
+
+const currentNoteTracker = new CurrentNoteTracker();
+
 /*
  * The main plugin that setups the noter
  * TODO: maybe NoteTracker could extend Plugin which would mean we could
@@ -15988,7 +16113,8 @@ const buildNoter = (
     noteTracker,
     markType,
     key,
-    historyPlugin
+    historyPlugin,
+    currentNoteTracker
   );
   const noteDecorator = createDecorateNotes(noteTransaction, noteTracker);
 
@@ -16008,8 +16134,9 @@ const buildNoter = (
         decorations: noteDecorator,
         handleClick: handleClick && clickHandler(noteTracker, handleClick)
       },
-      filterTransaction: (tr, oldState) =>
-        noteTransaction.filterTransaction(tr, oldState)
+      filterTransaction: (...args) =>
+        noteTransaction.filterTransaction(...args),
+      appendTransaction: (...args) => noteTransaction.appendTransaction(...args)
     }),
     toggleNote: toggleNote$1(key),
     setNoteMeta: setNoteMeta$1(key),
@@ -16137,8 +16264,9 @@ new dist_1$3(document.querySelector("#editor"), {
         F10: toggleNote("note", true)
       }),
       historyPlugin,
-      noterPlugin,
-      flagPlugin
+
+      flagPlugin,
+      noterPlugin
     ]
   })
 });

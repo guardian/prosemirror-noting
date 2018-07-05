@@ -132,8 +132,9 @@ new EditorView(document.querySelector("#editor"), {
         F10: toggleNote("note", true)
       }),
       historyPlugin,
-      noterPlugin,
-      flagPlugin
+
+      flagPlugin,
+      noterPlugin
     ]
   })
 });

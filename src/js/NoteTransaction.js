@@ -3,21 +3,24 @@ import { cloneDeep } from "./utils/helpers";
 import { charsAdded, notesFromDoc } from "./utils/StateUtils";
 
 export default class NoteTransaction {
-  constructor(noteTracker, markType, key, historyPlugin) {
+  constructor(noteTracker, markType, key, historyPlugin, currentNoteTracker) {
     this.noteTracker = noteTracker;
     this.markType = markType;
     this.key = key;
     this.historyPlugin = historyPlugin;
     this.tr = null;
-    this.insideID = false;
+    this.currentNoteID = false;
+    this.currentNoteTracker = currentNoteTracker;
+    currentNoteTracker.addNoteTracker(noteTracker);
+    currentNoteTracker.setCurrentNoteByKey(this.markType.name, false);
   }
 
   static get PLACEHOLDER_ID() {
     return "@@PLACEHOLDER_ID";
   }
 
-  get insideNote() {
-    return !!this.insideID && this.noteTracker.getNote(this.insideID);
+  get currentNote() {
+    return !!this.currentNoteID && this.noteTracker.getNote(this.currentNoteID);
   }
 
   filterTransaction(tr, oldState) {
@@ -35,11 +38,27 @@ export default class NoteTransaction {
       this.handleInput(oldState);
     }
     this.setCorrectMark();
+    this.currentNoteTracker.setCurrentNoteByKey(
+      this.markType.name,
+      this.currentNoteID
+    );
     return this.tr;
   }
 
+  appendTransaction(tr, oldState, newState) {
+    // If this and another noter plugin is maintaining a note ID - that is to say, it
+    // considers itself to be within or without but inclusive of a note - but there's
+    // no note present at the current position, we must be in a position where two notes
+    // of different types touch but do not overlap. This is necessarily a neutral position,
+    // and we reset the note ID to account for this fact.
+    // @todo -- is this the correct place for this hook?
+    if (this.currentNoteTracker.isCursorBetweenTouchingNotes(newState)) {
+      this.currentNoteID = false;
+    }
+  }
+
   init(tr, oldState) {
-    const { noteTracker, insideID } = this;
+    const { noteTracker, currentNoteID } = this;
     const { selection: { $cursor: $oldCursor } } = oldState;
     const { $cursor } = tr.selection;
 
@@ -48,42 +67,45 @@ export default class NoteTransaction {
      * need to add and rebuild
      */
     noteTracker.mapPositions(
-      (pos, id) => tr.mapping.mapResult(pos, id === insideID ? -1 : 1).pos,
-      (pos, id) => tr.mapping.mapResult(pos, id === insideID ? 1 : -1).pos
+      (pos, id) => tr.mapping.mapResult(pos, id === currentNoteID ? -1 : 1).pos,
+      (pos, id) => tr.mapping.mapResult(pos, id === currentNoteID ? 1 : -1).pos
     );
 
     if (!tr.docChanged && $cursor && $oldCursor) {
       const movement = $cursor.pos - $oldCursor.pos;
       if (movement === 0) {
-        this.insideID =
-          this.insideID || (noteTracker.noteAt($cursor.pos) || {}).id;
+        // A static cursor change, e.g. selecting into text from an unfocused state.
+        this.currentNoteID =
+          this.currentNoteID || (noteTracker.noteAt($cursor.pos) || {}).id;
       } else if (Math.abs(movement) !== 1) {
-        this.insideID = (noteTracker.noteAt($cursor.pos) || {}).id;
+        // A cursor change larger than 1, e.g. selecting another position from a
+        // previous position.
+        this.currentNoteID = (noteTracker.noteAt($cursor.pos) || {}).id;
       } else if (
-        insideID &&
+        currentNoteID &&
         !noteTracker.noteAt($oldCursor.pos) &&
         (noteTracker.noteAt($oldCursor.pos + movement, -movement) || {}).id !==
-          insideID
+          currentNoteID
       ) {
-        // We're moving from an inclusive position to a neutral position.
-        // console.log("outside but inclusive, moving neutral");
-        this.insideID = false;
+        // A move from an inclusive position to a neutral position.
+        this.currentNoteID = false;
         tr.setSelection(Selection.near($oldCursor));
       } else if (
-        !insideID &&
+        !currentNoteID &&
         !noteTracker.noteAt($oldCursor.pos) &&
         noteTracker.noteAt($oldCursor.pos + movement, -movement)
       ) {
-        // We're moving from a neutral position to an inclusive position.
-        // console.log("neutral, moving outside inclusive");
-        this.insideID = noteTracker.noteAt(
+        // A move from a neutral position to an inclusive position.
+        this.currentNoteID = noteTracker.noteAt(
           $oldCursor.pos + movement,
           -movement
         ).id;
         tr.setSelection(Selection.near($oldCursor));
       } else if (noteTracker.noteAt($cursor.pos)) {
-        // console.log("inside a note");
-        this.insideID = noteTracker.noteAt($cursor.pos).id;
+        // A move inside of a note.
+        this.currentNoteID = noteTracker.noteAt($cursor.pos).id;
+      } else {
+        // A move outside of a note.
       }
     }
 
@@ -95,7 +117,7 @@ export default class NoteTransaction {
     const { tr, markType } = this;
     const { $cursor } = tr.selection;
     if ($cursor) {
-      const note = this.insideNote;
+      const note = this.currentNote;
       if (note) {
         const { id, meta } = note;
         const newMark = markType.create({ id, meta });
@@ -144,7 +166,7 @@ export default class NoteTransaction {
     const { $cursor, from, to } = tr.selection;
 
     if ($cursor) {
-      const note = this.insideNote;
+      const note = this.currentNote;
       if (note) {
         const { start, end } = note;
         return this.removeRanges([{ from: start, to: end }]);
@@ -239,7 +261,7 @@ export default class NoteTransaction {
     if ($cursor) {
       const { pos } = $cursor;
       const type = this.hasPlaceholder(oldState);
-      const note = this.insideNote;
+      const note = this.currentNote;
       if (!note && type) {
         const addedChars = charsAdded(oldState, tr);
 
@@ -287,7 +309,7 @@ export default class NoteTransaction {
       const $end = this.tr.doc.resolve(end);
       this.tr = this.tr.setSelection(Selection.near($end), 1);
     } else if (insideLast && notes.length) {
-      this.insideID = notes[notes.length - 1].id;
+      this.currentNoteID = notes[notes.length - 1].id;
     }
 
     return this;
@@ -304,7 +326,7 @@ export default class NoteTransaction {
 
   startNote(type) {
     this.tr = this.tr.addStoredMark(this.placeholder(type));
-    this.insideID = this.constructor.PLACEHOLDER_ID;
+    this.currentNoteID = this.constructor.PLACEHOLDER_ID;
     return this;
   }
 }

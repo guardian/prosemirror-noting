@@ -74,6 +74,73 @@ const toggleAllNotes = key => () => (state, dispatch) =>
     ? collapseAllNotes(key)()(state, dispatch)
     : showAllNotes(key)()(state, dispatch);
 
+/**
+ * @class CurrentNoteTracker
+ *
+ * Registers NoteTrackers and current note selections from multiple plugins,
+ * to enable us to reason about their interactions.
+ */
+class CurrentNoteTracker {
+  constructor() {
+    this.currentNotesByKey = {};
+    this.noteTrackers = [];
+  }
+
+  /**
+   * @param {NoteTracker} noteTracker
+   */
+  addNoteTracker(noteTracker) {
+    this.noteTrackers.push(noteTracker);
+  }
+
+  /**
+   * Is the cursor placed between two touching notes?
+   *
+   * @param {EditorState} state
+   */
+  isCursorBetweenTouchingNotes(state) {
+    return (
+      state.selection.$cursor &&
+      this.getCurrentNotes().length > 1 &&
+      !this.notesAt(state.selection.$cursor.pos).length
+    );
+  }
+
+  /**
+   * Set the current note for a given key, which should correspond to the appropriate mark.
+   *
+   * @param {string} key
+   * @param {string} currentNoteId
+   */
+  setCurrentNoteByKey(key, currentNoteId) {
+    this.currentNotesByKey[key] = currentNoteId;
+  }
+
+  /**
+   * Return the note ids for all registered noteTrackers at this position.
+   *
+   * @param {pos} number The cursor position.
+   */
+  notesAt(pos) {
+    return this.noteTrackers
+      .map(noteTracker => noteTracker.noteAt(pos))
+      .filter(noteOption => !!noteOption);
+  }
+
+  /**
+   * Is there more than one note plugin reporting a current note?
+   */
+  getCurrentNotes() {
+    return (
+      Object.keys(this.currentNotesByKey).filter(
+        key => this.currentNotesByKey[key]
+      )
+    );
+  }
+}
+
+const currentNoteTracker = new CurrentNoteTracker();
+
 /*
  * The main plugin that setups the noter
  * TODO: maybe NoteTracker could extend Plugin which would mean we could
@@ -92,7 +159,8 @@ const buildNoter = (
     noteTracker,
     markType,
     key,
-    historyPlugin
+    historyPlugin,
+    currentNoteTracker
   );
   const noteDecorator = createDecorateNotes(noteTransaction, noteTracker);
 
@@ -112,8 +180,9 @@ const buildNoter = (
         decorations: noteDecorator,
         handleClick: handleClick && clickHandler(noteTracker, handleClick)
       },
-      filterTransaction: (tr, oldState) =>
-        noteTransaction.filterTransaction(tr, oldState)
+      filterTransaction: (...args) =>
+        noteTransaction.filterTransaction(...args),
+      appendTransaction: (...args) => noteTransaction.appendTransaction(...args)
     }),
     toggleNote: toggleNote(key),
     setNoteMeta: setNoteMeta(key),
