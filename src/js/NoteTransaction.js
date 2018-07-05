@@ -46,12 +46,12 @@ export default class NoteTransaction {
   }
 
   appendTransaction(tr, oldState, newState) {
-    // If this and another noter plugin is maintaining a note ID - that is to say, it
-    // considers itself to be within or without but inclusive of a note - but there's
-    // no note present at the current position, we must be in a position where two notes
-    // of different types touch but do not overlap. This is necessarily a neutral position,
-    // and we reset the note ID to account for this fact.
-    // @todo -- is this the correct place for this hook?
+    // If this and another noter plugin is maintaining a note ID - that is to say, they
+    // both consider themselves to be inclusive of a note - but there's no note present at
+    // the current position, we must be in a position where two notes of different types
+    // touch but do not overlap. This is necessarily a neutral position, and we reset the
+    // note ID to account for this fact.
+    // @todo -- is this the best place for this hook?
     if (this.currentNoteTracker.isCursorBetweenTouchingNotes(newState)) {
       this.currentNoteID = false;
     }
