@@ -62,7 +62,7 @@ export const createDecorateNotes = (noteTransaction, noteTracker) => state =>
           state.selection.$cursor && state.selection.$cursor.pos,
           type,
           -1,
-          noteTransaction.insideID === id
+          noteTransaction.currentNoteID === id
         ),
         noteWrapper(
           id,
@@ -70,7 +70,7 @@ export const createDecorateNotes = (noteTransaction, noteTracker) => state =>
           state.selection.$cursor && state.selection.$cursor.pos,
           type,
           1,
-          noteTransaction.insideID === id
+          noteTransaction.currentNoteID === id
         )
       ],
       []
