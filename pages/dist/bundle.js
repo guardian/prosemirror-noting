@@ -16085,10 +16085,8 @@ class CurrentNoteTracker {
    * Is there more than one note plugin reporting a current note?
    */
   getCurrentNotes() {
-    return (
-      Object.keys(this.currentNotesByKey).filter(
-        key => this.currentNotesByKey[key]
-      )
+    return Object.keys(this.currentNotesByKey).filter(
+      key => this.currentNotesByKey[key]
     );
   }
 }
