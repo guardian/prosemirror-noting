@@ -46,14 +46,50 @@ export default class NoteTransaction {
   }
 
   appendTransaction(tr, oldState, newState) {
-    // If this and another noter plugin is maintaining a note ID - that is to say, they
-    // both consider themselves to be inclusive of a note - but there's no note present at
-    // the current position, we must be in a position where two notes of different types
-    // touch but do not overlap. This is necessarily a neutral position, and we reset the
-    // note ID to account for this fact.
     // @todo -- is this the best place for this hook?
-    if (this.currentNoteTracker.isCursorBetweenTouchingNotes(newState)) {
-      this.currentNoteID = false;
+    if (this.currentNoteTracker.stallNextCursorMovement) {
+      // If we haven't yet set the old cursor positions and there is cursor
+      // information, store the attempted cursor movement so we can use the
+      // position and direction to find notes for that range. We do this because
+      // if there are multiple instances of this plugin, we only have this information
+      // on the first call of appendTransaction - in subsequent calls, oldState
+      // will already contain the new position information.
+      if (
+        !this.currentNoteTracker.oldCursorPosition &&
+        oldState.selection.$cursor &&
+        newState.selection.$cursor
+      ) {
+        this.currentNoteTracker.oldCursorPosition =
+          oldState.selection.$cursor.pos;
+        this.currentNoteTracker.attemptedCursorPosition =
+          newState.selection.$cursor.pos;
+      }
+      let resetStoredMarks = false;
+      // If we have two stall requests pending and there's less than two notes in the
+      // position the cursor *would* have entered, we're at a boundary between two
+      // touching notes. We check for two notes because this condition can also occur
+      // when two different note types begin at once; in this situation, we continue
+      // without a reset.
+      if (
+        this.currentNoteTracker.stallNextCursorMovement > 1 &&
+        this.currentNoteTracker.notesAt(
+          this.currentNoteTracker.attemptedCursorPosition,
+          -this.currentNoteTracker.lastAttemptedMovement
+        ).length < 2
+      ) {
+        this.currentNoteID = false;
+        resetStoredMarks = true;
+      }
+      this.currentNoteTracker.transactionCompleted();
+      if (!oldState.selection.$cursor) {
+        return;
+      }
+      // In a transaction, setting a selection will clear the marks, so if we'd like
+      // to keep them, we re-append them after we make the selection.
+      const tr = newState.tr.setSelection(
+        Selection.near(oldState.selection.$cursor)
+      );
+      return resetStoredMarks ? tr : tr.setStoredMarks(newState.storedMarks);
     }
   }
 
@@ -89,7 +125,8 @@ export default class NoteTransaction {
       ) {
         // A move from an inclusive position to a neutral position.
         this.currentNoteID = false;
-        tr.setSelection(Selection.near($oldCursor));
+        this.currentNoteTracker.stallNextCursorMovement++;
+        // tr.setSelection(Selection.near($oldCursor));
       } else if (
         !currentNoteID &&
         !noteTracker.noteAt($oldCursor.pos) &&
@@ -100,7 +137,9 @@ export default class NoteTransaction {
           $oldCursor.pos + movement,
           -movement
         ).id;
-        tr.setSelection(Selection.near($oldCursor));
+        this.currentNoteTracker.stallNextCursorMovement++;
+
+        // tr.setSelection(Selection.near($oldCursor));
       } else if (noteTracker.noteAt($cursor.pos)) {
         // A move inside of a note.
         this.currentNoteID = noteTracker.noteAt($cursor.pos).id;
@@ -114,6 +153,7 @@ export default class NoteTransaction {
   }
 
   setCorrectMark() {
+    //console.trace();
     const { tr, markType } = this;
     const { $cursor } = tr.selection;
     if ($cursor) {
@@ -121,6 +161,7 @@ export default class NoteTransaction {
       if (note) {
         const { id, meta } = note;
         const newMark = markType.create({ id, meta });
+
         if (!newMark.isInSet(tr.storedMarks || $cursor.marks())) {
           this.tr = tr.addStoredMark(newMark);
         }
@@ -264,7 +305,6 @@ export default class NoteTransaction {
       const note = this.currentNote;
       if (!note && type) {
         const addedChars = charsAdded(oldState, tr);
-
         if (addedChars > 0) {
           const from = pos - addedChars;
           const to = pos;

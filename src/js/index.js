@@ -84,26 +84,39 @@ class CurrentNoteTracker {
   constructor() {
     this.currentNotesByKey = {};
     this.noteTrackers = [];
+    this.resetCounters();
   }
 
   /**
+   * Indicate that the transaction has been completed. Once all of the noteTrackers
+   * are completed, we can reset the counters.
+   */
+  transactionCompleted() {
+    this.transactionsCompleted++;
+    if (this.transactionsCompleted === this.noteTrackers.length) {
+      this.resetCounters();
+    }
+  }
+
+  resetCounters() {
+    this.stallNextCursorMovement = 0;
+    this.transactionsCompleted = 0;
+    this.oldCursorPosition = 0;
+    this.attemptedCursorPosition = 0;
+    this.attemptedMovement = 0;
+  }
+
+  get lastAttemptedMovement() {
+    return this.attemptedCursorPosition - this.oldCursorPosition;
+  }
+
+  /**
+   * Add a NoteTracker instance to the state.
+   *
    * @param {NoteTracker} noteTracker
    */
   addNoteTracker(noteTracker) {
     this.noteTrackers.push(noteTracker);
-  }
-
-  /**
-   * Is the cursor placed between two touching notes?
-   *
-   * @param {EditorState} state
-   */
-  isCursorBetweenTouchingNotes(state) {
-    return (
-      state.selection.$cursor &&
-      this.getCurrentNotes().length > 1 &&
-      !this.notesAt(state.selection.$cursor.pos).length
-    );
   }
 
   /**
@@ -121,19 +134,10 @@ class CurrentNoteTracker {
    *
    * @param {pos} number The cursor position.
    */
-  notesAt(pos) {
+  notesAt(pos, bias) {
     return this.noteTrackers
-      .map(noteTracker => noteTracker.noteAt(pos))
+      .map(noteTracker => noteTracker.noteAt(pos, bias))
       .filter(noteOption => !!noteOption);
-  }
-
-  /**
-   * Is there more than one note plugin reporting a current note?
-   */
-  getCurrentNotes() {
-    return Object.keys(this.currentNotesByKey).filter(
-      key => this.currentNotesByKey[key]
-    );
   }
 }
 

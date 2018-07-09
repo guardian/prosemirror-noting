@@ -99,7 +99,7 @@ const {
   }
 );
 
-new EditorView(document.querySelector("#editor"), {
+window.editor = new EditorView(document.querySelector("#editor"), {
   state: EditorState.create({
     doc: DOMParser.fromSchema(mySchema).parse(
       document.querySelector("#content")

@@ -15489,14 +15489,50 @@ class NoteTransaction {
   }
 
   appendTransaction(tr, oldState, newState) {
-    // If this and another noter plugin is maintaining a note ID - that is to say, they
-    // both consider themselves to be inclusive of a note - but there's no note present at
-    // the current position, we must be in a position where two notes of different types
-    // touch but do not overlap. This is necessarily a neutral position, and we reset the
-    // note ID to account for this fact.
     // @todo -- is this the best place for this hook?
-    if (this.currentNoteTracker.isCursorBetweenTouchingNotes(newState)) {
-      this.currentNoteID = false;
+    if (this.currentNoteTracker.stallNextCursorMovement) {
+      // If we haven't yet set the old cursor positions and there is cursor
+      // information, store the attempted cursor movement so we can use the
+      // position and direction to find notes for that range. We do this because
+      // if there are multiple instances of this plugin, we only have this information
+      // on the first call of appendTransaction - in subsequent calls, oldState
+      // will already contain the new position information.
+      if (
+        !this.currentNoteTracker.oldCursorPosition &&
+        oldState.selection.$cursor &&
+        newState.selection.$cursor
+      ) {
+        this.currentNoteTracker.oldCursorPosition =
+          oldState.selection.$cursor.pos;
+        this.currentNoteTracker.attemptedCursorPosition =
+          newState.selection.$cursor.pos;
+      }
+      let resetStoredMarks = false;
+      // If we have two stall requests pending and there's less than two notes in the
+      // position the cursor *would* have entered, we're at a boundary between two
+      // touching notes. We check for two notes because this condition can also occur
+      // when two different note types begin at once; in this situation, we continue
+      // without a reset.
+      if (
+        this.currentNoteTracker.stallNextCursorMovement > 1 &&
+        this.currentNoteTracker.notesAt(
+          this.currentNoteTracker.attemptedCursorPosition,
+          -this.currentNoteTracker.lastAttemptedMovement
+        ).length < 2
+      ) {
+        this.currentNoteID = false;
+        resetStoredMarks = true;
+      }
+      this.currentNoteTracker.transactionCompleted();
+      if (!oldState.selection.$cursor) {
+        return;
+      }
+      // In a transaction, setting a selection will clear the marks, so if we'd like
+      // to keep them, we re-append them after we make the selection.
+      const tr = newState.tr.setSelection(
+        dist_1.near(oldState.selection.$cursor)
+      );
+      return resetStoredMarks ? tr : tr.setStoredMarks(newState.storedMarks);
     }
   }
 
@@ -15532,7 +15568,8 @@ class NoteTransaction {
       ) {
         // A move from an inclusive position to a neutral position.
         this.currentNoteID = false;
-        tr.setSelection(dist_1.near($oldCursor));
+        this.currentNoteTracker.stallNextCursorMovement++;
+        // tr.setSelection(Selection.near($oldCursor));
       } else if (
         !currentNoteID &&
         !noteTracker.noteAt($oldCursor.pos) &&
@@ -15543,7 +15580,9 @@ class NoteTransaction {
           $oldCursor.pos + movement,
           -movement
         ).id;
-        tr.setSelection(dist_1.near($oldCursor));
+        this.currentNoteTracker.stallNextCursorMovement++;
+
+        // tr.setSelection(Selection.near($oldCursor));
       } else if (noteTracker.noteAt($cursor.pos)) {
         // A move inside of a note.
         this.currentNoteID = noteTracker.noteAt($cursor.pos).id;
@@ -15557,6 +15596,7 @@ class NoteTransaction {
   }
 
   setCorrectMark() {
+    //console.trace();
     const { tr, markType } = this;
     const { $cursor } = tr.selection;
     if ($cursor) {
@@ -15564,6 +15604,7 @@ class NoteTransaction {
       if (note) {
         const { id, meta } = note;
         const newMark = markType.create({ id, meta });
+
         if (!newMark.isInSet(tr.storedMarks || $cursor.marks())) {
           this.tr = tr.addStoredMark(newMark);
         }
@@ -15707,7 +15748,6 @@ class NoteTransaction {
       const note = this.currentNote;
       if (!note && type) {
         const addedChars = charsAdded(oldState, tr);
-
         if (addedChars > 0) {
           const from = pos - addedChars;
           const to = pos;
@@ -16038,26 +16078,39 @@ class CurrentNoteTracker {
   constructor() {
     this.currentNotesByKey = {};
     this.noteTrackers = [];
+    this.resetCounters();
   }
 
   /**
+   * Indicate that the transaction has been completed. Once all of the noteTrackers
+   * are completed, we can reset the counters.
+   */
+  transactionCompleted() {
+    this.transactionsCompleted++;
+    if (this.transactionsCompleted === this.noteTrackers.length) {
+      this.resetCounters();
+    }
+  }
+
+  resetCounters() {
+    this.stallNextCursorMovement = 0;
+    this.transactionsCompleted = 0;
+    this.oldCursorPosition = 0;
+    this.attemptedCursorPosition = 0;
+    this.attemptedMovement = 0;
+  }
+
+  get lastAttemptedMovement() {
+    return this.attemptedCursorPosition - this.oldCursorPosition;
+  }
+
+  /**
+   * Add a NoteTracker instance to the state.
+   *
    * @param {NoteTracker} noteTracker
    */
   addNoteTracker(noteTracker) {
     this.noteTrackers.push(noteTracker);
-  }
-
-  /**
-   * Is the cursor placed between two touching notes?
-   *
-   * @param {EditorState} state
-   */
-  isCursorBetweenTouchingNotes(state) {
-    return (
-      state.selection.$cursor &&
-      this.getCurrentNotes().length > 1 &&
-      !this.notesAt(state.selection.$cursor.pos).length
-    );
   }
 
   /**
@@ -16075,19 +16128,10 @@ class CurrentNoteTracker {
    *
    * @param {pos} number The cursor position.
    */
-  notesAt(pos) {
+  notesAt(pos, bias) {
     return this.noteTrackers
-      .map(noteTracker => noteTracker.noteAt(pos))
+      .map(noteTracker => noteTracker.noteAt(pos, bias))
       .filter(noteOption => !!noteOption);
-  }
-
-  /**
-   * Is there more than one note plugin reporting a current note?
-   */
-  getCurrentNotes() {
-    return Object.keys(this.currentNotesByKey).filter(
-      key => this.currentNotesByKey[key]
-    );
   }
 }
 
@@ -16229,7 +16273,7 @@ const {
   }
 );
 
-new dist_1$3(document.querySelector("#editor"), {
+window.editor = new dist_1$3(document.querySelector("#editor"), {
   state: dist_7.create({
     doc: dist_12.fromSchema(mySchema).parse(
       document.querySelector("#content")

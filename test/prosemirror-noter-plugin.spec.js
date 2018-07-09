@@ -17,6 +17,14 @@ const noteSchema = new Schema({
     note: createNoteMark(
       {
         note: "gu-note",
+      },
+      meta => ({
+        class: meta.hidden ? "note--collapsed" : "",
+        title: "Test"
+      })
+    ),
+    flag: createNoteMark(
+      {
         flag: "gu-flag",
         correct: "gu-correct"
       },
@@ -24,7 +32,7 @@ const noteSchema = new Schema({
         class: meta.hidden ? "note--collapsed" : "",
         title: "Test"
       })
-    )
+    ),
   })
 });
 
@@ -64,11 +72,17 @@ const initPM = initDoc => {
     "noter",
     historyPlugin
   );
+  const { plugin: flagger } = buildNoter(
+    noteSchema.marks.note,
+    initDoc,
+    "flagger",
+    historyPlugin
+  );
   const state = EditorState.create({
     doc: initDoc,
     schema: noteSchema,
     selection: selFor(initDoc),
-    plugins: [historyPlugin, noter]
+    plugins: [historyPlugin, noter, flagger]
   });
   return new TestState(state, rest);
 };
