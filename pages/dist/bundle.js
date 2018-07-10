@@ -15254,14 +15254,25 @@ const ensureType = meta => {
 };
 
 class NoteTracker {
-  constructor(notes = [], onNoteCreate = () => {}) {
+  constructor(notes = [], onNoteCreate = () => {}, sharedNoteStateTracker) {
+    if (!sharedNoteStateTracker) {
+      throw new Error(
+        "[prosemirror-noting]: NoteTracker must be passed an instance of SharedNoteStateTracker on construction"
+      );
+    }
     this.notes = notes.filter(note => !note.isEmpty);
     this.onNoteCreate = onNoteCreate;
+    this.sharedNoteStateTracker = sharedNoteStateTracker;
+    sharedNoteStateTracker.addNoteTracker(this);
+  }
+
+  getSharedNoteStateTracker() {
+    return this.sharedNoteStateTracker;
   }
 
   /*
-     * Writes does mutate state on this top-level object
-     */
+   * Writes does mutate state on this top-level object
+   */
 
   reset() {
     this.notes = [];
@@ -15446,16 +15457,14 @@ const notesFromDoc = (doc, markType, min = false, max = false) => {
 };
 
 class NoteTransaction {
-  constructor(noteTracker, markType, key, historyPlugin, currentNoteTracker) {
+  constructor(noteTracker, markType, key, historyPlugin) {
     this.noteTracker = noteTracker;
     this.markType = markType;
     this.key = key;
     this.historyPlugin = historyPlugin;
     this.tr = null;
     this.currentNoteID = false;
-    this.currentNoteTracker = currentNoteTracker;
-    currentNoteTracker.addNoteTracker(noteTracker);
-    currentNoteTracker.setCurrentNoteByKey(this.markType.name, false);
+    this.sharedNoteStateTracker = noteTracker.getSharedNoteStateTracker();
   }
 
   static get PLACEHOLDER_ID() {
@@ -15481,16 +15490,12 @@ class NoteTransaction {
       this.handleInput(oldState);
     }
     this.setCorrectMark();
-    this.currentNoteTracker.setCurrentNoteByKey(
-      this.markType.name,
-      this.currentNoteID
-    );
     return this.tr;
   }
 
   appendTransaction(tr, oldState, newState) {
     // @todo -- is this the best place for this hook?
-    if (this.currentNoteTracker.stallNextCursorMovement) {
+    if (this.sharedNoteStateTracker.getStallRequests()) {
       // If we haven't yet set the old cursor positions and there is cursor
       // information, store the attempted cursor movement so we can use the
       // position and direction to find notes for that range. We do this because
@@ -15498,14 +15503,16 @@ class NoteTransaction {
       // on the first call of appendTransaction - in subsequent calls, oldState
       // will already contain the new position information.
       if (
-        this.currentNoteTracker.oldCursorPosition === null &&
+        !this.sharedNoteStateTracker.hasOldCursorPosition() &&
         oldState.selection.$cursor &&
         newState.selection.$cursor
       ) {
-        this.currentNoteTracker.oldCursorPosition =
-          oldState.selection.$cursor.pos;
-        this.currentNoteTracker.attemptedCursorPosition =
-          newState.selection.$cursor.pos;
+        this.sharedNoteStateTracker.setOldCursorPosition(
+          oldState.selection.$cursor.pos
+        );
+        this.sharedNoteStateTracker.setAttemptedCursorPosition(
+          newState.selection.$cursor.pos
+        );
       }
       let resetStoredMarks = false;
       // If we have two stall requests pending and there's less than two notes in the
@@ -15514,16 +15521,16 @@ class NoteTransaction {
       // when two different note types begin at once in the same position; in this
       // situation, we continue without a reset, or the cursor would be stuck.
       if (
-        this.currentNoteTracker.stallNextCursorMovement > 1 &&
-        this.currentNoteTracker.notesAt(
-          this.currentNoteTracker.attemptedCursorPosition,
-          -this.currentNoteTracker.lastAttemptedMovement
+        this.sharedNoteStateTracker.getStallRequests() > 1 &&
+        this.sharedNoteStateTracker.notesAt(
+          this.sharedNoteStateTracker.getAttemptedCursorPosition(),
+          -this.sharedNoteStateTracker.getLastAttemptedMovement()
         ).length < 2
       ) {
         this.currentNoteID = false;
         resetStoredMarks = true;
       }
-      this.currentNoteTracker.transactionCompleted();
+      this.sharedNoteStateTracker.transactionCompleted();
       if (!oldState.selection.$cursor) {
         return;
       }
@@ -15568,8 +15575,7 @@ class NoteTransaction {
       ) {
         // A move from an inclusive position to a neutral position.
         this.currentNoteID = false;
-        this.currentNoteTracker.stallNextCursorMovement++;
-        // tr.setSelection(Selection.near($oldCursor));
+        this.sharedNoteStateTracker.requestCursorStall();
       } else if (
         !currentNoteID &&
         !noteTracker.noteAt($oldCursor.pos) &&
@@ -15580,9 +15586,7 @@ class NoteTransaction {
           $oldCursor.pos + movement,
           -movement
         ).id;
-        this.currentNoteTracker.stallNextCursorMovement++;
-
-        // tr.setSelection(Selection.near($oldCursor));
+        this.sharedNoteStateTracker.requestCursorStall();
       } else if (noteTracker.noteAt($cursor.pos)) {
         // A move inside of a note.
         this.currentNoteID = noteTracker.noteAt($cursor.pos).id;
@@ -16000,6 +16004,90 @@ const createNoteMark = (_typeTagMap, attrGenerator = () => {}) => {
   };
 };
 
+/**
+ * @class CurrentNoteTracker
+ *
+ * Registers NoteTrackers and current note selections from multiple plugins,
+ * to enable us to reason about their interactions.
+ */
+class SharedNoteStateTracker {
+  constructor() {
+    this.currentNotesByKey = {};
+    this.noteTrackers = [];
+    this.resetCounters();
+  }
+
+  /**
+   * Indicate that the transaction has been completed. Once all of the noteTrackers
+   * are completed, we can reset the counters.
+   */
+  transactionCompleted() {
+    this.transactionsCompleted++;
+    if (this.transactionsCompleted === this.noteTrackers.length) {
+      this.resetCounters();
+    }
+  }
+
+  resetCounters() {
+    this.stallRequests = 0;
+    this.transactionsCompleted = 0;
+    this.oldCursorPosition = null;
+    this.attemptedCursorPosition = null;
+  }
+
+  hasOldCursorPosition() {
+    return this.oldCursorPosition !== null;
+  }
+
+  setOldCursorPosition(pos) {
+    this.oldCursorPosition = pos;
+  }
+
+  setAttemptedCursorPosition(pos) {
+    this.attemptedCursorPosition = pos;
+  }
+
+  getAttemptedCursorPosition() {
+    return this.attemptedCursorPosition;
+  }
+
+  getLastAttemptedMovement() {
+    return this.attemptedCursorPosition - this.oldCursorPosition;
+  }
+
+  getStallRequests() {
+    return this.stallRequests;
+  }
+
+  /**
+   * Register an attempt to stall the next cursor movement.
+   */
+  requestCursorStall() {
+    this.stallRequests++;
+  }
+
+  /**
+   * Add a NoteTracker instance to the state.
+   *
+   * @param {NoteTracker} noteTracker
+   */
+  addNoteTracker(noteTracker) {
+    this.noteTrackers.push(noteTracker);
+  }
+
+  /**
+   * Return the note ids for all registered noteTrackers at this position.
+   *
+   * @param {number} pos The cursor position.
+   * @param {number} bias Bias the selected range forward (+), backward (-) or address a point with 0.
+   */
+  notesAt(pos, bias = 0) {
+    return this.noteTrackers
+      .map(noteTracker => noteTracker.noteAt(pos, bias))
+      .filter(noteOption => !!noteOption);
+  }
+}
+
 const toggleNote$1 = key => (type, cursorToEnd = false) => (state, dispatch) =>
   dispatch
     ? dispatch(
@@ -16068,74 +16156,7 @@ const toggleAllNotes$1 = key => () => (state, dispatch) =>
     ? collapseAllNotes(key)()(state, dispatch)
     : showAllNotes$1(key)()(state, dispatch);
 
-/**
- * @class CurrentNoteTracker
- *
- * Registers NoteTrackers and current note selections from multiple plugins,
- * to enable us to reason about their interactions.
- */
-class CurrentNoteTracker {
-  constructor() {
-    this.currentNotesByKey = {};
-    this.noteTrackers = [];
-    this.resetCounters();
-  }
-
-  /**
-   * Indicate that the transaction has been completed. Once all of the noteTrackers
-   * are completed, we can reset the counters.
-   */
-  transactionCompleted() {
-    this.transactionsCompleted++;
-    if (this.transactionsCompleted === this.noteTrackers.length) {
-      this.resetCounters();
-    }
-  }
-
-  resetCounters() {
-    this.stallNextCursorMovement = 0;
-    this.transactionsCompleted = 0;
-    this.attemptedMovement = 0;
-    this.oldCursorPosition = null;
-    this.attemptedCursorPosition = null;
-  }
-
-  get lastAttemptedMovement() {
-    return this.attemptedCursorPosition - this.oldCursorPosition;
-  }
-
-  /**
-   * Add a NoteTracker instance to the state.
-   *
-   * @param {NoteTracker} noteTracker
-   */
-  addNoteTracker(noteTracker) {
-    this.noteTrackers.push(noteTracker);
-  }
-
-  /**
-   * Set the current note for a given key, which should correspond to the appropriate mark.
-   *
-   * @param {string} key
-   * @param {string} currentNoteId
-   */
-  setCurrentNoteByKey(key, currentNoteId) {
-    this.currentNotesByKey[key] = currentNoteId;
-  }
-
-  /**
-   * Return the note ids for all registered noteTrackers at this position.
-   *
-   * @param {pos} number The cursor position.
-   */
-  notesAt(pos, bias) {
-    return this.noteTrackers
-      .map(noteTracker => noteTracker.noteAt(pos, bias))
-      .filter(noteOption => !!noteOption);
-  }
-}
-
-const currentNoteTracker = new CurrentNoteTracker();
+const defaultSharedNoteStateTracker = new SharedNoteStateTracker();
 
 /*
  * The main plugin that setups the noter
@@ -16148,25 +16169,25 @@ const buildNoter = (
   key,
   historyPlugin,
   onNoteCreate = () => {},
-  handleClick = null
+  handleClick = null,
+  sharedNoteStateTracker = defaultSharedNoteStateTracker
 ) => {
-  const noteTracker = new NoteTracker([], onNoteCreate);
+  const noteTracker = new NoteTracker([], onNoteCreate, sharedNoteStateTracker);
   const noteTransaction = new NoteTransaction(
     noteTracker,
     markType,
     key,
-    historyPlugin,
-    currentNoteTracker
+    historyPlugin
   );
   const noteDecorator = createDecorateNotes(noteTransaction, noteTracker);
 
   notesFromDoc(initDoc, markType).forEach(({ start, end, meta, id }) =>
-    /*
-         * Pass true as fifth argument to make sure that we don't update the
-         * meta in the notetracker with the onNoteCreate callback as this is NOT
-         * a new note and will not be rerendered to the DOM with the new meta
-         * (which it shouldn't) and will cause issues when comparing notes
-         */
+    /**
+     * Pass true as fifth argument to make sure that we don't update the
+     * meta in the notetracker with the onNoteCreate callback as this is NOT
+     * a new note and will not be rerendered to the DOM with the new meta
+     * (which it shouldn't) and will cause issues when comparing notes
+     */
     noteTracker.addNote(start, end, meta, id, true)
   );
 

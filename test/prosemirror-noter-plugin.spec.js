@@ -10,6 +10,7 @@ import {
 import { nodes, marks } from "prosemirror-schema-basic";
 import { TestState, removeTags } from "./helpers/prosemirror";
 import { createNoteMark, buildNoter } from "../src/js";
+import SharedNoteStateTracker from "../src/js/SharedNoteStateTracker";
 
 const noteSchema = new Schema({
   nodes: nodes,
@@ -66,17 +67,22 @@ const selFor = initDoc => {
 
 const initPM = initDoc => {
   const historyPlugin = history();
+  const sharedNoteStateTracker = new SharedNoteStateTracker();
   const { plugin: noter, ...rest } = buildNoter(
     noteSchema.marks.note,
     initDoc,
     "noter",
-    historyPlugin
+    historyPlugin,
+    () => {},
+    sharedNoteStateTracker
   );
   const { plugin: flagger } = buildNoter(
     noteSchema.marks.note,
     initDoc,
     "flagger",
-    historyPlugin
+    historyPlugin,
+    () => {},
+    sharedNoteStateTracker
   );
   const state = EditorState.create({
     doc: initDoc,

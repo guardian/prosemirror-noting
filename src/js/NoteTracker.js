@@ -16,14 +16,25 @@ const ensureType = meta => {
 };
 
 export default class NoteTracker {
-  constructor(notes = [], onNoteCreate = () => {}) {
+  constructor(notes = [], onNoteCreate = () => {}, sharedNoteStateTracker) {
+    if (!sharedNoteStateTracker) {
+      throw new Error(
+        "[prosemirror-noting]: NoteTracker must be passed an instance of SharedNoteStateTracker on construction"
+      );
+    }
     this.notes = notes.filter(note => !note.isEmpty);
     this.onNoteCreate = onNoteCreate;
+    this.sharedNoteStateTracker = sharedNoteStateTracker;
+    sharedNoteStateTracker.addNoteTracker(this);
+  }
+
+  getSharedNoteStateTracker() {
+    return this.sharedNoteStateTracker;
   }
 
   /*
-     * Writes does mutate state on this top-level object
-     */
+   * Writes does mutate state on this top-level object
+   */
 
   reset() {
     this.notes = [];

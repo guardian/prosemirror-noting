@@ -1,4 +1,5 @@
 import NoteTracker from "../src/js/NoteTracker";
+import SharedNoteStateTracker from "../src/js/SharedNoteStateTracker";
 
 const getNoteRanges = notes => notes.map(({ start, end }) => [start, end]);
 
@@ -6,7 +7,7 @@ describe("NoteTracker", () => {
   let noteTracker;
 
   beforeEach(() => {
-    noteTracker = new NoteTracker();
+    noteTracker = new NoteTracker([], () => {}, new SharedNoteStateTracker());
   });
 
   describe("addNote", () => {

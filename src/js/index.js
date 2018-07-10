@@ -5,6 +5,7 @@ import { createDecorateNotes } from "./utils/DecorationUtils";
 import clickHandler from "./clickHandler";
 import { notesFromDoc } from "./utils/StateUtils";
 import { createNoteMark } from "./utils/SchemaUtils";
+import SharedNoteStateTracker from "./SharedNoteStateTracker";
 
 const toggleNote = key => (type, cursorToEnd = false) => (state, dispatch) =>
   dispatch
@@ -74,74 +75,7 @@ const toggleAllNotes = key => () => (state, dispatch) =>
     ? collapseAllNotes(key)()(state, dispatch)
     : showAllNotes(key)()(state, dispatch);
 
-/**
- * @class CurrentNoteTracker
- *
- * Registers NoteTrackers and current note selections from multiple plugins,
- * to enable us to reason about their interactions.
- */
-class CurrentNoteTracker {
-  constructor() {
-    this.currentNotesByKey = {};
-    this.noteTrackers = [];
-    this.resetCounters();
-  }
-
-  /**
-   * Indicate that the transaction has been completed. Once all of the noteTrackers
-   * are completed, we can reset the counters.
-   */
-  transactionCompleted() {
-    this.transactionsCompleted++;
-    if (this.transactionsCompleted === this.noteTrackers.length) {
-      this.resetCounters();
-    }
-  }
-
-  resetCounters() {
-    this.stallNextCursorMovement = 0;
-    this.transactionsCompleted = 0;
-    this.attemptedMovement = 0;
-    this.oldCursorPosition = null;
-    this.attemptedCursorPosition = null;
-  }
-
-  get lastAttemptedMovement() {
-    return this.attemptedCursorPosition - this.oldCursorPosition;
-  }
-
-  /**
-   * Add a NoteTracker instance to the state.
-   *
-   * @param {NoteTracker} noteTracker
-   */
-  addNoteTracker(noteTracker) {
-    this.noteTrackers.push(noteTracker);
-  }
-
-  /**
-   * Set the current note for a given key, which should correspond to the appropriate mark.
-   *
-   * @param {string} key
-   * @param {string} currentNoteId
-   */
-  setCurrentNoteByKey(key, currentNoteId) {
-    this.currentNotesByKey[key] = currentNoteId;
-  }
-
-  /**
-   * Return the note ids for all registered noteTrackers at this position.
-   *
-   * @param {pos} number The cursor position.
-   */
-  notesAt(pos, bias) {
-    return this.noteTrackers
-      .map(noteTracker => noteTracker.noteAt(pos, bias))
-      .filter(noteOption => !!noteOption);
-  }
-}
-
-const currentNoteTracker = new CurrentNoteTracker();
+const defaultSharedNoteStateTracker = new SharedNoteStateTracker();
 
 /*
  * The main plugin that setups the noter
@@ -154,25 +88,25 @@ const buildNoter = (
   key,
   historyPlugin,
   onNoteCreate = () => {},
-  handleClick = null
+  handleClick = null,
+  sharedNoteStateTracker = defaultSharedNoteStateTracker
 ) => {
-  const noteTracker = new NoteTracker([], onNoteCreate);
+  const noteTracker = new NoteTracker([], onNoteCreate, sharedNoteStateTracker);
   const noteTransaction = new NoteTransaction(
     noteTracker,
     markType,
     key,
-    historyPlugin,
-    currentNoteTracker
+    historyPlugin
   );
   const noteDecorator = createDecorateNotes(noteTransaction, noteTracker);
 
   notesFromDoc(initDoc, markType).forEach(({ start, end, meta, id }) =>
-    /*
-         * Pass true as fifth argument to make sure that we don't update the
-         * meta in the notetracker with the onNoteCreate callback as this is NOT
-         * a new note and will not be rerendered to the DOM with the new meta
-         * (which it shouldn't) and will cause issues when comparing notes
-         */
+    /**
+     * Pass true as fifth argument to make sure that we don't update the
+     * meta in the notetracker with the onNoteCreate callback as this is NOT
+     * a new note and will not be rerendered to the DOM with the new meta
+     * (which it shouldn't) and will cause issues when comparing notes
+     */
     noteTracker.addNote(start, end, meta, id, true)
   );
 

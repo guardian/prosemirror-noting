@@ -3,16 +3,14 @@ import { cloneDeep } from "./utils/helpers";
 import { charsAdded, notesFromDoc } from "./utils/StateUtils";
 
 export default class NoteTransaction {
-  constructor(noteTracker, markType, key, historyPlugin, currentNoteTracker) {
+  constructor(noteTracker, markType, key, historyPlugin) {
     this.noteTracker = noteTracker;
     this.markType = markType;
     this.key = key;
     this.historyPlugin = historyPlugin;
     this.tr = null;
     this.currentNoteID = false;
-    this.currentNoteTracker = currentNoteTracker;
-    currentNoteTracker.addNoteTracker(noteTracker);
-    currentNoteTracker.setCurrentNoteByKey(this.markType.name, false);
+    this.sharedNoteStateTracker = noteTracker.getSharedNoteStateTracker();
   }
 
   static get PLACEHOLDER_ID() {
@@ -38,16 +36,12 @@ export default class NoteTransaction {
       this.handleInput(oldState);
     }
     this.setCorrectMark();
-    this.currentNoteTracker.setCurrentNoteByKey(
-      this.markType.name,
-      this.currentNoteID
-    );
     return this.tr;
   }
 
   appendTransaction(tr, oldState, newState) {
     // @todo -- is this the best place for this hook?
-    if (this.currentNoteTracker.stallNextCursorMovement) {
+    if (this.sharedNoteStateTracker.getStallRequests()) {
       // If we haven't yet set the old cursor positions and there is cursor
       // information, store the attempted cursor movement so we can use the
       // position and direction to find notes for that range. We do this because
@@ -55,14 +49,16 @@ export default class NoteTransaction {
       // on the first call of appendTransaction - in subsequent calls, oldState
       // will already contain the new position information.
       if (
-        this.currentNoteTracker.oldCursorPosition === null &&
+        !this.sharedNoteStateTracker.hasOldCursorPosition() &&
         oldState.selection.$cursor &&
         newState.selection.$cursor
       ) {
-        this.currentNoteTracker.oldCursorPosition =
-          oldState.selection.$cursor.pos;
-        this.currentNoteTracker.attemptedCursorPosition =
-          newState.selection.$cursor.pos;
+        this.sharedNoteStateTracker.setOldCursorPosition(
+          oldState.selection.$cursor.pos
+        );
+        this.sharedNoteStateTracker.setAttemptedCursorPosition(
+          newState.selection.$cursor.pos
+        );
       }
       let resetStoredMarks = false;
       // If we have two stall requests pending and there's less than two notes in the
@@ -71,16 +67,16 @@ export default class NoteTransaction {
       // when two different note types begin at once in the same position; in this
       // situation, we continue without a reset, or the cursor would be stuck.
       if (
-        this.currentNoteTracker.stallNextCursorMovement > 1 &&
-        this.currentNoteTracker.notesAt(
-          this.currentNoteTracker.attemptedCursorPosition,
-          -this.currentNoteTracker.lastAttemptedMovement
+        this.sharedNoteStateTracker.getStallRequests() > 1 &&
+        this.sharedNoteStateTracker.notesAt(
+          this.sharedNoteStateTracker.getAttemptedCursorPosition(),
+          -this.sharedNoteStateTracker.getLastAttemptedMovement()
         ).length < 2
       ) {
         this.currentNoteID = false;
         resetStoredMarks = true;
       }
-      this.currentNoteTracker.transactionCompleted();
+      this.sharedNoteStateTracker.transactionCompleted();
       if (!oldState.selection.$cursor) {
         return;
       }
@@ -125,8 +121,7 @@ export default class NoteTransaction {
       ) {
         // A move from an inclusive position to a neutral position.
         this.currentNoteID = false;
-        this.currentNoteTracker.stallNextCursorMovement++;
-        // tr.setSelection(Selection.near($oldCursor));
+        this.sharedNoteStateTracker.requestCursorStall();
       } else if (
         !currentNoteID &&
         !noteTracker.noteAt($oldCursor.pos) &&
@@ -137,9 +132,7 @@ export default class NoteTransaction {
           $oldCursor.pos + movement,
           -movement
         ).id;
-        this.currentNoteTracker.stallNextCursorMovement++;
-
-        // tr.setSelection(Selection.near($oldCursor));
+        this.sharedNoteStateTracker.requestCursorStall();
       } else if (noteTracker.noteAt($cursor.pos)) {
         // A move inside of a note.
         this.currentNoteID = noteTracker.noteAt($cursor.pos).id;
