@@ -15590,9 +15590,8 @@ class NoteTransaction {
       } else if (noteTracker.noteAt($cursor.pos)) {
         // A move inside of a note.
         this.currentNoteID = noteTracker.noteAt($cursor.pos).id;
-      } else {
-        // A move outside of a note.
       }
+      // If none of these conditions are satisfied, we have a move outside of a note.
     }
 
     this.tr = tr;
@@ -15600,7 +15599,6 @@ class NoteTransaction {
   }
 
   setCorrectMark() {
-    //console.trace();
     const { tr, markType } = this;
     const { $cursor } = tr.selection;
     if ($cursor) {
