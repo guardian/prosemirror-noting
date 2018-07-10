@@ -101,9 +101,9 @@ class CurrentNoteTracker {
   resetCounters() {
     this.stallNextCursorMovement = 0;
     this.transactionsCompleted = 0;
-    this.oldCursorPosition = 0;
-    this.attemptedCursorPosition = 0;
     this.attemptedMovement = 0;
+    this.oldCursorPosition = null;
+    this.attemptedCursorPosition = null;
   }
 
   get lastAttemptedMovement() {

@@ -15498,7 +15498,7 @@ class NoteTransaction {
       // on the first call of appendTransaction - in subsequent calls, oldState
       // will already contain the new position information.
       if (
-        !this.currentNoteTracker.oldCursorPosition &&
+        this.currentNoteTracker.oldCursorPosition === null &&
         oldState.selection.$cursor &&
         newState.selection.$cursor
       ) {
@@ -15511,8 +15511,8 @@ class NoteTransaction {
       // If we have two stall requests pending and there's less than two notes in the
       // position the cursor *would* have entered, we're at a boundary between two
       // touching notes. We check for two notes because this condition can also occur
-      // when two different note types begin at once; in this situation, we continue
-      // without a reset.
+      // when two different note types begin at once in the same position; in this
+      // situation, we continue without a reset, or the cursor would be stuck.
       if (
         this.currentNoteTracker.stallNextCursorMovement > 1 &&
         this.currentNoteTracker.notesAt(
@@ -15527,8 +15527,8 @@ class NoteTransaction {
       if (!oldState.selection.$cursor) {
         return;
       }
-      // In a transaction, setting a selection will clear the marks, so if we'd like
-      // to keep them, we re-append them after we make the selection.
+      // Setting a selection will clear the transaction's stored marks, so if we'd like
+      // to keep them, we must re-append them.
       const tr = newState.tr.setSelection(
         dist_1.near(oldState.selection.$cursor)
       );
@@ -16095,9 +16095,9 @@ class CurrentNoteTracker {
   resetCounters() {
     this.stallNextCursorMovement = 0;
     this.transactionsCompleted = 0;
-    this.oldCursorPosition = 0;
-    this.attemptedCursorPosition = 0;
     this.attemptedMovement = 0;
+    this.oldCursorPosition = null;
+    this.attemptedCursorPosition = null;
   }
 
   get lastAttemptedMovement() {
