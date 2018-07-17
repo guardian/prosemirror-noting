@@ -77,7 +77,9 @@ const toggleAllNotes = key => () => (state, dispatch) =>
 
 const defaultSharedNoteStateTracker = new SharedNoteStateTracker();
 
-/*
+let noOfNoterPlugins = 0;
+
+/**
  * The main plugin that setups the noter
  * TODO: maybe NoteTracker could extend Plugin which would mean we could
  * use the plugin instance more normally rather than notePlugin.props.noteTracker
@@ -91,6 +93,7 @@ const buildNoter = (
   handleClick = null,
   sharedNoteStateTracker = defaultSharedNoteStateTracker
 ) => {
+  noOfNoterPlugins++;
   const noteTracker = new NoteTracker([], onNoteCreate, sharedNoteStateTracker);
   const noteTransaction = new NoteTransaction(
     noteTracker,
@@ -98,7 +101,7 @@ const buildNoter = (
     key,
     historyPlugin
   );
-  const noteDecorator = createDecorateNotes(noteTransaction, noteTracker);
+  const noteDecorator = createDecorateNotes(noteTransaction, noteTracker, noOfNoterPlugins);
 
   notesFromDoc(initDoc, markType).forEach(({ start, end, meta, id }) =>
     /**

@@ -1,6 +1,14 @@
 import { DecorationSet, Decoration } from "prosemirror-view";
 
-const noteWrapper = (id, notePos, cursorPos, type, side, inside) => {
+const noteWrapper = (
+  id,
+  notePos,
+  cursorPos,
+  type,
+  side,
+  inside,
+  pluginPriority
+) => {
   const dom = document.createElement("span");
 
   // fixes a firefox bug that makes the decos appear selected
@@ -22,7 +30,11 @@ const noteWrapper = (id, notePos, cursorPos, type, side, inside) => {
     ? side - Math.sign(side) / 2
     : 0 - side;
   return Decoration.widget(notePos, dom, {
-    side: sideToRender,
+    // MAX_SAFE_INTEGER is here to order note decorations consistently across
+    // plugins without imposing a (realistic) limit on the number of noting
+    // plugins that can run concurrently.
+    side:
+      sideToRender + pluginPriority / Number.MAX_SAFE_INTEGER * Math.sign(side),
     marks: []
   });
 };
@@ -51,7 +63,11 @@ const placeholderDecos = (noteTransaction, state) => {
     : [];
 };
 
-export const createDecorateNotes = (noteTransaction, noteTracker) => state =>
+export const createDecorateNotes = (
+  noteTransaction,
+  noteTracker,
+  pluginPriority
+) => state =>
   DecorationSet.create(state.doc, [
     ...noteTracker.notes.reduce(
       (out, { id, start, end, meta: { type } }) => [
@@ -62,7 +78,8 @@ export const createDecorateNotes = (noteTransaction, noteTracker) => state =>
           state.selection.$cursor && state.selection.$cursor.pos,
           type,
           -1,
-          noteTransaction.currentNoteID === id
+          noteTransaction.currentNoteID === id,
+          pluginPriority
         ),
         noteWrapper(
           id,
@@ -70,7 +87,8 @@ export const createDecorateNotes = (noteTransaction, noteTracker) => state =>
           state.selection.$cursor && state.selection.$cursor.pos,
           type,
           1,
-          noteTransaction.currentNoteID === id
+          noteTransaction.currentNoteID === id,
+          pluginPriority
         )
       ],
       []

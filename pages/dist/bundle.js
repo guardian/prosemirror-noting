@@ -15476,6 +15476,7 @@ class NoteTransaction {
   }
 
   filterTransaction(tr, oldState) {
+    console.log("filter", this.markType.name);
     this.init(tr, oldState);
     let meta;
     if ((meta = tr.getMeta("set-notes-meta")) && meta.key === this.key) {
@@ -15515,18 +15516,7 @@ class NoteTransaction {
         );
       }
       let resetStoredMarks = false;
-      // If we have two stall requests pending and there's less than two notes in the
-      // position the cursor *would* have entered, we're at a boundary between two
-      // touching notes. We check for two notes because this condition can also occur
-      // when two different note types begin at once in the same position; in this
-      // situation, we continue without a reset, or the cursor would be stuck.
-      if (
-        this.sharedNoteStateTracker.getStallRequests() > 1 &&
-        this.sharedNoteStateTracker.notesAt(
-          this.sharedNoteStateTracker.getAttemptedCursorPosition(),
-          -this.sharedNoteStateTracker.getLastAttemptedMovement()
-        ).length < 2
-      ) {
+      if (this.sharedNoteStateTracker.isAtBoundaryBetweenTouchingNotes()) {
         this.currentNoteID = false;
         resetStoredMarks = true;
       }
@@ -15816,7 +15806,15 @@ class NoteTransaction {
   }
 }
 
-const noteWrapper = (id, notePos, cursorPos, type, side, inside) => {
+const noteWrapper = (
+  id,
+  notePos,
+  cursorPos,
+  type,
+  side,
+  inside,
+  pluginPriority
+) => {
   const dom = document.createElement("span");
 
   // fixes a firefox bug that makes the decos appear selected
@@ -15838,7 +15836,11 @@ const noteWrapper = (id, notePos, cursorPos, type, side, inside) => {
     ? side - Math.sign(side) / 2
     : 0 - side;
   return dist_2$3.widget(notePos, dom, {
-    side: sideToRender,
+    // MAX_SAFE_INTEGER is here to order note decorations consistently across
+    // plugins without imposing a (realistic) limit on the number of noting
+    // plugins that can run concurrently.
+    side:
+      sideToRender + pluginPriority / Number.MAX_SAFE_INTEGER * Math.sign(side),
     marks: []
   });
 };
@@ -15867,7 +15869,11 @@ const placeholderDecos = (noteTransaction, state) => {
     : [];
 };
 
-const createDecorateNotes = (noteTransaction, noteTracker) => state =>
+const createDecorateNotes = (
+  noteTransaction,
+  noteTracker,
+  pluginPriority
+) => state =>
   dist_3$3.create(state.doc, [
     ...noteTracker.notes.reduce(
       (out, { id, start, end, meta: { type } }) => [
@@ -15878,7 +15884,8 @@ const createDecorateNotes = (noteTransaction, noteTracker) => state =>
           state.selection.$cursor && state.selection.$cursor.pos,
           type,
           -1,
-          noteTransaction.currentNoteID === id
+          noteTransaction.currentNoteID === id,
+          pluginPriority
         ),
         noteWrapper(
           id,
@@ -15886,7 +15893,8 @@ const createDecorateNotes = (noteTransaction, noteTracker) => state =>
           state.selection.$cursor && state.selection.$cursor.pos,
           type,
           1,
-          noteTransaction.currentNoteID === id
+          noteTransaction.currentNoteID === id,
+          pluginPriority
         )
       ],
       []
@@ -16026,6 +16034,21 @@ class SharedNoteStateTracker {
     }
   }
 
+  isAtBoundaryBetweenTouchingNotes() {
+    // If we have two stall requests pending and there's less than two notes in the
+    // position the cursor *would* have entered, we're at a boundary between two
+    // touching notes. We check for two notes because this condition can also occur
+    // when two different note types begin at once in the same position; in this
+    // situation, we continue without a reset, or the cursor would be stuck.
+    return (
+      this.getStallRequests() > 1 &&
+      this.notesAt(
+        this.getAttemptedCursorPosition(),
+        -this.getLastAttemptedMovement()
+      ).length < 2
+    );
+  }
+
   resetCounters() {
     this.stallRequests = 0;
     this.transactionsCompleted = 0;
@@ -16156,7 +16179,9 @@ const toggleAllNotes$1 = key => () => (state, dispatch) =>
 
 const defaultSharedNoteStateTracker = new SharedNoteStateTracker();
 
-/*
+let noOfNoterPlugins = 0;
+
+/**
  * The main plugin that setups the noter
  * TODO: maybe NoteTracker could extend Plugin which would mean we could
  * use the plugin instance more normally rather than notePlugin.props.noteTracker
@@ -16170,6 +16195,7 @@ const buildNoter = (
   handleClick = null,
   sharedNoteStateTracker = defaultSharedNoteStateTracker
 ) => {
+  noOfNoterPlugins++;
   const noteTracker = new NoteTracker([], onNoteCreate, sharedNoteStateTracker);
   const noteTransaction = new NoteTransaction(
     noteTracker,
@@ -16177,7 +16203,7 @@ const buildNoter = (
     key,
     historyPlugin
   );
-  const noteDecorator = createDecorateNotes(noteTransaction, noteTracker);
+  const noteDecorator = createDecorateNotes(noteTransaction, noteTracker, noOfNoterPlugins);
 
   notesFromDoc(initDoc, markType).forEach(({ start, end, meta, id }) =>
     /**

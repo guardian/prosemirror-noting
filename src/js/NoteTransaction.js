@@ -61,18 +61,7 @@ export default class NoteTransaction {
         );
       }
       let resetStoredMarks = false;
-      // If we have two stall requests pending and there's less than two notes in the
-      // position the cursor *would* have entered, we're at a boundary between two
-      // touching notes. We check for two notes because this condition can also occur
-      // when two different note types begin at once in the same position; in this
-      // situation, we continue without a reset, or the cursor would be stuck.
-      if (
-        this.sharedNoteStateTracker.getStallRequests() > 1 &&
-        this.sharedNoteStateTracker.notesAt(
-          this.sharedNoteStateTracker.getAttemptedCursorPosition(),
-          -this.sharedNoteStateTracker.getLastAttemptedMovement()
-        ).length < 2
-      ) {
+      if (this.sharedNoteStateTracker.isAtBoundaryBetweenTouchingNotes()) {
         this.currentNoteID = false;
         resetStoredMarks = true;
       }
