@@ -7,7 +7,7 @@ const noteWrapper = (
   type,
   side,
   inside,
-  pluginPriority
+  pluginPriority = 1
 ) => {
   const dom = document.createElement("span");
 
