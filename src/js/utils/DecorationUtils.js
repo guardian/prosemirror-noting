@@ -19,7 +19,7 @@ const createNoteWrapper = (
     `note-wrapper--${meta.type}`
   );
   // This allows the user to mutate the DOM node we've just created. Consumer beware!
-  modifyNoteDecoration(dom, side);
+  modifyNoteDecoration(dom, meta, side);
   dom.dataset.toggleNoteId = id;
   const cursorAtWidgetAndInsideNote = inside && cursorPos === notePos;
   // If we have a cursor at the note widget position and we're inside a note,
