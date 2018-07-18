@@ -89,9 +89,16 @@ const buildNoter = (
   initDoc,
   key,
   historyPlugin,
-  onNoteCreate = () => {},
-  handleClick = null,
-  sharedNoteStateTracker = defaultSharedNoteStateTracker
+  {
+    onNoteCreate = () => {},
+    handleClick = null,
+    sharedNoteStateTracker = defaultSharedNoteStateTracker,
+    // modifyNoteDecoration provides a callback that's passed a note decoration
+    // element and the side that it's rendered on, to allow the consumer to
+    // modify the element, e.g. add a title attribute.
+    // (element: HTMLElement, side: Boolean) => void
+    modifyNoteDecoration = () => {}
+  }
 ) => {
   noOfNoterPlugins++;
   const noteTracker = new NoteTracker([], onNoteCreate, sharedNoteStateTracker);
@@ -101,7 +108,12 @@ const buildNoter = (
     key,
     historyPlugin
   );
-  const noteDecorator = createDecorateNotes(noteTransaction, noteTracker, noOfNoterPlugins);
+  const noteDecorator = createDecorateNotes(
+    noteTransaction,
+    noteTracker,
+    modifyNoteDecoration,
+    noOfNoterPlugins
+  );
 
   notesFromDoc(initDoc, markType).forEach(({ start, end, meta, id }) =>
     /**

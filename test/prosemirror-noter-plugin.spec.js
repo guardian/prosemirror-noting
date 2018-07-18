@@ -73,16 +73,14 @@ const initPM = initDoc => {
     initDoc,
     "noter",
     historyPlugin,
-    () => {},
-    sharedNoteStateTracker
+    { onNoteCreate: () => {}, sharedNoteStateTracker }
   );
   const { plugin: flagger } = buildNoter(
     noteSchema.marks.note,
     initDoc,
     "flagger",
     historyPlugin,
-    () => {},
-    sharedNoteStateTracker
+    { onNoteCreate: () => {}, sharedNoteStateTracker }
   );
   const state = EditorState.create({
     doc: initDoc,

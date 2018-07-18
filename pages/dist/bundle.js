@@ -15476,7 +15476,6 @@ class NoteTransaction {
   }
 
   filterTransaction(tr, oldState) {
-    console.log("filter", this.markType.name);
     this.init(tr, oldState);
     let meta;
     if ((meta = tr.getMeta("set-notes-meta")) && meta.key === this.key) {
@@ -15806,15 +15805,13 @@ class NoteTransaction {
   }
 }
 
-const noteWrapper = (
-  id,
-  notePos,
+const createNoteWrapper = (
+  meta,
   cursorPos,
-  type,
-  side,
   inside,
-  pluginPriority
-) => {
+  pluginPriority = 1,
+  modifyNoteDecoration = () => {}
+) => (id, notePos, side) => {
   const dom = document.createElement("span");
 
   // fixes a firefox bug that makes the decos appear selected
@@ -15824,8 +15821,10 @@ const noteWrapper = (
   dom.classList.add(
     `note-${id}`,
     `note-wrapper--${side < 0 ? "start" : "end"}`,
-    `note-wrapper--${type}`
+    `note-wrapper--${meta.type}`
   );
+  // This allows the user to mutate the DOM node we've just created. Consumer beware!
+  modifyNoteDecoration(dom, side);
   dom.dataset.toggleNoteId = id;
   const cursorAtWidgetAndInsideNote = inside && cursorPos === notePos;
   // If we have a cursor at the note widget position and we're inside a note,
@@ -15847,24 +15846,15 @@ const noteWrapper = (
 
 const placeholderDecos = (noteTransaction, state) => {
   const type = noteTransaction.hasPlaceholder(state);
+  const noteWrapper = createNoteWrapper(
+    { type },
+    state.selection.$cursor && state.selection.$cursor.pos,
+    true
+  );
   return state.selection.$cursor && type
     ? [
-        noteWrapper(
-          "NONE",
-          state.selection.$cursor.pos,
-          state.selection.$cursor.pos,
-          type,
-          -1,
-          true
-        ),
-        noteWrapper(
-          "NONE",
-          state.selection.$cursor.pos,
-          state.selection.$cursor.pos,
-          type,
-          1,
-          true
-        )
+        noteWrapper("NONE", state.selection.$cursor.pos, -1),
+        noteWrapper("NONE", state.selection.$cursor.pos, 1)
       ]
     : [];
 };
@@ -15872,35 +15862,23 @@ const placeholderDecos = (noteTransaction, state) => {
 const createDecorateNotes = (
   noteTransaction,
   noteTracker,
+  modifyNoteDecoration,
   pluginPriority
-) => state =>
-  dist_3$3.create(state.doc, [
-    ...noteTracker.notes.reduce(
-      (out, { id, start, end, meta: { type } }) => [
-        ...out,
-        noteWrapper(
-          id,
-          start,
-          state.selection.$cursor && state.selection.$cursor.pos,
-          type,
-          -1,
-          noteTransaction.currentNoteID === id,
-          pluginPriority
-        ),
-        noteWrapper(
-          id,
-          end,
-          state.selection.$cursor && state.selection.$cursor.pos,
-          type,
-          1,
-          noteTransaction.currentNoteID === id,
-          pluginPriority
-        )
-      ],
-      []
-    ),
+) => state => {
+  return dist_3$3.create(state.doc, [
+    ...noteTracker.notes.reduce((out, { id, start, end, meta }) => {
+      const noteWrapper = createNoteWrapper(
+        meta,
+        state.selection.$cursor && state.selection.$cursor.pos,
+        noteTransaction.currentNoteID === id,
+        pluginPriority,
+        modifyNoteDecoration
+      );
+      return [...out, noteWrapper(id, start, -1), noteWrapper(id, end, 1)];
+    }, []),
     ...placeholderDecos(noteTransaction, state)
   ]);
+};
 
 const clickHandler = (noteTracker, handleClick) => (
   { dispatch, state },
@@ -16191,9 +16169,16 @@ const buildNoter = (
   initDoc,
   key,
   historyPlugin,
-  onNoteCreate = () => {},
-  handleClick = null,
-  sharedNoteStateTracker = defaultSharedNoteStateTracker
+  {
+    onNoteCreate = () => {},
+    handleClick = null,
+    sharedNoteStateTracker = defaultSharedNoteStateTracker,
+    // modifyNoteDecoration provides a callback that's passed a note decoration
+    // element and the side that it's rendered on, to allow the consumer to
+    // modify the element, e.g. add a title attribute.
+    // (element: HTMLElement, side: Boolean) => void
+    modifyNoteDecoration = () => {}
+  }
 ) => {
   noOfNoterPlugins++;
   const noteTracker = new NoteTracker([], onNoteCreate, sharedNoteStateTracker);
@@ -16203,7 +16188,12 @@ const buildNoter = (
     key,
     historyPlugin
   );
-  const noteDecorator = createDecorateNotes(noteTransaction, noteTracker, noOfNoterPlugins);
+  const noteDecorator = createDecorateNotes(
+    noteTransaction,
+    noteTracker,
+    modifyNoteDecoration,
+    noOfNoterPlugins
+  );
 
   notesFromDoc(initDoc, markType).forEach(({ start, end, meta, id }) =>
     /**
@@ -16285,17 +16275,13 @@ const {
   showAllNotes,
   toggleNote,
   setNoteMeta
-} = buildNoter(
-  mySchema.marks.note,
-  doc,
-  "noter",
-  historyPlugin,
+} = buildNoter(mySchema.marks.note, doc, "noter", historyPlugin, {
   onNoteCreate,
-  note =>
+  handleClick: note =>
     setNoteMeta(note.id, {
       hidden: !note.meta.hidden
     })
-);
+});
 
 const {
   plugin: flagPlugin,
