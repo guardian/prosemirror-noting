@@ -46,7 +46,8 @@ const datasetToAttrs = (dataset, defaults = {}) => ({
 const filterTagTypeMap = tagTypeMap =>
   typeof tagTypeMap === "string" ? { note: tagTypeMap } : tagTypeMap;
 
-export const createNoteMark = (typeTagMap, attrGenerator = () => {}) => {
+export const createNoteMark = (_typeTagMap, attrGenerator = () => {}) => {
+  const typeTagMap = filterTagTypeMap(_typeTagMap);
   const values = Object.keys(typeTagMap).map(key => typeTagMap[key]);
   if (values.length !== new Set(values).size) {
     throw new Error(
@@ -62,7 +63,7 @@ export const createNoteMark = (typeTagMap, attrGenerator = () => {}) => {
     },
     inclusive: false,
     // Create a rule for every type
-    parseDOM: Object.keys(filterTagTypeMap(typeTagMap)).map(type => ({
+    parseDOM: Object.keys(typeTagMap).map(type => ({
       tag: typeTagMap[type],
       getAttrs: ({ dataset }) => {
         const attrs = datasetToAttrs(dataset);

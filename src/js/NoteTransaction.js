@@ -3,24 +3,31 @@ import { cloneDeep } from "./utils/helpers";
 import { charsAdded, notesFromDoc } from "./utils/StateUtils";
 
 export default class NoteTransaction {
-  constructor(noteTracker, markType, historyPlugin) {
+  constructor(noteTracker, markType, key, historyPlugin) {
     this.noteTracker = noteTracker;
     this.markType = markType;
+    this.key = key;
     this.historyPlugin = historyPlugin;
     this.tr = null;
-    this.inside = false;
+    this.currentNoteID = false;
+    this.sharedNoteStateTracker = noteTracker.getSharedNoteStateTracker();
   }
 
   static get PLACEHOLDER_ID() {
     return "@@PLACEHOLDER_ID";
   }
 
+  get currentNote() {
+    return !!this.currentNoteID && this.noteTracker.getNote(this.currentNoteID);
+  }
+
   filterTransaction(tr, oldState) {
     this.init(tr, oldState);
-    if (tr.getMeta("set-notes-meta")) {
-      const specs = tr.getMeta("set-notes-meta");
+    let meta;
+    if ((meta = tr.getMeta("set-notes-meta")) && meta.key === this.key) {
+      const { specs } = tr.getMeta("set-notes-meta");
       specs.forEach(({ id, meta }) => this.updateMeta(id, meta));
-    } else if (tr.getMeta("toggle-note")) {
+    } else if ((meta = tr.getMeta("toggle-note")) && meta.key === this.key) {
       const { type, cursorToEnd } = tr.getMeta("toggle-note");
       this.handleToggle(type, cursorToEnd, oldState);
     } else if (tr.getMeta("paste") || tr.getMeta(this.historyPlugin)) {
@@ -32,8 +39,47 @@ export default class NoteTransaction {
     return this.tr;
   }
 
+  appendTransaction(tr, oldState, newState) {
+    // @todo -- is this the best place for this hook?
+    if (this.sharedNoteStateTracker.getStallRequests()) {
+      // If we haven't yet set the old cursor positions and there is cursor
+      // information, store the attempted cursor movement so we can use the
+      // position and direction to find notes for that range. We do this because
+      // if there are multiple instances of this plugin, we only have this information
+      // on the first call of appendTransaction - in subsequent calls, oldState
+      // will already contain the new position information.
+      if (
+        !this.sharedNoteStateTracker.hasOldCursorPosition() &&
+        oldState.selection.$cursor &&
+        newState.selection.$cursor
+      ) {
+        this.sharedNoteStateTracker.setOldCursorPosition(
+          oldState.selection.$cursor.pos
+        );
+        this.sharedNoteStateTracker.setAttemptedCursorPosition(
+          newState.selection.$cursor.pos
+        );
+      }
+      let resetStoredMarks = false;
+      if (this.sharedNoteStateTracker.isAtBoundaryBetweenTouchingNotes()) {
+        this.currentNoteID = false;
+        resetStoredMarks = true;
+      }
+      this.sharedNoteStateTracker.transactionCompleted();
+      if (!oldState.selection.$cursor) {
+        return;
+      }
+      // Setting a selection will clear the transaction's stored marks, so if we'd like
+      // to keep them, we must re-append them.
+      const tr = newState.tr.setSelection(
+        Selection.near(oldState.selection.$cursor)
+      );
+      return resetStoredMarks ? tr : tr.setStoredMarks(newState.storedMarks);
+    }
+  }
+
   init(tr, oldState) {
-    const { noteTracker, inside } = this;
+    const { noteTracker, currentNoteID } = this;
     const { selection: { $cursor: $oldCursor } } = oldState;
     const { $cursor } = tr.selection;
 
@@ -42,34 +88,45 @@ export default class NoteTransaction {
      * need to add and rebuild
      */
     noteTracker.mapPositions(
-      pos => tr.mapping.mapResult(pos, inside ? -1 : 1).pos,
-      pos => tr.mapping.mapResult(pos, inside ? 1 : -1).pos
+      (pos, id) => tr.mapping.mapResult(pos, id === currentNoteID ? -1 : 1).pos,
+      (pos, id) => tr.mapping.mapResult(pos, id === currentNoteID ? 1 : -1).pos
     );
 
-    let note = false; // are we inside or moving into a note
-
-    if ($cursor && $oldCursor) {
-      if (
-        !inside &&
-        (note = noteTracker.movingIntoNote($oldCursor.pos, $cursor.pos, false))
-      ) {
-        tr.setSelection(Selection.near($oldCursor));
-        this.inside = true;
+    if (!tr.docChanged && $cursor && $oldCursor) {
+      const movement = $cursor.pos - $oldCursor.pos;
+      if (movement === 0) {
+        // A static cursor change, e.g. selecting into text from an unfocused state.
+        this.currentNoteID =
+          this.currentNoteID || (noteTracker.noteAt($cursor.pos) || {}).id;
+      } else if (Math.abs(movement) !== 1) {
+        // A cursor change larger than 1, e.g. selecting another position from a
+        // previous position.
+        this.currentNoteID = (noteTracker.noteAt($cursor.pos) || {}).id;
       } else if (
-        inside &&
-        (note = noteTracker.movingOutOfNote($oldCursor.pos, $cursor.pos, true))
+        currentNoteID &&
+        !noteTracker.noteAt($oldCursor.pos) &&
+        (noteTracker.noteAt($oldCursor.pos + movement, -movement) || {}).id !==
+          currentNoteID
       ) {
-        tr.setSelection(Selection.near($oldCursor));
-        this.inside = false;
-      } else {
-        note = noteTracker.noteAt($cursor.pos, this.inside);
-
-        if (note || this.hasPlaceholder(oldState)) {
-          this.inside = true;
-        } else {
-          this.inside = false;
-        }
+        // A move from an inclusive position to a neutral position.
+        this.currentNoteID = false;
+        this.sharedNoteStateTracker.requestCursorStall();
+      } else if (
+        !currentNoteID &&
+        !noteTracker.noteAt($oldCursor.pos) &&
+        noteTracker.noteAt($oldCursor.pos + movement, -movement)
+      ) {
+        // A move from a neutral position to an inclusive position.
+        this.currentNoteID = noteTracker.noteAt(
+          $oldCursor.pos + movement,
+          -movement
+        ).id;
+        this.sharedNoteStateTracker.requestCursorStall();
+      } else if (noteTracker.noteAt($cursor.pos)) {
+        // A move inside of a note.
+        this.currentNoteID = noteTracker.noteAt($cursor.pos).id;
       }
+      // If none of these conditions are satisfied, we have a move outside of a note.
     }
 
     this.tr = tr;
@@ -77,13 +134,14 @@ export default class NoteTransaction {
   }
 
   setCorrectMark() {
-    const { tr, noteTracker, markType, inside } = this;
+    const { tr, markType } = this;
     const { $cursor } = tr.selection;
     if ($cursor) {
-      const note = noteTracker.noteAt($cursor.pos, inside);
+      const note = this.currentNote;
       if (note) {
         const { id, meta } = note;
         const newMark = markType.create({ id, meta });
+
         if (!newMark.isInSet(tr.storedMarks || $cursor.marks())) {
           this.tr = tr.addStoredMark(newMark);
         }
@@ -125,11 +183,11 @@ export default class NoteTransaction {
      * If we have a selection decide whether to grow the note or slice it
      */
   handleToggle(type, cursorToEnd, oldState) {
-    const { noteTracker, tr, markType, inside } = this;
+    const { noteTracker, tr, markType } = this;
     const { $cursor, from, to } = tr.selection;
 
     if ($cursor) {
-      const note = noteTracker.noteAt($cursor.pos, inside);
+      const note = this.currentNote;
       if (note) {
         const { start, end } = note;
         return this.removeRanges([{ from: start, to: end }]);
@@ -219,19 +277,18 @@ export default class NoteTransaction {
      * placeholder
      */
   handleInput(oldState) {
-    const { tr, noteTracker } = this;
+    const { tr } = this;
     const { $cursor } = tr.selection;
     if ($cursor) {
       const { pos } = $cursor;
       const type = this.hasPlaceholder(oldState);
-      const note = noteTracker.noteAt(pos);
+      const note = this.currentNote;
       if (!note && type) {
         const addedChars = charsAdded(oldState, tr);
-
         if (addedChars > 0) {
           const from = pos - addedChars;
           const to = pos;
-          return this.addNotes([{ from, to, meta: { type } }]);
+          return this.addNotes([{ from, to, meta: { type } }], false, true);
         }
       }
     }
@@ -255,23 +312,24 @@ export default class NoteTransaction {
     return this.removeRanges([range]).addNotes(noteRanges);
   }
 
-  addNotes(ranges, cursorToEnd = false) {
+  addNotes(ranges, cursorToEnd = false, insideLast = false) {
     const { tr, noteTracker, markType } = this;
-    this.tr = ranges
+    const notes = ranges
       .map(({ from, to, meta, id }) => noteTracker.addNote(from, to, meta, id))
-      .filter(note => note) // remove notes that couldn't be added
-      .reduce((_tr, { id, meta, start, end }) => {
-        const newMark = markType.create({ id, meta });
-        return _tr
-          .removeMark(start, end, markType)
-          .addMark(start, end, newMark);
-      }, tr);
+      .filter(note => note); // remove notes that couldn't be added
+
+    this.tr = notes.reduce((_tr, { id, meta, start, end }) => {
+      const newMark = markType.create({ id, meta });
+      return _tr.removeMark(start, end, markType).addMark(start, end, newMark);
+    }, tr);
 
     if (cursorToEnd && ranges.length) {
       const { to } = ranges[ranges.length - 1];
-      const { end } = noteTracker.noteAt(to, true);
+      const { end } = noteTracker.noteAt(to, -1);
       const $end = this.tr.doc.resolve(end);
       this.tr = this.tr.setSelection(Selection.near($end), 1);
+    } else if (insideLast && notes.length) {
+      this.currentNoteID = notes[notes.length - 1].id;
     }
 
     return this;
@@ -288,7 +346,7 @@ export default class NoteTransaction {
 
   startNote(type) {
     this.tr = this.tr.addStoredMark(this.placeholder(type));
-    this.inside = true;
+    this.currentNoteID = this.constructor.PLACEHOLDER_ID;
     return this;
   }
 }

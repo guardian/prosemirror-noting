@@ -20,8 +20,8 @@ export default class Note {
 
   mapPositions(startFunc, endFunc = startFunc) {
     return new Note(
-      startFunc(this.start),
-      endFunc(this.end),
+      startFunc(this.start, this.id),
+      endFunc(this.end, this.id),
       this.id,
       cloneDeep(this.meta)
     );
@@ -58,7 +58,7 @@ export default class Note {
   coversRange(from, to, inside = false) {
     return inside
       ? this.start <= from && this.end >= to
-      : this.start < from && this.end > from;
+      : this.start < from && this.end > to;
   }
 
   // End is exclusive

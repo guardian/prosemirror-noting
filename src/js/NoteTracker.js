@@ -16,17 +16,34 @@ const ensureType = meta => {
 };
 
 export default class NoteTracker {
-  constructor(notes = [], onNoteCreate = () => {}) {
+  constructor(notes = [], onNoteCreate = () => {}, sharedNoteStateTracker) {
+    if (!sharedNoteStateTracker) {
+      throw new Error(
+        "[prosemirror-noting]: NoteTracker must be passed an instance of SharedNoteStateTracker on construction"
+      );
+    }
     this.notes = notes.filter(note => !note.isEmpty);
     this.onNoteCreate = onNoteCreate;
+    this.sharedNoteStateTracker = sharedNoteStateTracker;
+    sharedNoteStateTracker.addNoteTracker(this);
+  }
+
+  getSharedNoteStateTracker() {
+    return this.sharedNoteStateTracker;
   }
 
   /*
-     * Writes does mutate state on this top-level object
-     */
+   * Writes does mutate state on this top-level object
+   */
 
   reset() {
     this.notes = [];
+  }
+
+  sortNotes() {
+    const toSort = this.notes.slice();
+    toSort.sort((a, b) => a.start - b.start);
+    this.notes = toSort;
   }
 
   addNote(from, to, _meta, id = null, ignoreCallback = false) {
@@ -45,6 +62,7 @@ export default class NoteTracker {
       this.onNoteCreate(note); // may mutate the note
     }
     this.notes.push(note);
+    this.sortNotes();
     return note;
   }
 
@@ -80,33 +98,6 @@ export default class NoteTracker {
    * Reads
    */
 
-  movingIntoNote(prevPos, pos, inclusive = false) {
-    const note = this.noteAt(pos, inclusive);
-    const offset = inclusive ? 0 : 1;
-    if (!note) {
-      return false;
-    } else if (pos - offset === note.start && prevPos === pos - 1) {
-      return note;
-    } else if (pos + offset === note.end && prevPos === pos + 1) {
-      return note;
-    }
-    return false;
-  }
-
-  movingOutOfNote(prevPos, pos, inclusive = false) {
-    const note = this.noteAt(prevPos, inclusive);
-    const offset = inclusive ? 0 : 1;
-
-    if (!note) {
-      return false;
-    } else if (prevPos - offset === note.start && prevPos === pos + 1) {
-      return note;
-    } else if (prevPos + offset === note.end && prevPos === pos - 1) {
-      return note;
-    }
-    return false;
-  }
-
   getNote(noteId) {
     return this.notes.filter(({ id }) => id === noteId)[0];
   }
@@ -119,17 +110,14 @@ export default class NoteTracker {
     return !!this.getNote(noteId);
   }
 
-  noteAt(pos, inside = false) {
-    const { notes } = this;
-
-    for (let i = 0; i < notes.length; i += 1) {
-      const note = notes[i];
-      if (note.containsPosition(pos, inside)) {
-        return note;
-      }
-    }
-
-    return false;
+  noteAt(pos, _bias = 0) {
+    const bias = Math.sign(_bias);
+    const range = [pos, pos + bias];
+    range.sort();
+    const [from, to] = range;
+    return (
+      this.notes.find(note => note.coversRange(from, to, bias !== 0)) || false
+    );
   }
 
   noteCoveringRange(from, to, inside = false) {
@@ -146,7 +134,9 @@ export default class NoteTracker {
   }
 
   notesTouchingRange(from, to, type) {
-    return this.notes.filter(note => (!type || note.meta.type === type) && note.touchesRange(from, to));
+    return this.notes.filter(
+      note => (!type || note.meta.type === type) && note.touchesRange(from, to)
+    );
   }
 
   mergeableRange(from, to, type) {
