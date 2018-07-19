@@ -15476,7 +15476,6 @@ class NoteTransaction {
   }
 
   filterTransaction(tr, oldState) {
-    console.log("filter", this.markType.name);
     this.init(tr, oldState);
     let meta;
     if ((meta = tr.getMeta("set-notes-meta")) && meta.key === this.key) {
@@ -15813,7 +15812,7 @@ const noteWrapper = (
   type,
   side,
   inside,
-  pluginPriority
+  pluginPriority = 1
 ) => {
   const dom = document.createElement("span");
 
@@ -16203,7 +16202,11 @@ const buildNoter = (
     key,
     historyPlugin
   );
-  const noteDecorator = createDecorateNotes(noteTransaction, noteTracker, noOfNoterPlugins);
+  const noteDecorator = createDecorateNotes(
+    noteTransaction,
+    noteTracker,
+    noOfNoterPlugins
+  );
 
   notesFromDoc(initDoc, markType).forEach(({ start, end, meta, id }) =>
     /**

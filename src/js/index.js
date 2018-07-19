@@ -101,7 +101,11 @@ const buildNoter = (
     key,
     historyPlugin
   );
-  const noteDecorator = createDecorateNotes(noteTransaction, noteTracker, noOfNoterPlugins);
+  const noteDecorator = createDecorateNotes(
+    noteTransaction,
+    noteTracker,
+    noOfNoterPlugins
+  );
 
   notesFromDoc(initDoc, markType).forEach(({ start, end, meta, id }) =>
     /**
