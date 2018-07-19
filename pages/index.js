@@ -66,17 +66,13 @@ const {
   showAllNotes,
   toggleNote,
   setNoteMeta
-} = buildNoter(
-  mySchema.marks.note,
-  doc,
-  "noter",
-  historyPlugin,
+} = buildNoter(mySchema.marks.note, doc, "noter", historyPlugin, {
   onNoteCreate,
-  note =>
+  handleClick: note =>
     setNoteMeta(note.id, {
       hidden: !note.meta.hidden
     })
-);
+});
 
 const {
   plugin: flagPlugin,

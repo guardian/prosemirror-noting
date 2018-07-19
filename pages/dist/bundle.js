@@ -3480,7 +3480,7 @@ exports.MarkType = MarkType;
 exports.ContentMatch = ContentMatch;
 exports.DOMParser = DOMParser;
 exports.DOMSerializer = DOMSerializer;
-//# sourceMappingURL=index.js.map
+
 });
 
 unwrapExports(dist$1);
@@ -5183,7 +5183,7 @@ exports.RemoveMarkStep = RemoveMarkStep;
 exports.ReplaceStep = ReplaceStep;
 exports.ReplaceAroundStep = ReplaceAroundStep;
 exports.replaceStep = replaceStep;
-//# sourceMappingURL=index.js.map
+
 });
 
 unwrapExports(dist$2);
@@ -6340,7 +6340,7 @@ exports.Transaction = Transaction;
 exports.EditorState = EditorState;
 exports.Plugin = Plugin;
 exports.PluginKey = PluginKey;
-//# sourceMappingURL=index.js.map
+
 });
 
 unwrapExports(dist);
@@ -10972,7 +10972,7 @@ exports.Decoration = Decoration;
 exports.DecorationSet = DecorationSet;
 exports.__serializeForClipboard = serializeForClipboard;
 exports.__parseFromClipboard = parseFromClipboard;
-//# sourceMappingURL=index.js.map
+
 });
 
 unwrapExports(dist$3);
@@ -11143,7 +11143,7 @@ var schema = new dist$1.Schema({nodes: nodes, marks: marks});
 exports.nodes = nodes;
 exports.marks = marks;
 exports.schema = schema;
-//# sourceMappingURL=schema-basic.js.map
+
 });
 
 unwrapExports(schemaBasic);
@@ -11798,7 +11798,7 @@ exports.undo = undo;
 exports.redo = redo;
 exports.undoDepth = undoDepth;
 exports.redoDepth = redoDepth;
-//# sourceMappingURL=history.js.map
+
 });
 
 unwrapExports(history_1);
@@ -12038,7 +12038,7 @@ function keydownHandler(bindings) {
 
 exports.keymap = keymap;
 exports.keydownHandler = keydownHandler;
-//# sourceMappingURL=keymap.js.map
+
 });
 
 unwrapExports(keymap_1);
@@ -12704,7 +12704,7 @@ exports.chainCommands = chainCommands;
 exports.pcBaseKeymap = pcBaseKeymap;
 exports.macBaseKeymap = macBaseKeymap;
 exports.baseKeymap = baseKeymap;
-//# sourceMappingURL=commands.js.map
+
 });
 
 unwrapExports(commands);
@@ -12847,7 +12847,7 @@ function dropPos(slice, $pos) {
 }
 
 exports.dropCursor = dropCursor;
-//# sourceMappingURL=dropcursor.js.map
+
 });
 
 unwrapExports(dropcursor);
@@ -13043,7 +13043,7 @@ function drawGapCursor(state) {
 
 exports.gapCursor = gapCursor;
 exports.GapCursor = GapCursor;
-//# sourceMappingURL=index.js.map
+
 });
 
 unwrapExports(dist$7);
@@ -13887,7 +13887,7 @@ exports.redoItem = redoItem;
 exports.wrapItem = wrapItem;
 exports.blockTypeItem = blockTypeItem;
 exports.menuBar = menuBar;
-//# sourceMappingURL=index.js.map
+
 });
 
 unwrapExports(dist$8);
@@ -14152,7 +14152,7 @@ exports.wrapInList = wrapInList;
 exports.splitListItem = splitListItem;
 exports.liftListItem = liftListItem;
 exports.sinkListItem = sinkListItem;
-//# sourceMappingURL=schema-list.js.map
+
 });
 
 unwrapExports(schemaList);
@@ -14338,7 +14338,7 @@ exports.closeSingleQuote = closeSingleQuote;
 exports.smartQuotes = smartQuotes;
 exports.wrappingInputRule = wrappingInputRule;
 exports.textblockTypeInputRule = textblockTypeInputRule;
-//# sourceMappingURL=index.js.map
+
 });
 
 unwrapExports(dist$9);
@@ -14982,7 +14982,7 @@ exports.buildMenuItems = buildMenuItems;
 exports.buildKeymap = buildKeymap;
 exports.buildInputRules = buildInputRules;
 exports.exampleSetup = exampleSetup;
-//# sourceMappingURL=index.js.map
+
 });
 
 unwrapExports(dist$6);
@@ -15007,6 +15007,10 @@ const cloneDeep = val => {
   }
   return val;
 };
+
+/*
+ * NOTE: All ends for ranges are EXCLUSIVE
+ */
 
 const clamp = (num, min, max) => Math.max(Math.min(num, max), min);
 
@@ -15137,6 +15141,11 @@ function bytesToUuid(buf, offset) {
 }
 
 var bytesToUuid_1 = bytesToUuid;
+
+// **`v1()` - Generate time-based UUID**
+//
+// Inspired by https://github.com/LiosK/UUID.js
+// and http://docs.python.org/library/uuid.html
 
 var _nodeId;
 var _clockseq;
@@ -15805,15 +15814,13 @@ class NoteTransaction {
   }
 }
 
-const noteWrapper = (
-  id,
-  notePos,
+const createNoteWrapper = (
+  meta,
   cursorPos,
-  type,
-  side,
   inside,
-  pluginPriority = 1
-) => {
+  pluginPriority = 1,
+  modifyNoteDecoration = () => {}
+) => (id, notePos, side) => {
   const dom = document.createElement("span");
 
   // fixes a firefox bug that makes the decos appear selected
@@ -15823,8 +15830,10 @@ const noteWrapper = (
   dom.classList.add(
     `note-${id}`,
     `note-wrapper--${side < 0 ? "start" : "end"}`,
-    `note-wrapper--${type}`
+    `note-wrapper--${meta.type}`
   );
+  // This allows the user to mutate the DOM node we've just created. Consumer beware!
+  modifyNoteDecoration(dom, meta, side);
   dom.dataset.toggleNoteId = id;
   const cursorAtWidgetAndInsideNote = inside && cursorPos === notePos;
   // If we have a cursor at the note widget position and we're inside a note,
@@ -15846,24 +15855,15 @@ const noteWrapper = (
 
 const placeholderDecos = (noteTransaction, state) => {
   const type = noteTransaction.hasPlaceholder(state);
+  const noteWrapper = createNoteWrapper(
+    { type },
+    state.selection.$cursor && state.selection.$cursor.pos,
+    true
+  );
   return state.selection.$cursor && type
     ? [
-        noteWrapper(
-          "NONE",
-          state.selection.$cursor.pos,
-          state.selection.$cursor.pos,
-          type,
-          -1,
-          true
-        ),
-        noteWrapper(
-          "NONE",
-          state.selection.$cursor.pos,
-          state.selection.$cursor.pos,
-          type,
-          1,
-          true
-        )
+        noteWrapper("NONE", state.selection.$cursor.pos, -1),
+        noteWrapper("NONE", state.selection.$cursor.pos, 1)
       ]
     : [];
 };
@@ -15871,35 +15871,23 @@ const placeholderDecos = (noteTransaction, state) => {
 const createDecorateNotes = (
   noteTransaction,
   noteTracker,
+  modifyNoteDecoration,
   pluginPriority
-) => state =>
-  dist_3$3.create(state.doc, [
-    ...noteTracker.notes.reduce(
-      (out, { id, start, end, meta: { type } }) => [
-        ...out,
-        noteWrapper(
-          id,
-          start,
-          state.selection.$cursor && state.selection.$cursor.pos,
-          type,
-          -1,
-          noteTransaction.currentNoteID === id,
-          pluginPriority
-        ),
-        noteWrapper(
-          id,
-          end,
-          state.selection.$cursor && state.selection.$cursor.pos,
-          type,
-          1,
-          noteTransaction.currentNoteID === id,
-          pluginPriority
-        )
-      ],
-      []
-    ),
+) => state => {
+  return dist_3$3.create(state.doc, [
+    ...noteTracker.notes.reduce((out, { id, start, end, meta }) => {
+      const noteWrapper = createNoteWrapper(
+        meta,
+        state.selection.$cursor && state.selection.$cursor.pos,
+        noteTransaction.currentNoteID === id,
+        pluginPriority,
+        modifyNoteDecoration
+      );
+      return [...out, noteWrapper(id, start, -1), noteWrapper(id, end, 1)];
+    }, []),
     ...placeholderDecos(noteTransaction, state)
   ]);
+};
 
 const clickHandler = (noteTracker, handleClick) => (
   { dispatch, state },
@@ -15928,6 +15916,7 @@ const hyphenatePascal = str =>
     .replace(/([A-Z]{2})[a-z]/, "$1-")
     .toLowerCase();
 
+// Coerce trues
 const attToVal = att => (att === "true" ? true : att);
 
 const noteToAttrs = (id, meta, attrGenerator = () => {}) => {
@@ -16190,9 +16179,16 @@ const buildNoter = (
   initDoc,
   key,
   historyPlugin,
-  onNoteCreate = () => {},
-  handleClick = null,
-  sharedNoteStateTracker = defaultSharedNoteStateTracker
+  {
+    onNoteCreate = () => {},
+    handleClick = null,
+    sharedNoteStateTracker = defaultSharedNoteStateTracker,
+    // modifyNoteDecoration provides a callback that's passed a note decoration
+    // element and the side that it's rendered on, to allow the consumer to
+    // modify the element, e.g. add a title attribute.
+    // (element: HTMLElement, side: Boolean) => void
+    modifyNoteDecoration = () => {}
+  }
 ) => {
   noOfNoterPlugins++;
   const noteTracker = new NoteTracker([], onNoteCreate, sharedNoteStateTracker);
@@ -16205,6 +16201,7 @@ const buildNoter = (
   const noteDecorator = createDecorateNotes(
     noteTransaction,
     noteTracker,
+    modifyNoteDecoration,
     noOfNoterPlugins
   );
 
@@ -16288,17 +16285,13 @@ const {
   showAllNotes,
   toggleNote,
   setNoteMeta
-} = buildNoter(
-  mySchema.marks.note,
-  doc,
-  "noter",
-  historyPlugin,
+} = buildNoter(mySchema.marks.note, doc, "noter", historyPlugin, {
   onNoteCreate,
-  note =>
+  handleClick: note =>
     setNoteMeta(note.id, {
       hidden: !note.meta.hidden
     })
-);
+});
 
 const {
   plugin: flagPlugin,
