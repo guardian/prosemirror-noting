@@ -1,5 +1,5 @@
 {
-  "name": "prosemirror-noting",
+  "name": "@guardian/prosemirror-noting",
   "version": "3.0.0",
   "description": "A plugin to allow noting in prosemirror",
   "main": "dist/noting.js",
