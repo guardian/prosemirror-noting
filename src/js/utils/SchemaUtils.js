@@ -3,17 +3,28 @@ import { hyphenatePascal } from "./StringUtils";
 // Coerce trues
 const attToVal = att => (att === "true" ? true : att);
 
+export const removeUndefinedValues = obj =>
+  Object.keys(obj).reduce((acc, key) => {
+    const val = obj[key];
+    return typeof val === "undefined"
+      ? acc
+      : Object.assign(acc, {
+          [key]: val
+        });
+  }, {});
+
 const noteToAttrs = (id, meta, attrGenerator = () => {}) => {
   const classes = ["note"]; // allow classes to be added by all
-  const generatedMeta = attrGenerator(meta) || {};
+  const generatedAttrs = attrGenerator(meta) || {};
+  const attrs = removeUndefinedValues(generatedAttrs);
 
-  if (generatedMeta.class) {
-    classes.push(generatedMeta.class);
+  if (attrs.class) {
+    classes.push(attrs.class);
   }
 
   return Object.assign(
     {},
-    generatedMeta,
+    attrs,
     Object.keys(meta)
       .filter(key => meta[key] !== false) // remove specials
       .reduce(
