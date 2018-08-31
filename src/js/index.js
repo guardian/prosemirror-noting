@@ -3,7 +3,7 @@ import NoteTracker from "./NoteTracker";
 import NoteTransaction from "./NoteTransaction";
 import { createDecorateNotes } from "./utils/DecorationUtils";
 import clickHandler from "./clickHandler";
-import { notesFromDoc } from "./utils/StateUtils";
+import { notesFromDoc, sanitizeDoc } from "./utils/StateUtils";
 import { createNoteMark } from "./utils/SchemaUtils";
 import SharedNoteStateTracker from "./SharedNoteStateTracker";
 
@@ -143,4 +143,4 @@ const buildNoter = (
   };
 };
 
-export { createNoteMark, buildNoter, toggleNote };
+export { createNoteMark, buildNoter, toggleNote, sanitizeDoc };

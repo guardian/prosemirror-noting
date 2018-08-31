@@ -1,4 +1,78 @@
 import { AllSelection } from "prosemirror-state";
+import { Fragment } from "prosemirror-model";
+
+const updateNodes = updater => node => {
+  const prevFrag = node.content;
+  let frag = Fragment.empty;
+
+  const appendNodeToFragment = node =>
+    (frag = frag.append(Fragment.from(node)));
+
+  prevFrag.forEach(node =>
+    appendNodeToFragment(updateNodes(updater)(updater(node)))
+  );
+
+  return node.copy(frag);
+};
+
+const updateNodeMarkAttrs = (node, mark, attrs = {}) =>
+  mark.isInSet(node.marks)
+    ? node.mark(
+        mark
+          .removeFromSet(node.marks)
+          .concat(mark.type.create(Object.assign(mark.attrs, attrs)))
+      )
+    : node;
+
+const defaultGetId = () => {
+  let id = 0;
+  return () => {
+    id++;
+    return id;
+  };
+};
+
+// ensures that there are no notes in the document that have the same note id
+// in non-contiguous places, which would result in one large note between the
+// extremes of those places on certain edits
+// e.g. <note id="1">test</note> some <note id="1">stuff</note>
+// results in
+// e.g. <note id="1">test</note> some <note id="2">stuff</note>
+export const sanitizeDoc = (doc, markType, getId = defaultGetId()) => {
+  let idMap = {};
+  // the current id of the node according to the input document
+  let currentNoteId = null;
+
+  const getAdjustNoteId = id => {
+    if (id === currentNoteId) {
+      return idMap[id];
+    }
+
+    const newId = getId();
+    idMap[id] = newId;
+    currentNoteId = id;
+    return newId;
+  };
+
+  const closeNote = () => {
+    currentNoteId = null;
+  };
+
+  return updateNodes(node => {
+    const noteMark = markType.isInSet(node.marks);
+    if (noteMark) {
+      return updateNodeMarkAttrs(node, noteMark, {
+        id: getAdjustNoteId(noteMark.attrs.id)
+      });
+    }
+
+    if (node.isText) {
+      closeNote();
+    }
+
+    return node;
+  })(doc);
+};
 
 export const charsAdded = (oldState, state) =>
   state.doc.textContent.length - oldState.doc.textContent.length;
