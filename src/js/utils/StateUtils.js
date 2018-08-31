@@ -1,6 +1,9 @@
 import { AllSelection } from "prosemirror-state";
 import { Fragment } from "prosemirror-model";
 
+// Runs through a Fragment's nodes and runs `updater` on them,
+// which is expected to return a node - either the same one or a modified one -
+// which is then added in place of the old node
 const updateFragmentNodes = updater => prevFrag => {
   let frag = Fragment.empty;
 
@@ -16,6 +19,8 @@ const updateFragmentNodes = updater => prevFrag => {
   return frag;
 };
 
+// Changes the attributes on a Mark or MarkType on a node if it exists on that
+// node
 const updateNodeMarkAttrs = (node, mark, attrs = {}) =>
   mark.isInSet(node.marks)
     ? node.mark(
@@ -44,6 +49,10 @@ export const sanitizeFragment = (frag, markType, getId = defaultGetId()) => {
   // the current id of the node according to the input document
   let currentNoteId = null;
 
+  // This will return an updated id for this id depending on whether it's been
+  // seen before in a previous non-contiguous note range, if it's been seen
+  // before then a new id will be generated and used for this id while the range
+  // is contiguous
   const getAdjustNoteId = id => {
     if (id === currentNoteId) {
       return idMap[id];
@@ -67,6 +76,8 @@ export const sanitizeFragment = (frag, markType, getId = defaultGetId()) => {
       });
     }
 
+    // if we're in a text node and we don't have a noteMark then assume we are
+    // not in a note and close the range
     if (node.isText) {
       closeNote();
     }
@@ -75,9 +86,11 @@ export const sanitizeFragment = (frag, markType, getId = defaultGetId()) => {
   })(frag);
 };
 
+// Similar to sanitizeFragment but allows a node to be passed instead
 export const sanitizeNode = (node, markType, getId) =>
   node.copy(sanitizeFragment(node.content, markType, getId));
 
+// Return an array of all of the new ranges in a document [[start, end], ...]
 export const getInsertedRanges = ({ mapping }) => {
   let ranges = [];
   mapping.maps.forEach((stepMap, i) => {
