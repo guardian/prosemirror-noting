@@ -1,18 +1,19 @@
 import { AllSelection } from "prosemirror-state";
 import { Fragment } from "prosemirror-model";
 
-const updateNodes = updater => node => {
-  const prevFrag = node.content;
+const updateFragmentNodes = updater => prevFrag => {
   let frag = Fragment.empty;
 
   const appendNodeToFragment = node =>
     (frag = frag.append(Fragment.from(node)));
 
   prevFrag.forEach(node =>
-    appendNodeToFragment(updateNodes(updater)(updater(node)))
+    appendNodeToFragment(
+      node.copy(updateFragmentNodes(updater)(updater(node).content))
+    )
   );
 
-  return node.copy(frag);
+  return frag;
 };
 
 const updateNodeMarkAttrs = (node, mark, attrs = {}) =>
@@ -38,7 +39,7 @@ const defaultGetId = () => {
 // e.g. <note id="1">test</note> some <note id="1">stuff</note>
 // results in
 // e.g. <note id="1">test</note> some <note id="2">stuff</note>
-export const sanitizeDoc = (doc, markType, getId = defaultGetId()) => {
+export const sanitizeFragment = (frag, markType, getId = defaultGetId()) => {
   let idMap = {};
   // the current id of the node according to the input document
   let currentNoteId = null;
@@ -58,7 +59,7 @@ export const sanitizeDoc = (doc, markType, getId = defaultGetId()) => {
     currentNoteId = null;
   };
 
-  return updateNodes(node => {
+  return updateFragmentNodes(node => {
     const noteMark = markType.isInSet(node.marks);
     if (noteMark) {
       return updateNodeMarkAttrs(node, noteMark, {
@@ -71,7 +72,23 @@ export const sanitizeDoc = (doc, markType, getId = defaultGetId()) => {
     }
 
     return node;
-  })(doc);
+  })(frag);
+};
+
+export const sanitizeNode = (node, markType, getId) =>
+  node.copy(sanitizeFragment(node.content, markType, getId));
+
+export const getInsertedRanges = ({ mapping }) => {
+  let ranges = [];
+  mapping.maps.forEach((stepMap, i) => {
+    stepMap.forEach((oldStart, oldEnd, newStart, newEnd) => {
+      ranges.push([
+        mapping.slice(i + 1).map(newStart),
+        mapping.slice(i + 1).map(newEnd)
+      ]);
+    });
+  });
+  return ranges;
 };
 
 export const charsAdded = (oldState, state) =>
