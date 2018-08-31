@@ -37,13 +37,13 @@ const updateNodeMarkAttrs = (node, mark, attrs = {}) =>
 // e.g. <note id="1">test</note> some <note id="1">stuff</note>
 // results in
 // e.g. <note id="1">test</note> some <note id="2">stuff</note>
-export const sanitizeFragment = (frag, markType, getId = v4) => {
+const sanitizeFragmentInner = (frag, markType, createId = v4) => {
   let idMap = {};
   // the current id of the node according to the input document
   let currentNoteId = null;
 
   const setNewId = prevId => {
-    const newId = !idMap[prevId] ? prevId : getId();
+    const newId = !idMap[prevId] ? prevId : createId();
     idMap[prevId] = newId;
     currentNoteId = prevId;
     return newId;
@@ -82,9 +82,18 @@ export const sanitizeFragment = (frag, markType, getId = v4) => {
   })(frag);
 };
 
+const wrap = value => (Array.isArray(value) ? value : [value]);
+
+// markTypes can either be a MarkType or MarkType[]
+export const sanitizeFragment = (frag, markTypes, createId) =>
+  wrap(markTypes).reduce(
+    (nextFrag, markType) => sanitizeFragmentInner(nextFrag, markType, createId),
+    frag
+  );
+
 // Similar to sanitizeFragment but allows a node to be passed instead
-export const sanitizeNode = (node, markType, getId) =>
-  node.copy(sanitizeFragment(node.content, markType, getId));
+export const sanitizeNode = (node, markTypes, createId) =>
+  node.copy(sanitizeFragment(node.content, markTypes, createId));
 
 // Return an array of all of the new ranges in a document [[start, end], ...]
 export const getInsertedRanges = ({ mapping }) => {

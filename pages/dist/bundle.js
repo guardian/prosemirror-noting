@@ -15249,6 +15249,36 @@ function v1(options, buf, offset) {
 
 var v1_1 = v1;
 
+function v4(options, buf, offset) {
+  var i = buf && offset || 0;
+
+  if (typeof(options) == 'string') {
+    buf = options === 'binary' ? new Array(16) : null;
+    options = null;
+  }
+  options = options || {};
+
+  var rnds = options.random || (options.rng || rngBrowser)();
+
+  // Per 4.4, set bits for version and `clock_seq_hi_and_reserved`
+  rnds[6] = (rnds[6] & 0x0f) | 0x40;
+  rnds[8] = (rnds[8] & 0x3f) | 0x80;
+
+  // Copy bytes to buffer, if provided
+  if (buf) {
+    for (var ii = 0; ii < 16; ++ii) {
+      buf[i + ii] = rnds[ii];
+    }
+  }
+
+  return buf || bytesToUuid_1(rnds);
+}
+
+var v4_1 = v4;
+
+// Runs through a Fragment's nodes and runs `updater` on them,
+// which is expected to return a node - either the same one or a modified one -
+// which is then added in place of the old node
 const updateFragmentNodes = updater => prevFrag => {
   let frag = dist_4$1.empty;
 
@@ -15264,6 +15294,8 @@ const updateFragmentNodes = updater => prevFrag => {
   return frag;
 };
 
+// Changes the attributes on a Mark or MarkType on a node if it exists on that
+// node
 const updateNodeMarkAttrs = (node, mark, attrs = {}) =>
   mark.isInSet(node.marks)
     ? node.mark(
@@ -15273,34 +15305,33 @@ const updateNodeMarkAttrs = (node, mark, attrs = {}) =>
       )
     : node;
 
-const defaultGetId = () => {
-  let id = 0;
-  return () => {
-    id++;
-    return id;
-  };
-};
-
 // ensures that there are no notes in the document that have the same note id
 // in non-contiguous places, which would result in one large note between the
 // extremes of those places on certain edits
 // e.g. <note id="1">test</note> some <note id="1">stuff</note>
 // results in
 // e.g. <note id="1">test</note> some <note id="2">stuff</note>
-const sanitizeFragment = (frag, markType, getId = defaultGetId()) => {
+const sanitizeFragmentInner = (frag, markType, createId = v4_1) => {
   let idMap = {};
   // the current id of the node according to the input document
   let currentNoteId = null;
 
+  const setNewId = prevId => {
+    const newId = !idMap[prevId] ? prevId : createId();
+    idMap[prevId] = newId;
+    currentNoteId = prevId;
+    return newId;
+  };
+
+  // This will return an updated id for this id depending on whether it's been
+  // seen before in a previous non-contiguous note range, if it's been seen
+  // before then a new id will be generated and used for this id while the range
+  // is contiguous
   const getAdjustNoteId = id => {
     if (id === currentNoteId) {
       return idMap[id];
     }
-
-    const newId = getId();
-    idMap[id] = newId;
-    currentNoteId = id;
-    return newId;
+    return setNewId(id);
   };
 
   const closeNote = () => {
@@ -15315,6 +15346,8 @@ const sanitizeFragment = (frag, markType, getId = defaultGetId()) => {
       });
     }
 
+    // if we're in a text node and we don't have a noteMark then assume we are
+    // not in a note and close the range
     if (node.isText) {
       closeNote();
     }
@@ -15323,8 +15356,19 @@ const sanitizeFragment = (frag, markType, getId = defaultGetId()) => {
   })(frag);
 };
 
+const wrap = value => (Array.isArray(value) ? value : [value]);
+
+// markTypes can either be a MarkType or MarkType[]
+const sanitizeFragment = (frag, markTypes, createId) =>
+  wrap(markTypes).reduce(
+    (nextFrag, markType) => sanitizeFragmentInner(nextFrag, markType, createId),
+    frag
+  );
+
+// Similar to sanitizeFragment but allows a node to be passed instead
 
 
+// Return an array of all of the new ranges in a document [[start, end], ...]
 const getInsertedRanges = ({ mapping }) => {
   let ranges = [];
   mapping.maps.forEach((stepMap, i) => {
@@ -15342,9 +15386,14 @@ const charsAdded = (oldState, state) =>
   state.doc.textContent.length - oldState.doc.textContent.length;
 
 /*
-     * This takes a doc node and a marktype and hunts for them (assuming the have an id
-     * on their attrs) and merges their start and ends (for use with the note tracker)
-     */
+ * This takes a doc node and a marktype and hunts for them (assuming the have an id
+ * on their attrs) and merges their start and ends (for use with the note tracker)
+ * 
+ * Unlike sanitizeNode, this will not look for contiguosness when finding the
+ * notes as this helper assumes that the consuming code is not interested in
+ * sanitizing the code. This should not pose any problems as long as notes
+ * are getting sanitized on load and on paste.
+ */
 const notesFromDoc = (doc, markType, min = false, max = false) => {
   const notes = {};
 
@@ -16190,33 +16239,6 @@ class SharedNoteStateTracker {
   }
 }
 
-function v4(options, buf, offset) {
-  var i = buf && offset || 0;
-
-  if (typeof(options) == 'string') {
-    buf = options === 'binary' ? new Array(16) : null;
-    options = null;
-  }
-  options = options || {};
-
-  var rnds = options.random || (options.rng || rngBrowser)();
-
-  // Per 4.4, set bits for version and `clock_seq_hi_and_reserved`
-  rnds[6] = (rnds[6] & 0x0f) | 0x40;
-  rnds[8] = (rnds[8] & 0x3f) | 0x80;
-
-  // Copy bytes to buffer, if provided
-  if (buf) {
-    for (var ii = 0; ii < 16; ++ii) {
-      buf[i + ii] = rnds[ii];
-    }
-  }
-
-  return buf || bytesToUuid_1(rnds);
-}
-
-var v4_1 = v4;
-
 const toggleNote$1 = key => (type, cursorToEnd = false) => (state, dispatch) =>
   dispatch
     ? dispatch(
@@ -16341,7 +16363,7 @@ const buildNoter = (
         decorations: noteDecorator,
         handleClick: handleClick && clickHandler(noteTracker, handleClick),
         transformPasted: ({ content, openStart, openEnd }) =>
-          new dist_5$1(sanitizeFragment(content, markType, v4_1), openStart, openEnd)
+          new dist_5$1(sanitizeFragment(content, markType), openStart, openEnd)
       },
       filterTransaction: (...args) =>
         noteTransaction.filterTransaction(...args),
