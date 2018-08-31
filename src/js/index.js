@@ -11,7 +11,6 @@ import {
 } from "./utils/StateUtils";
 import { createNoteMark } from "./utils/SchemaUtils";
 import SharedNoteStateTracker from "./SharedNoteStateTracker";
-import v4 from "uuid/v4";
 
 const toggleNote = key => (type, cursorToEnd = false) => (state, dispatch) =>
   dispatch
@@ -137,7 +136,7 @@ const buildNoter = (
         decorations: noteDecorator,
         handleClick: handleClick && clickHandler(noteTracker, handleClick),
         transformPasted: ({ content, openStart, openEnd }) =>
-          new Slice(sanitizeFragment(content, markType, v4), openStart, openEnd)
+          new Slice(sanitizeFragment(content, markType), openStart, openEnd)
       },
       filterTransaction: (...args) =>
         noteTransaction.filterTransaction(...args),

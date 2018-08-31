@@ -1,5 +1,6 @@
 import { AllSelection } from "prosemirror-state";
 import { Fragment } from "prosemirror-model";
+import v4 from "uuid/v4";
 
 // Runs through a Fragment's nodes and runs `updater` on them,
 // which is expected to return a node - either the same one or a modified one -
@@ -30,24 +31,23 @@ const updateNodeMarkAttrs = (node, mark, attrs = {}) =>
       )
     : node;
 
-const defaultGetId = () => {
-  let id = 0;
-  return () => {
-    id++;
-    return id;
-  };
-};
-
 // ensures that there are no notes in the document that have the same note id
 // in non-contiguous places, which would result in one large note between the
 // extremes of those places on certain edits
 // e.g. <note id="1">test</note> some <note id="1">stuff</note>
 // results in
 // e.g. <note id="1">test</note> some <note id="2">stuff</note>
-export const sanitizeFragment = (frag, markType, getId = defaultGetId()) => {
+export const sanitizeFragment = (frag, markType, getId = v4) => {
   let idMap = {};
   // the current id of the node according to the input document
   let currentNoteId = null;
+
+  const setNewId = prevId => {
+    const newId = !idMap[prevId] ? prevId : getId();
+    idMap[prevId] = newId;
+    currentNoteId = prevId;
+    return newId;
+  };
 
   // This will return an updated id for this id depending on whether it's been
   // seen before in a previous non-contiguous note range, if it's been seen
@@ -57,11 +57,7 @@ export const sanitizeFragment = (frag, markType, getId = defaultGetId()) => {
     if (id === currentNoteId) {
       return idMap[id];
     }
-
-    const newId = getId();
-    idMap[id] = newId;
-    currentNoteId = id;
-    return newId;
+    return setNewId(id);
   };
 
   const closeNote = () => {
@@ -108,9 +104,14 @@ export const charsAdded = (oldState, state) =>
   state.doc.textContent.length - oldState.doc.textContent.length;
 
 /*
-     * This takes a doc node and a marktype and hunts for them (assuming the have an id
-     * on their attrs) and merges their start and ends (for use with the note tracker)
-     */
+ * This takes a doc node and a marktype and hunts for them (assuming the have an id
+ * on their attrs) and merges their start and ends (for use with the note tracker)
+ * 
+ * Unlike sanitizeNode, this will not look for contiguosness when finding the
+ * notes as this helper assumes that the consuming code is not interested in
+ * sanitizing the code. This should not pose any problems as long as notes
+ * are getting sanitized on load and on paste.
+ */
 export const notesFromDoc = (doc, markType, min = false, max = false) => {
   const notes = {};
 
