@@ -15249,6 +15249,142 @@ function v1(options, buf, offset) {
 
 var v1_1 = v1;
 
+const updateFragmentNodes = updater => prevFrag => {
+  let frag = dist_4$1.empty;
+
+  const appendNodeToFragment = node =>
+    (frag = frag.append(dist_4$1.from(node)));
+
+  prevFrag.forEach(node =>
+    appendNodeToFragment(
+      node.copy(updateFragmentNodes(updater)(updater(node).content))
+    )
+  );
+
+  return frag;
+};
+
+const updateNodeMarkAttrs = (node, mark, attrs = {}) =>
+  mark.isInSet(node.marks)
+    ? node.mark(
+        mark
+          .removeFromSet(node.marks)
+          .concat(mark.type.create(Object.assign(mark.attrs, attrs)))
+      )
+    : node;
+
+const defaultGetId = () => {
+  let id = 0;
+  return () => {
+    id++;
+    return id;
+  };
+};
+
+// ensures that there are no notes in the document that have the same note id
+// in non-contiguous places, which would result in one large note between the
+// extremes of those places on certain edits
+// e.g. <note id="1">test</note> some <note id="1">stuff</note>
+// results in
+// e.g. <note id="1">test</note> some <note id="2">stuff</note>
+const sanitizeFragment = (frag, markType, getId = defaultGetId()) => {
+  let idMap = {};
+  // the current id of the node according to the input document
+  let currentNoteId = null;
+
+  const getAdjustNoteId = id => {
+    if (id === currentNoteId) {
+      return idMap[id];
+    }
+
+    const newId = getId();
+    idMap[id] = newId;
+    currentNoteId = id;
+    return newId;
+  };
+
+  const closeNote = () => {
+    currentNoteId = null;
+  };
+
+  return updateFragmentNodes(node => {
+    const noteMark = markType.isInSet(node.marks);
+    if (noteMark) {
+      return updateNodeMarkAttrs(node, noteMark, {
+        id: getAdjustNoteId(noteMark.attrs.id)
+      });
+    }
+
+    if (node.isText) {
+      closeNote();
+    }
+
+    return node;
+  })(frag);
+};
+
+
+
+const getInsertedRanges = ({ mapping }) => {
+  let ranges = [];
+  mapping.maps.forEach((stepMap, i) => {
+    stepMap.forEach((oldStart, oldEnd, newStart, newEnd) => {
+      ranges.push([
+        mapping.slice(i + 1).map(newStart),
+        mapping.slice(i + 1).map(newEnd)
+      ]);
+    });
+  });
+  return ranges;
+};
+
+const charsAdded = (oldState, state) =>
+  state.doc.textContent.length - oldState.doc.textContent.length;
+
+/*
+     * This takes a doc node and a marktype and hunts for them (assuming the have an id
+     * on their attrs) and merges their start and ends (for use with the note tracker)
+     */
+const notesFromDoc = (doc, markType, min = false, max = false) => {
+  const notes = {};
+
+  const { from, to } = new dist_5(doc);
+
+  const _min = min === false ? from : min;
+  const _max = max === false ? to : max;
+
+  doc.nodesBetween(_min, _max, (node, start) => {
+    const end = start + node.nodeSize;
+    const mark = markType.isInSet(node.marks);
+
+    if (mark) {
+      const { id, meta } = mark.attrs;
+
+      notes[id] = notes[id] || {
+        id,
+        meta, // this should be the same across all notes so just set it here
+        nodes: [],
+        start: Infinity,
+        end: -Infinity
+      };
+
+      notes[id] = Object.assign({}, notes[id], {
+        start: Math.min(notes[id].start, start),
+        end: Math.max(notes[id].end, end),
+        nodes: [
+          ...notes[id].nodes,
+          {
+            start,
+            end
+          }
+        ]
+      });
+    }
+  });
+
+  return Object.keys(notes).map(id => notes[id]);
+};
+
 const ensureType = meta => {
   if (!meta) {
     return {
@@ -15401,69 +15537,26 @@ class NoteTracker {
     };
   }
 
-  rebuildRange(oldState, state) {
-    const start = oldState.doc.content.findDiffStart(state.doc.content);
+  rebuildRange(state) {
+    let ranges = getInsertedRanges(state);
 
-    if (start) {
-      const end = oldState.doc.content.findDiffEnd(state.doc.content).b;
-      if (start < end) {
-        return this.mergeableRange(start, end);
-      } else if (oldState.doc.nodeSize < state.doc.nodeSize) {
-        // make sure we're over-zealous with our rebuild size
-        const diff = state.doc.nodeSize - oldState.doc.nodeSize;
-        return this.mergeableRange(start, start + diff);
-      }
+    if (!ranges.length) {
+      return false;
     }
-    return false;
+
+    const start = ranges.reduce(
+      (acc, [from, to]) => Math.min(acc, from, to),
+      Infinity
+    );
+
+    const end = ranges.reduce(
+      (acc, [from, to]) => Math.max(acc, from, to),
+      -Infinity
+    );
+
+    return start < end ? this.mergeableRange(start, end) : false;
   }
 }
-
-const charsAdded = (oldState, state) =>
-  state.doc.textContent.length - oldState.doc.textContent.length;
-
-/*
-     * This takes a doc node and a marktype and hunts for them (assuming the have an id
-     * on their attrs) and merges their start and ends (for use with the note tracker)
-     */
-const notesFromDoc = (doc, markType, min = false, max = false) => {
-  const notes = {};
-
-  const { from, to } = new dist_5(doc);
-
-  const _min = min === false ? from : min;
-  const _max = max === false ? to : max;
-
-  doc.nodesBetween(_min, _max, (node, start) => {
-    const end = start + node.nodeSize;
-    const mark = markType.isInSet(node.marks);
-
-    if (mark) {
-      const { id, meta } = mark.attrs;
-
-      notes[id] = notes[id] || {
-        id,
-        meta, // this should be the same across all notes so just set it here
-        nodes: [],
-        start: Infinity,
-        end: -Infinity
-      };
-
-      notes[id] = Object.assign({}, notes[id], {
-        start: Math.min(notes[id].start, start),
-        end: Math.max(notes[id].end, end),
-        nodes: [
-          ...notes[id].nodes,
-          {
-            start,
-            end
-          }
-        ]
-      });
-    }
-  });
-
-  return Object.keys(notes).map(id => notes[id]);
-};
 
 class NoteTransaction {
   constructor(noteTracker, markType, key, historyPlugin) {
@@ -15494,7 +15587,7 @@ class NoteTransaction {
       const { type, cursorToEnd } = tr.getMeta("toggle-note");
       this.handleToggle(type, cursorToEnd, oldState);
     } else if (tr.getMeta("paste") || tr.getMeta(this.historyPlugin)) {
-      this.handlePaste(oldState);
+      this.handlePaste();
     } else {
       this.handleInput(oldState);
     }
@@ -15708,9 +15801,9 @@ class NoteTransaction {
      * Then rebuild this range my removing all the notes and adding them
      * back in
      */
-  handlePaste(oldState) {
+  handlePaste() {
     const { noteTracker, tr, markType } = this;
-    const rebuildRange = noteTracker.rebuildRange(oldState, tr);
+    const rebuildRange = noteTracker.rebuildRange(tr);
 
     if (rebuildRange) {
       const { from, to } = rebuildRange;
@@ -16097,6 +16190,33 @@ class SharedNoteStateTracker {
   }
 }
 
+function v4(options, buf, offset) {
+  var i = buf && offset || 0;
+
+  if (typeof(options) == 'string') {
+    buf = options === 'binary' ? new Array(16) : null;
+    options = null;
+  }
+  options = options || {};
+
+  var rnds = options.random || (options.rng || rngBrowser)();
+
+  // Per 4.4, set bits for version and `clock_seq_hi_and_reserved`
+  rnds[6] = (rnds[6] & 0x0f) | 0x40;
+  rnds[8] = (rnds[8] & 0x3f) | 0x80;
+
+  // Copy bytes to buffer, if provided
+  if (buf) {
+    for (var ii = 0; ii < 16; ++ii) {
+      buf[i + ii] = rnds[ii];
+    }
+  }
+
+  return buf || bytesToUuid_1(rnds);
+}
+
+var v4_1 = v4;
+
 const toggleNote$1 = key => (type, cursorToEnd = false) => (state, dispatch) =>
   dispatch
     ? dispatch(
@@ -16219,7 +16339,9 @@ const buildNoter = (
     plugin: new dist_8({
       props: {
         decorations: noteDecorator,
-        handleClick: handleClick && clickHandler(noteTracker, handleClick)
+        handleClick: handleClick && clickHandler(noteTracker, handleClick),
+        transformPasted: ({ content, openStart, openEnd }) =>
+          new dist_5$1(sanitizeFragment(content, markType, v4_1), openStart, openEnd)
       },
       filterTransaction: (...args) =>
         noteTransaction.filterTransaction(...args),

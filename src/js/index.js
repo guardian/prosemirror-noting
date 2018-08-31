@@ -1,9 +1,14 @@
 import { Plugin } from "prosemirror-state";
+import { Slice } from "prosemirror-model";
 import NoteTracker from "./NoteTracker";
 import NoteTransaction from "./NoteTransaction";
 import { createDecorateNotes } from "./utils/DecorationUtils";
 import clickHandler from "./clickHandler";
-import { notesFromDoc } from "./utils/StateUtils";
+import {
+  notesFromDoc,
+  sanitizeNode,
+  sanitizeFragment
+} from "./utils/StateUtils";
 import { createNoteMark } from "./utils/SchemaUtils";
 import SharedNoteStateTracker from "./SharedNoteStateTracker";
 
@@ -129,7 +134,9 @@ const buildNoter = (
     plugin: new Plugin({
       props: {
         decorations: noteDecorator,
-        handleClick: handleClick && clickHandler(noteTracker, handleClick)
+        handleClick: handleClick && clickHandler(noteTracker, handleClick),
+        transformPasted: ({ content, openStart, openEnd }) =>
+          new Slice(sanitizeFragment(content, markType), openStart, openEnd)
       },
       filterTransaction: (...args) =>
         noteTransaction.filterTransaction(...args),
@@ -143,4 +150,4 @@ const buildNoter = (
   };
 };
 
-export { createNoteMark, buildNoter, toggleNote };
+export { createNoteMark, buildNoter, toggleNote, sanitizeNode };

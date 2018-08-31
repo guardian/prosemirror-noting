@@ -9,7 +9,7 @@ import {
 } from "prosemirror-state";
 import { nodes, marks } from "prosemirror-schema-basic";
 import { TestState, removeTags } from "./helpers/prosemirror";
-import { createNoteMark, buildNoter } from "../src/js";
+import { createNoteMark, buildNoter, sanitizeNode } from "../src/js";
 import SharedNoteStateTracker from "../src/js/SharedNoteStateTracker";
 
 const noteSchema = new Schema({
@@ -519,5 +519,48 @@ describe("Noter Plugin", () => {
       s => s.delete(2),
       t(p("foo", note({ id: 1 }, "r"), "more"))
     );
+  });
+
+  describe("sanitizeNode", () => {
+    const getID = () => {
+      let id = 10;
+      return () => {
+        return id ++;
+      };
+    };
+
+    it("gets correct notes from a document", () => {
+      const input = t(
+        p(
+          "f",
+          note({ id: 1 }, "a"),
+          "g",
+          note({ id: 2 }, "b")
+        ),
+        p(
+          note({ id: 2 }, "c"),
+          "h",
+          note({ id: 1 }, "d"),
+          "i",
+          note({ id: 1 }, "e")
+        )
+      );
+      const output = t(
+        p(
+          "f",
+          note({ id: 1 }, "a"),
+          "g",
+          note({ id: 2 }, "b")
+        ),
+        p(
+          note({ id: 2 }, "c"),
+          "h",
+          note({ id: 10 }, "d"),
+          "i",
+          note({ id: 11 }, "e")
+        )
+      );
+      expect(sanitizeNode(input, noteSchema.marks.note, getID())).toEqual(output);
+    })
   });
 });

@@ -1,6 +1,7 @@
 import Note from "./Note";
 import uuid from "uuid/v1";
 import { cloneDeep } from "./utils/helpers";
+import { getInsertedRanges } from "./utils/StateUtils";
 
 const ensureType = meta => {
   if (!meta) {
@@ -154,19 +155,23 @@ export default class NoteTracker {
     };
   }
 
-  rebuildRange(oldState, state) {
-    const start = oldState.doc.content.findDiffStart(state.doc.content);
+  rebuildRange(state) {
+    let ranges = getInsertedRanges(state);
 
-    if (start) {
-      const end = oldState.doc.content.findDiffEnd(state.doc.content).b;
-      if (start < end) {
-        return this.mergeableRange(start, end);
-      } else if (oldState.doc.nodeSize < state.doc.nodeSize) {
-        // make sure we're over-zealous with our rebuild size
-        const diff = state.doc.nodeSize - oldState.doc.nodeSize;
-        return this.mergeableRange(start, start + diff);
-      }
+    if (!ranges.length) {
+      return false;
     }
-    return false;
+
+    const start = ranges.reduce(
+      (acc, [from, to]) => Math.min(acc, from, to),
+      Infinity
+    );
+
+    const end = ranges.reduce(
+      (acc, [from, to]) => Math.max(acc, from, to),
+      -Infinity
+    );
+
+    return start < end ? this.mergeableRange(start, end) : false;
   }
 }
