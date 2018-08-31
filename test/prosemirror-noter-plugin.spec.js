@@ -48,6 +48,9 @@ const { doc, p } = build;
 const note = (attrs = {}, content) =>
   build.note(Object.assign({}, { meta: { type: "note" } }, attrs), content);
 
+const flag = (attrs = {}, content) =>
+  build.flag(Object.assign({}, { meta: { type: "flag" } }, attrs), content);
+
 const t = (...content) => doc(...content);
 
 const selFor = initDoc => {
@@ -561,6 +564,42 @@ describe("Noter Plugin", () => {
         )
       );
       expect(sanitizeNode(input, noteSchema.marks.note, getID())).toEqual(output);
-    })
+    });
+
+    it("accepts multiple note types", () => {
+      const input = t(
+        p(
+          "f",
+          note({ id: 1 }, "a"),
+          "g",
+          flag({ id: 1 },"b")
+        ),
+        p(
+          flag({ id: 1 }, "c"),
+          "h",
+          note({ id: 1 }, "d"),
+          "i",
+          flag({ id: 1 }, "e")
+        )
+      );
+      const output = t(
+        p(
+          "f",
+          note({ id: 1 }, "a"),
+          "g",
+          flag({ id: 1 }, "b")
+        ),
+        p(
+          flag({ id: 1 }, "c"),
+          "h",
+          note({ id: 10 }, "d"),
+          "i",
+          flag({ id: 11 }, "e")
+        )
+      );
+      expect(
+        sanitizeNode(input, [noteSchema.marks.note, noteSchema.marks.flag], getID())
+      ).toEqual(output);
+    });
   });
 });
