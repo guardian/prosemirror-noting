@@ -155,7 +155,22 @@ export default class NoteTracker {
     };
   }
 
-  rebuildRange(state) {
+  diffRange(state, oldState) {
+    const start = oldState.doc.content.findDiffStart(state.doc.content);
+    if (start) {
+      const end = oldState.doc.content.findDiffEnd(state.doc.content).b;
+      if (start < end) {
+        return this.mergeableRange(start, end);
+      } else if (oldState.doc.nodeSize < state.doc.nodeSize) {
+        // make sure we're over-zealous with our rebuild size
+        const diff = state.doc.nodeSize - oldState.doc.nodeSize;
+        return this.mergeableRange(start, start + diff);
+      }
+    }
+    return false;
+  }
+
+  insertedRange(state) {
     let ranges = getInsertedRanges(state);
 
     if (!ranges.length) {
