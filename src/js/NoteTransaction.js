@@ -31,7 +31,7 @@ export default class NoteTransaction {
       const { type, cursorToEnd } = tr.getMeta("toggle-note");
       this.handleToggle(type, cursorToEnd, oldState);
     } else if (tr.getMeta("paste") || tr.getMeta(this.historyPlugin)) {
-      this.handlePaste();
+      this.handleChange(!!tr.getMeta(this.historyPlugin), oldState);
     } else {
       this.handleInput(oldState);
     }
@@ -245,9 +245,11 @@ export default class NoteTransaction {
      * Then rebuild this range my removing all the notes and adding them
      * back in
      */
-  handlePaste() {
+  handleChange(undo, oldState) {
     const { noteTracker, tr, markType } = this;
-    const rebuildRange = noteTracker.rebuildRange(tr);
+    const rebuildRange = undo
+      ? noteTracker.diffRange(tr, oldState)
+      : noteTracker.insertedRange(tr);
 
     if (rebuildRange) {
       const { from, to } = rebuildRange;

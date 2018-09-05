@@ -2,7 +2,7 @@ import { EditorState } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
 import { Schema, DOMParser } from "prosemirror-model";
 import { nodes, marks } from "prosemirror-schema-basic";
-import { history } from "prosemirror-history";
+import { history, undo, redo } from "prosemirror-history";
 import { keymap } from "prosemirror-keymap";
 import { exampleSetup, buildMenuItems } from "prosemirror-example-setup";
 import { MenuItem } from "prosemirror-menu";
@@ -104,6 +104,10 @@ window.editor = new EditorView(document.querySelector("#editor"), {
       ...exampleSetup({
         schema: mySchema,
         history: false,
+        mapKeys: {
+          "Mod-z": undo,
+          "Shift-Mod-z": redo
+        },
         menuContent: [
           ...buildMenuItems(mySchema).fullMenu,
           [
@@ -118,6 +122,18 @@ window.editor = new EditorView(document.querySelector("#editor"), {
               icon: collapseNoteIcon,
               run: toggleAllNotes(),
               active: showAllNotes()
+            }),
+            new MenuItem({
+              title: "Undo",
+              label: "Undo",
+              icon: collapseNoteIcon,
+              run: undo
+            }),
+            new MenuItem({
+              title: "Redo",
+              label: "Redo",
+              icon: collapseNoteIcon,
+              run: redo
             })
           ]
         ]
