@@ -3480,7 +3480,7 @@ exports.MarkType = MarkType;
 exports.ContentMatch = ContentMatch;
 exports.DOMParser = DOMParser;
 exports.DOMSerializer = DOMSerializer;
-
+//# sourceMappingURL=index.js.map
 });
 
 unwrapExports(dist$1);
@@ -5183,7 +5183,7 @@ exports.RemoveMarkStep = RemoveMarkStep;
 exports.ReplaceStep = ReplaceStep;
 exports.ReplaceAroundStep = ReplaceAroundStep;
 exports.replaceStep = replaceStep;
-
+//# sourceMappingURL=index.js.map
 });
 
 unwrapExports(dist$2);
@@ -6340,7 +6340,7 @@ exports.Transaction = Transaction;
 exports.EditorState = EditorState;
 exports.Plugin = Plugin;
 exports.PluginKey = PluginKey;
-
+//# sourceMappingURL=index.js.map
 });
 
 unwrapExports(dist);
@@ -10972,7 +10972,7 @@ exports.Decoration = Decoration;
 exports.DecorationSet = DecorationSet;
 exports.__serializeForClipboard = serializeForClipboard;
 exports.__parseFromClipboard = parseFromClipboard;
-
+//# sourceMappingURL=index.js.map
 });
 
 unwrapExports(dist$3);
@@ -11143,13 +11143,273 @@ var schema = new dist$1.Schema({nodes: nodes, marks: marks});
 exports.nodes = nodes;
 exports.marks = marks;
 exports.schema = schema;
-
+//# sourceMappingURL=schema-basic.js.map
 });
 
 unwrapExports(schemaBasic);
 var schemaBasic_1 = schemaBasic.nodes;
 var schemaBasic_2 = schemaBasic.marks;
 var schemaBasic_3 = schemaBasic.schema;
+
+var schemaList = createCommonjsModule(function (module, exports) {
+Object.defineProperty(exports, '__esModule', { value: true });
+
+
+
+
+// :: NodeSpec
+// An ordered list [node spec](#model.NodeSpec). Has a single
+// attribute, `order`, which determines the number at which the list
+// starts counting, and defaults to 1. Represented as an `<ol>`
+// element.
+var orderedList = {
+  attrs: {order: {default: 1}},
+  parseDOM: [{tag: "ol", getAttrs: function getAttrs(dom) {
+    return {order: dom.hasAttribute("start") ? +dom.getAttribute("start") : 1}
+  }}],
+  toDOM: function toDOM(node) {
+    return ["ol", {start: node.attrs.order == 1 ? null : node.attrs.order}, 0]
+  }
+};
+
+// :: NodeSpec
+// A bullet list node spec, represented in the DOM as `<ul>`.
+var bulletList = {
+  parseDOM: [{tag: "ul"}],
+  toDOM: function toDOM() { return ["ul", 0] }
+};
+
+// :: NodeSpec
+// A list item (`<li>`) spec.
+var listItem = {
+  parseDOM: [{tag: "li"}],
+  toDOM: function toDOM() { return ["li", 0] },
+  defining: true
+};
+
+function add(obj, props) {
+  var copy = {};
+  for (var prop in obj) { copy[prop] = obj[prop]; }
+  for (var prop$1 in props) { copy[prop$1] = props[prop$1]; }
+  return copy
+}
+
+// :: (OrderedMap, string, ?string) → OrderedMap
+// Convenience function for adding list-related node types to a map
+// specifying the nodes for a schema. Adds
+// [`orderedList`](#schema-list.orderedList) as `"ordered_list"`,
+// [`bulletList`](#schema-list.bulletList) as `"bullet_list"`, and
+// [`listItem`](#schema-list.listItem) as `"list_item"`.
+//
+// `itemContent` determines the content expression for the list items.
+// If you want the commands defined in this module to apply to your
+// list structure, it should have a shape like `"paragraph block*"` or
+// `"paragraph (ordered_list | bullet_list)*"`. `listGroup` can be
+// given to assign a group name to the list node types, for example
+// `"block"`.
+function addListNodes(nodes, itemContent, listGroup) {
+  return nodes.append({
+    ordered_list: add(orderedList, {content: "list_item+", group: listGroup}),
+    bullet_list: add(bulletList, {content: "list_item+", group: listGroup}),
+    list_item: add(listItem, {content: itemContent})
+  })
+}
+
+// :: (NodeType, ?Object) → (state: EditorState, dispatch: ?(tr: Transaction)) → bool
+// Returns a command function that wraps the selection in a list with
+// the given type an attributes. If `dispatch` is null, only return a
+// value to indicate whether this is possible, but don't actually
+// perform the change.
+function wrapInList(listType, attrs) {
+  return function(state, dispatch) {
+    var ref = state.selection;
+    var $from = ref.$from;
+    var $to = ref.$to;
+    var range = $from.blockRange($to), doJoin = false, outerRange = range;
+    if (!range) { return false }
+    // This is at the top of an existing list item
+    if (range.depth >= 2 && $from.node(range.depth - 1).type.compatibleContent(listType) && range.startIndex == 0) {
+      // Don't do anything if this is the top of the list
+      if ($from.index(range.depth - 1) == 0) { return false }
+      var $insert = state.doc.resolve(range.start - 2);
+      outerRange = new dist$1.NodeRange($insert, $insert, range.depth);
+      if (range.endIndex < range.parent.childCount)
+        { range = new dist$1.NodeRange($from, state.doc.resolve($to.end(range.depth)), range.depth); }
+      doJoin = true;
+    }
+    var wrap = dist$2.findWrapping(outerRange, listType, attrs, range);
+    if (!wrap) { return false }
+    if (dispatch) { dispatch(doWrapInList(state.tr, range, wrap, doJoin, listType).scrollIntoView()); }
+    return true
+  }
+}
+
+function doWrapInList(tr, range, wrappers, joinBefore, listType) {
+  var content = dist$1.Fragment.empty;
+  for (var i = wrappers.length - 1; i >= 0; i--)
+    { content = dist$1.Fragment.from(wrappers[i].type.create(wrappers[i].attrs, content)); }
+
+  tr.step(new dist$2.ReplaceAroundStep(range.start - (joinBefore ? 2 : 0), range.end, range.start, range.end,
+                                new dist$1.Slice(content, 0, 0), wrappers.length, true));
+
+  var found = 0;
+  for (var i$1 = 0; i$1 < wrappers.length; i$1++) { if (wrappers[i$1].type == listType) { found = i$1 + 1; } }
+  var splitDepth = wrappers.length - found;
+
+  var splitPos = range.start + wrappers.length - (joinBefore ? 2 : 0), parent = range.parent;
+  for (var i$2 = range.startIndex, e = range.endIndex, first = true; i$2 < e; i$2++, first = false) {
+    if (!first && dist$2.canSplit(tr.doc, splitPos, splitDepth)) { tr.split(splitPos, splitDepth); }
+    splitPos += parent.child(i$2).nodeSize + (first ? 0 : 2 * splitDepth);
+  }
+  return tr
+}
+
+// :: (NodeType) → (state: EditorState, dispatch: ?(tr: Transaction)) → bool
+// Build a command that splits a non-empty textblock at the top level
+// of a list item by also splitting that list item.
+function splitListItem(itemType) {
+  return function(state, dispatch) {
+    var ref = state.selection;
+    var $from = ref.$from;
+    var $to = ref.$to;
+    var node = ref.node;
+    if ((node && node.isBlock) || $from.depth < 2 || !$from.sameParent($to)) { return false }
+    var grandParent = $from.node(-1);
+    if (grandParent.type != itemType) { return false }
+    if ($from.parent.content.size == 0) {
+      // In an empty block. If this is a nested list, the wrapping
+      // list item should be split. Otherwise, bail out and let next
+      // command handle lifting.
+      if ($from.depth == 2 || $from.node(-3).type != itemType ||
+          $from.index(-2) != $from.node(-2).childCount - 1) { return false }
+      if (dispatch) {
+        var wrap = dist$1.Fragment.empty, keepItem = $from.index(-1) > 0;
+        // Build a fragment containing empty versions of the structure
+        // from the outer list item to the parent node of the cursor
+        for (var d = $from.depth - (keepItem ? 1 : 2); d >= $from.depth - 3; d--)
+          { wrap = dist$1.Fragment.from($from.node(d).copy(wrap)); }
+        // Add a second list item with an empty default start node
+        wrap = wrap.append(dist$1.Fragment.from(itemType.createAndFill()));
+        var tr$1 = state.tr.replace($from.before(keepItem ? null : -1), $from.after(-3), new dist$1.Slice(wrap, keepItem ? 3 : 2, 2));
+        tr$1.setSelection(state.selection.constructor.near(tr$1.doc.resolve($from.pos + (keepItem ? 3 : 2))));
+        dispatch(tr$1.scrollIntoView());
+      }
+      return true
+    }
+    var nextType = $to.pos == $from.end() ? grandParent.defaultContentType(0) : null;
+    var tr = state.tr.delete($from.pos, $to.pos);
+    var types = nextType && [null, {type: nextType}];
+    if (!dist$2.canSplit(tr.doc, $from.pos, 2, types)) { return false }
+    if (dispatch) { dispatch(tr.split($from.pos, 2, types).scrollIntoView()); }
+    return true
+  }
+}
+
+// :: (NodeType) → (state: EditorState, dispatch: ?(tr: Transaction)) → bool
+// Create a command to lift the list item around the selection up into
+// a wrapping list.
+function liftListItem(itemType) {
+  return function(state, dispatch) {
+    var ref = state.selection;
+    var $from = ref.$from;
+    var $to = ref.$to;
+    var range = $from.blockRange($to, function (node) { return node.childCount && node.firstChild.type == itemType; });
+    if (!range) { return false }
+    if (!dispatch) { return true }
+    if ($from.node(range.depth - 1).type == itemType) // Inside a parent list
+      { return liftToOuterList(state, dispatch, itemType, range) }
+    else // Outer list node
+      { return liftOutOfList(state, dispatch, range) }
+  }
+}
+
+function liftToOuterList(state, dispatch, itemType, range) {
+  var tr = state.tr, end = range.end, endOfList = range.$to.end(range.depth);
+  if (end < endOfList) {
+    // There are siblings after the lifted items, which must become
+    // children of the last item
+    tr.step(new dist$2.ReplaceAroundStep(end - 1, endOfList, end, endOfList,
+                                  new dist$1.Slice(dist$1.Fragment.from(itemType.create(null, range.parent.copy())), 1, 0), 1, true));
+    range = new dist$1.NodeRange(tr.doc.resolveNoCache(range.$from.pos), tr.doc.resolveNoCache(endOfList), range.depth);
+  }
+  dispatch(tr.lift(range, dist$2.liftTarget(range)).scrollIntoView());
+  return true
+}
+
+function liftOutOfList(state, dispatch, range) {
+  var tr = state.tr, list = range.parent;
+  // Merge the list items into a single big item
+  for (var pos = range.end, i = range.endIndex - 1, e = range.startIndex; i > e; i--) {
+    pos -= list.child(i).nodeSize;
+    tr.delete(pos - 1, pos + 1);
+  }
+  var $start = tr.doc.resolve(range.start), item = $start.nodeAfter;
+  var atStart = range.startIndex == 0, atEnd = range.endIndex == list.childCount;
+  var parent = $start.node(-1), indexBefore = $start.index(-1);
+  if (!parent.canReplace(indexBefore + (atStart ? 0 : 1), indexBefore + 1,
+                         item.content.append(atEnd ? dist$1.Fragment.empty : dist$1.Fragment.from(list))))
+    { return false }
+  var start = $start.pos, end = start + item.nodeSize;
+  // Strip off the surrounding list. At the sides where we're not at
+  // the end of the list, the existing list is closed. At sides where
+  // this is the end, it is overwritten to its end.
+  tr.step(new dist$2.ReplaceAroundStep(start - (atStart ? 1 : 0), end + (atEnd ? 1 : 0), start + 1, end - 1,
+                                new dist$1.Slice((atStart ? dist$1.Fragment.empty : dist$1.Fragment.from(list.copy(dist$1.Fragment.empty)))
+                                          .append(atEnd ? dist$1.Fragment.empty : dist$1.Fragment.from(list.copy(dist$1.Fragment.empty))),
+                                          atStart ? 0 : 1, atEnd ? 0 : 1), atStart ? 0 : 1));
+  dispatch(tr.scrollIntoView());
+  return true
+}
+
+// :: (NodeType) → (state: EditorState, dispatch: ?(tr: Transaction)) → bool
+// Create a command to sink the list item around the selection down
+// into an inner list.
+function sinkListItem(itemType) {
+  return function(state, dispatch) {
+    var ref = state.selection;
+    var $from = ref.$from;
+    var $to = ref.$to;
+    var range = $from.blockRange($to, function (node) { return node.childCount && node.firstChild.type == itemType; });
+    if (!range) { return false }
+    var startIndex = range.startIndex;
+    if (startIndex == 0) { return false }
+    var parent = range.parent, nodeBefore = parent.child(startIndex - 1);
+    if (nodeBefore.type != itemType) { return false }
+
+    if (dispatch) {
+      var nestedBefore = nodeBefore.lastChild && nodeBefore.lastChild.type == parent.type;
+      var inner = dist$1.Fragment.from(nestedBefore ? itemType.create() : null);
+      var slice = new dist$1.Slice(dist$1.Fragment.from(itemType.create(null, dist$1.Fragment.from(parent.copy(inner)))),
+                            nestedBefore ? 3 : 1, 0);
+      var before = range.start, after = range.end;
+      dispatch(state.tr.step(new dist$2.ReplaceAroundStep(before - (nestedBefore ? 3 : 1), after,
+                                                   before, after, slice, 1, true))
+               .scrollIntoView());
+    }
+    return true
+  }
+}
+
+exports.orderedList = orderedList;
+exports.bulletList = bulletList;
+exports.listItem = listItem;
+exports.addListNodes = addListNodes;
+exports.wrapInList = wrapInList;
+exports.splitListItem = splitListItem;
+exports.liftListItem = liftListItem;
+exports.sinkListItem = sinkListItem;
+//# sourceMappingURL=schema-list.js.map
+});
+
+unwrapExports(schemaList);
+var schemaList_1 = schemaList.orderedList;
+var schemaList_2 = schemaList.bulletList;
+var schemaList_3 = schemaList.listItem;
+var schemaList_4 = schemaList.addListNodes;
+var schemaList_5 = schemaList.wrapInList;
+var schemaList_6 = schemaList.splitListItem;
+var schemaList_7 = schemaList.liftListItem;
+var schemaList_8 = schemaList.sinkListItem;
 
 var GOOD_LEAF_SIZE = 200;
 
@@ -11798,7 +12058,7 @@ exports.undo = undo;
 exports.redo = redo;
 exports.undoDepth = undoDepth;
 exports.redoDepth = redoDepth;
-
+//# sourceMappingURL=history.js.map
 });
 
 unwrapExports(history_1);
@@ -12038,7 +12298,7 @@ function keydownHandler(bindings) {
 
 exports.keymap = keymap;
 exports.keydownHandler = keydownHandler;
-
+//# sourceMappingURL=keymap.js.map
 });
 
 unwrapExports(keymap_1);
@@ -12704,7 +12964,7 @@ exports.chainCommands = chainCommands;
 exports.pcBaseKeymap = pcBaseKeymap;
 exports.macBaseKeymap = macBaseKeymap;
 exports.baseKeymap = baseKeymap;
-
+//# sourceMappingURL=commands.js.map
 });
 
 unwrapExports(commands);
@@ -12847,7 +13107,7 @@ function dropPos(slice, $pos) {
 }
 
 exports.dropCursor = dropCursor;
-
+//# sourceMappingURL=dropcursor.js.map
 });
 
 unwrapExports(dropcursor);
@@ -13043,7 +13303,7 @@ function drawGapCursor(state) {
 
 exports.gapCursor = gapCursor;
 exports.GapCursor = GapCursor;
-
+//# sourceMappingURL=index.js.map
 });
 
 unwrapExports(dist$7);
@@ -13887,7 +14147,7 @@ exports.redoItem = redoItem;
 exports.wrapItem = wrapItem;
 exports.blockTypeItem = blockTypeItem;
 exports.menuBar = menuBar;
-
+//# sourceMappingURL=index.js.map
 });
 
 unwrapExports(dist$8);
@@ -13904,266 +14164,6 @@ var dist_10$2 = dist$8.redoItem;
 var dist_11$2 = dist$8.wrapItem;
 var dist_12$2 = dist$8.blockTypeItem;
 var dist_13$2 = dist$8.menuBar;
-
-var schemaList = createCommonjsModule(function (module, exports) {
-Object.defineProperty(exports, '__esModule', { value: true });
-
-
-
-
-// :: NodeSpec
-// An ordered list [node spec](#model.NodeSpec). Has a single
-// attribute, `order`, which determines the number at which the list
-// starts counting, and defaults to 1. Represented as an `<ol>`
-// element.
-var orderedList = {
-  attrs: {order: {default: 1}},
-  parseDOM: [{tag: "ol", getAttrs: function getAttrs(dom) {
-    return {order: dom.hasAttribute("start") ? +dom.getAttribute("start") : 1}
-  }}],
-  toDOM: function toDOM(node) {
-    return ["ol", {start: node.attrs.order == 1 ? null : node.attrs.order}, 0]
-  }
-};
-
-// :: NodeSpec
-// A bullet list node spec, represented in the DOM as `<ul>`.
-var bulletList = {
-  parseDOM: [{tag: "ul"}],
-  toDOM: function toDOM() { return ["ul", 0] }
-};
-
-// :: NodeSpec
-// A list item (`<li>`) spec.
-var listItem = {
-  parseDOM: [{tag: "li"}],
-  toDOM: function toDOM() { return ["li", 0] },
-  defining: true
-};
-
-function add(obj, props) {
-  var copy = {};
-  for (var prop in obj) { copy[prop] = obj[prop]; }
-  for (var prop$1 in props) { copy[prop$1] = props[prop$1]; }
-  return copy
-}
-
-// :: (OrderedMap, string, ?string) → OrderedMap
-// Convenience function for adding list-related node types to a map
-// specifying the nodes for a schema. Adds
-// [`orderedList`](#schema-list.orderedList) as `"ordered_list"`,
-// [`bulletList`](#schema-list.bulletList) as `"bullet_list"`, and
-// [`listItem`](#schema-list.listItem) as `"list_item"`.
-//
-// `itemContent` determines the content expression for the list items.
-// If you want the commands defined in this module to apply to your
-// list structure, it should have a shape like `"paragraph block*"` or
-// `"paragraph (ordered_list | bullet_list)*"`. `listGroup` can be
-// given to assign a group name to the list node types, for example
-// `"block"`.
-function addListNodes(nodes, itemContent, listGroup) {
-  return nodes.append({
-    ordered_list: add(orderedList, {content: "list_item+", group: listGroup}),
-    bullet_list: add(bulletList, {content: "list_item+", group: listGroup}),
-    list_item: add(listItem, {content: itemContent})
-  })
-}
-
-// :: (NodeType, ?Object) → (state: EditorState, dispatch: ?(tr: Transaction)) → bool
-// Returns a command function that wraps the selection in a list with
-// the given type an attributes. If `dispatch` is null, only return a
-// value to indicate whether this is possible, but don't actually
-// perform the change.
-function wrapInList(listType, attrs) {
-  return function(state, dispatch) {
-    var ref = state.selection;
-    var $from = ref.$from;
-    var $to = ref.$to;
-    var range = $from.blockRange($to), doJoin = false, outerRange = range;
-    if (!range) { return false }
-    // This is at the top of an existing list item
-    if (range.depth >= 2 && $from.node(range.depth - 1).type.compatibleContent(listType) && range.startIndex == 0) {
-      // Don't do anything if this is the top of the list
-      if ($from.index(range.depth - 1) == 0) { return false }
-      var $insert = state.doc.resolve(range.start - 2);
-      outerRange = new dist$1.NodeRange($insert, $insert, range.depth);
-      if (range.endIndex < range.parent.childCount)
-        { range = new dist$1.NodeRange($from, state.doc.resolve($to.end(range.depth)), range.depth); }
-      doJoin = true;
-    }
-    var wrap = dist$2.findWrapping(outerRange, listType, attrs, range);
-    if (!wrap) { return false }
-    if (dispatch) { dispatch(doWrapInList(state.tr, range, wrap, doJoin, listType).scrollIntoView()); }
-    return true
-  }
-}
-
-function doWrapInList(tr, range, wrappers, joinBefore, listType) {
-  var content = dist$1.Fragment.empty;
-  for (var i = wrappers.length - 1; i >= 0; i--)
-    { content = dist$1.Fragment.from(wrappers[i].type.create(wrappers[i].attrs, content)); }
-
-  tr.step(new dist$2.ReplaceAroundStep(range.start - (joinBefore ? 2 : 0), range.end, range.start, range.end,
-                                new dist$1.Slice(content, 0, 0), wrappers.length, true));
-
-  var found = 0;
-  for (var i$1 = 0; i$1 < wrappers.length; i$1++) { if (wrappers[i$1].type == listType) { found = i$1 + 1; } }
-  var splitDepth = wrappers.length - found;
-
-  var splitPos = range.start + wrappers.length - (joinBefore ? 2 : 0), parent = range.parent;
-  for (var i$2 = range.startIndex, e = range.endIndex, first = true; i$2 < e; i$2++, first = false) {
-    if (!first && dist$2.canSplit(tr.doc, splitPos, splitDepth)) { tr.split(splitPos, splitDepth); }
-    splitPos += parent.child(i$2).nodeSize + (first ? 0 : 2 * splitDepth);
-  }
-  return tr
-}
-
-// :: (NodeType) → (state: EditorState, dispatch: ?(tr: Transaction)) → bool
-// Build a command that splits a non-empty textblock at the top level
-// of a list item by also splitting that list item.
-function splitListItem(itemType) {
-  return function(state, dispatch) {
-    var ref = state.selection;
-    var $from = ref.$from;
-    var $to = ref.$to;
-    var node = ref.node;
-    if ((node && node.isBlock) || $from.depth < 2 || !$from.sameParent($to)) { return false }
-    var grandParent = $from.node(-1);
-    if (grandParent.type != itemType) { return false }
-    if ($from.parent.content.size == 0) {
-      // In an empty block. If this is a nested list, the wrapping
-      // list item should be split. Otherwise, bail out and let next
-      // command handle lifting.
-      if ($from.depth == 2 || $from.node(-3).type != itemType ||
-          $from.index(-2) != $from.node(-2).childCount - 1) { return false }
-      if (dispatch) {
-        var wrap = dist$1.Fragment.empty, keepItem = $from.index(-1) > 0;
-        // Build a fragment containing empty versions of the structure
-        // from the outer list item to the parent node of the cursor
-        for (var d = $from.depth - (keepItem ? 1 : 2); d >= $from.depth - 3; d--)
-          { wrap = dist$1.Fragment.from($from.node(d).copy(wrap)); }
-        // Add a second list item with an empty default start node
-        wrap = wrap.append(dist$1.Fragment.from(itemType.createAndFill()));
-        var tr$1 = state.tr.replace($from.before(keepItem ? null : -1), $from.after(-3), new dist$1.Slice(wrap, keepItem ? 3 : 2, 2));
-        tr$1.setSelection(state.selection.constructor.near(tr$1.doc.resolve($from.pos + (keepItem ? 3 : 2))));
-        dispatch(tr$1.scrollIntoView());
-      }
-      return true
-    }
-    var nextType = $to.pos == $from.end() ? grandParent.defaultContentType(0) : null;
-    var tr = state.tr.delete($from.pos, $to.pos);
-    var types = nextType && [null, {type: nextType}];
-    if (!dist$2.canSplit(tr.doc, $from.pos, 2, types)) { return false }
-    if (dispatch) { dispatch(tr.split($from.pos, 2, types).scrollIntoView()); }
-    return true
-  }
-}
-
-// :: (NodeType) → (state: EditorState, dispatch: ?(tr: Transaction)) → bool
-// Create a command to lift the list item around the selection up into
-// a wrapping list.
-function liftListItem(itemType) {
-  return function(state, dispatch) {
-    var ref = state.selection;
-    var $from = ref.$from;
-    var $to = ref.$to;
-    var range = $from.blockRange($to, function (node) { return node.childCount && node.firstChild.type == itemType; });
-    if (!range) { return false }
-    if (!dispatch) { return true }
-    if ($from.node(range.depth - 1).type == itemType) // Inside a parent list
-      { return liftToOuterList(state, dispatch, itemType, range) }
-    else // Outer list node
-      { return liftOutOfList(state, dispatch, range) }
-  }
-}
-
-function liftToOuterList(state, dispatch, itemType, range) {
-  var tr = state.tr, end = range.end, endOfList = range.$to.end(range.depth);
-  if (end < endOfList) {
-    // There are siblings after the lifted items, which must become
-    // children of the last item
-    tr.step(new dist$2.ReplaceAroundStep(end - 1, endOfList, end, endOfList,
-                                  new dist$1.Slice(dist$1.Fragment.from(itemType.create(null, range.parent.copy())), 1, 0), 1, true));
-    range = new dist$1.NodeRange(tr.doc.resolveNoCache(range.$from.pos), tr.doc.resolveNoCache(endOfList), range.depth);
-  }
-  dispatch(tr.lift(range, dist$2.liftTarget(range)).scrollIntoView());
-  return true
-}
-
-function liftOutOfList(state, dispatch, range) {
-  var tr = state.tr, list = range.parent;
-  // Merge the list items into a single big item
-  for (var pos = range.end, i = range.endIndex - 1, e = range.startIndex; i > e; i--) {
-    pos -= list.child(i).nodeSize;
-    tr.delete(pos - 1, pos + 1);
-  }
-  var $start = tr.doc.resolve(range.start), item = $start.nodeAfter;
-  var atStart = range.startIndex == 0, atEnd = range.endIndex == list.childCount;
-  var parent = $start.node(-1), indexBefore = $start.index(-1);
-  if (!parent.canReplace(indexBefore + (atStart ? 0 : 1), indexBefore + 1,
-                         item.content.append(atEnd ? dist$1.Fragment.empty : dist$1.Fragment.from(list))))
-    { return false }
-  var start = $start.pos, end = start + item.nodeSize;
-  // Strip off the surrounding list. At the sides where we're not at
-  // the end of the list, the existing list is closed. At sides where
-  // this is the end, it is overwritten to its end.
-  tr.step(new dist$2.ReplaceAroundStep(start - (atStart ? 1 : 0), end + (atEnd ? 1 : 0), start + 1, end - 1,
-                                new dist$1.Slice((atStart ? dist$1.Fragment.empty : dist$1.Fragment.from(list.copy(dist$1.Fragment.empty)))
-                                          .append(atEnd ? dist$1.Fragment.empty : dist$1.Fragment.from(list.copy(dist$1.Fragment.empty))),
-                                          atStart ? 0 : 1, atEnd ? 0 : 1), atStart ? 0 : 1));
-  dispatch(tr.scrollIntoView());
-  return true
-}
-
-// :: (NodeType) → (state: EditorState, dispatch: ?(tr: Transaction)) → bool
-// Create a command to sink the list item around the selection down
-// into an inner list.
-function sinkListItem(itemType) {
-  return function(state, dispatch) {
-    var ref = state.selection;
-    var $from = ref.$from;
-    var $to = ref.$to;
-    var range = $from.blockRange($to, function (node) { return node.childCount && node.firstChild.type == itemType; });
-    if (!range) { return false }
-    var startIndex = range.startIndex;
-    if (startIndex == 0) { return false }
-    var parent = range.parent, nodeBefore = parent.child(startIndex - 1);
-    if (nodeBefore.type != itemType) { return false }
-
-    if (dispatch) {
-      var nestedBefore = nodeBefore.lastChild && nodeBefore.lastChild.type == parent.type;
-      var inner = dist$1.Fragment.from(nestedBefore ? itemType.create() : null);
-      var slice = new dist$1.Slice(dist$1.Fragment.from(itemType.create(null, dist$1.Fragment.from(parent.copy(inner)))),
-                            nestedBefore ? 3 : 1, 0);
-      var before = range.start, after = range.end;
-      dispatch(state.tr.step(new dist$2.ReplaceAroundStep(before - (nestedBefore ? 3 : 1), after,
-                                                   before, after, slice, 1, true))
-               .scrollIntoView());
-    }
-    return true
-  }
-}
-
-exports.orderedList = orderedList;
-exports.bulletList = bulletList;
-exports.listItem = listItem;
-exports.addListNodes = addListNodes;
-exports.wrapInList = wrapInList;
-exports.splitListItem = splitListItem;
-exports.liftListItem = liftListItem;
-exports.sinkListItem = sinkListItem;
-
-});
-
-unwrapExports(schemaList);
-var schemaList_1 = schemaList.orderedList;
-var schemaList_2 = schemaList.bulletList;
-var schemaList_3 = schemaList.listItem;
-var schemaList_4 = schemaList.addListNodes;
-var schemaList_5 = schemaList.wrapInList;
-var schemaList_6 = schemaList.splitListItem;
-var schemaList_7 = schemaList.liftListItem;
-var schemaList_8 = schemaList.sinkListItem;
 
 var dist$9 = createCommonjsModule(function (module, exports) {
 Object.defineProperty(exports, '__esModule', { value: true });
@@ -14338,7 +14338,7 @@ exports.closeSingleQuote = closeSingleQuote;
 exports.smartQuotes = smartQuotes;
 exports.wrappingInputRule = wrappingInputRule;
 exports.textblockTypeInputRule = textblockTypeInputRule;
-
+//# sourceMappingURL=index.js.map
 });
 
 unwrapExports(dist$9);
@@ -14982,7 +14982,7 @@ exports.buildMenuItems = buildMenuItems;
 exports.buildKeymap = buildKeymap;
 exports.buildInputRules = buildInputRules;
 exports.exampleSetup = exampleSetup;
-
+//# sourceMappingURL=index.js.map
 });
 
 unwrapExports(dist$6);
@@ -14991,97 +14991,355 @@ var dist_2$4 = dist$6.buildKeymap;
 var dist_3$4 = dist$6.buildInputRules;
 var dist_4$4 = dist$6.exampleSetup;
 
-// This might need improving, pretty thing implementation but for now it will
-// suffice
-const cloneDeep = val => {
-  if (val instanceof Array) {
-    return val.map(cloneDeep);
-  } else if (val instanceof Object) {
-    return Object.keys(val).reduce(
-      (out, key) =>
-        Object.assign({}, out, {
-          [key]: cloneDeep(val[key])
-        }),
-      {}
-    );
+const markTypes = {
+    legal: 'legal',
+    warn: 'warn'
+};
+const createValidationMark = (markName) => ({
+    attrs: {},
+    inclusive: false,
+    parseDOM: [{
+            tag: `span.${markName}`,
+            getAttrs: () => ({})
+        }],
+    toDOM: (mark, inline) => [`span.${markName}`]
+});
+const validationMarks = Object.keys(markTypes).reduce((acc, markName) => {
+    return Object.assign({}, acc, { [markName]: createValidationMark(markName) });
+}, {});
+//# sourceMappingURL=schema.js.map
+
+/**
+ * Appends the elements of `values` to `array`.
+ *
+ * @private
+ * @param {Array} array The array to modify.
+ * @param {Array} values The values to append.
+ * @returns {Array} Returns `array`.
+ */
+function arrayPush(array, values) {
+  var index = -1,
+      length = values.length,
+      offset = array.length;
+
+  while (++index < length) {
+    array[offset + index] = values[index];
   }
-  return val;
+  return array;
+}
+
+var _arrayPush = arrayPush;
+
+var freeGlobal = typeof commonjsGlobal == 'object' && commonjsGlobal && commonjsGlobal.Object === Object && commonjsGlobal;
+
+var _freeGlobal = freeGlobal;
+
+var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
+
+/** Used as a reference to the global object. */
+var root = _freeGlobal || freeSelf || Function('return this')();
+
+var _root = root;
+
+var Symbol = _root.Symbol;
+
+var _Symbol = Symbol;
+
+var objectProto$1 = Object.prototype;
+
+/** Used to check objects for own properties. */
+var hasOwnProperty$1 = objectProto$1.hasOwnProperty;
+
+/**
+ * Used to resolve the
+ * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
+ * of values.
+ */
+var nativeObjectToString = objectProto$1.toString;
+
+/** Built-in value references. */
+var symToStringTag$1 = _Symbol ? _Symbol.toStringTag : undefined;
+
+/**
+ * A specialized version of `baseGetTag` which ignores `Symbol.toStringTag` values.
+ *
+ * @private
+ * @param {*} value The value to query.
+ * @returns {string} Returns the raw `toStringTag`.
+ */
+function getRawTag(value) {
+  var isOwn = hasOwnProperty$1.call(value, symToStringTag$1),
+      tag = value[symToStringTag$1];
+
+  try {
+    value[symToStringTag$1] = undefined;
+    var unmasked = true;
+  } catch (e) {}
+
+  var result = nativeObjectToString.call(value);
+  if (unmasked) {
+    if (isOwn) {
+      value[symToStringTag$1] = tag;
+    } else {
+      delete value[symToStringTag$1];
+    }
+  }
+  return result;
+}
+
+var _getRawTag = getRawTag;
+
+/** Used for built-in method references. */
+var objectProto$2 = Object.prototype;
+
+/**
+ * Used to resolve the
+ * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
+ * of values.
+ */
+var nativeObjectToString$1 = objectProto$2.toString;
+
+/**
+ * Converts `value` to a string using `Object.prototype.toString`.
+ *
+ * @private
+ * @param {*} value The value to convert.
+ * @returns {string} Returns the converted string.
+ */
+function objectToString(value) {
+  return nativeObjectToString$1.call(value);
+}
+
+var _objectToString = objectToString;
+
+var nullTag = '[object Null]';
+var undefinedTag = '[object Undefined]';
+
+/** Built-in value references. */
+var symToStringTag = _Symbol ? _Symbol.toStringTag : undefined;
+
+/**
+ * The base implementation of `getTag` without fallbacks for buggy environments.
+ *
+ * @private
+ * @param {*} value The value to query.
+ * @returns {string} Returns the `toStringTag`.
+ */
+function baseGetTag(value) {
+  if (value == null) {
+    return value === undefined ? undefinedTag : nullTag;
+  }
+  return (symToStringTag && symToStringTag in Object(value))
+    ? _getRawTag(value)
+    : _objectToString(value);
+}
+
+var _baseGetTag = baseGetTag;
+
+/**
+ * Checks if `value` is object-like. A value is object-like if it's not `null`
+ * and has a `typeof` result of "object".
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
+ * @example
+ *
+ * _.isObjectLike({});
+ * // => true
+ *
+ * _.isObjectLike([1, 2, 3]);
+ * // => true
+ *
+ * _.isObjectLike(_.noop);
+ * // => false
+ *
+ * _.isObjectLike(null);
+ * // => false
+ */
+function isObjectLike(value) {
+  return value != null && typeof value == 'object';
+}
+
+var isObjectLike_1 = isObjectLike;
+
+var argsTag = '[object Arguments]';
+
+/**
+ * The base implementation of `_.isArguments`.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an `arguments` object,
+ */
+function baseIsArguments(value) {
+  return isObjectLike_1(value) && _baseGetTag(value) == argsTag;
+}
+
+var _baseIsArguments = baseIsArguments;
+
+var objectProto = Object.prototype;
+
+/** Used to check objects for own properties. */
+var hasOwnProperty = objectProto.hasOwnProperty;
+
+/** Built-in value references. */
+var propertyIsEnumerable = objectProto.propertyIsEnumerable;
+
+/**
+ * Checks if `value` is likely an `arguments` object.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an `arguments` object,
+ *  else `false`.
+ * @example
+ *
+ * _.isArguments(function() { return arguments; }());
+ * // => true
+ *
+ * _.isArguments([1, 2, 3]);
+ * // => false
+ */
+var isArguments = _baseIsArguments(function() { return arguments; }()) ? _baseIsArguments : function(value) {
+  return isObjectLike_1(value) && hasOwnProperty.call(value, 'callee') &&
+    !propertyIsEnumerable.call(value, 'callee');
 };
 
-/*
- * NOTE: All ends for ranges are EXCLUSIVE
+var isArguments_1 = isArguments;
+
+/**
+ * Checks if `value` is classified as an `Array` object.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an array, else `false`.
+ * @example
+ *
+ * _.isArray([1, 2, 3]);
+ * // => true
+ *
+ * _.isArray(document.body.children);
+ * // => false
+ *
+ * _.isArray('abc');
+ * // => false
+ *
+ * _.isArray(_.noop);
+ * // => false
  */
+var isArray = Array.isArray;
 
-const clamp = (num, min, max) => Math.max(Math.min(num, max), min);
+var isArray_1 = isArray;
 
-class Note {
-  constructor(start, end, id, meta = {}) {
-    this.start = start;
-    this.end = end;
-    this.id = id;
-    this.meta = meta;
-  }
+var spreadableSymbol = _Symbol ? _Symbol.isConcatSpreadable : undefined;
 
-  /*
-    * Writes
-    */
-
-  mapPositions(startFunc, endFunc = startFunc) {
-    return new Note(
-      startFunc(this.start, this.id),
-      endFunc(this.end, this.id),
-      this.id,
-      cloneDeep(this.meta)
-    );
-  }
-
-  updateMeta(meta) {
-    this.meta = Object.assign({}, this.meta, meta);
-  }
-
-  /*
-    * Reads
-    */
-
-  rangesAround(from, to) {
-    const { start, end } = this;
-
-    return [
-      {
-        start,
-        end: clamp(from, start, end)
-      },
-      {
-        start: clamp(to, start, end),
-        end
-      }
-    ];
-  }
-
-  containsPosition(pos, inside = false) {
-    return this.coversRange(pos, pos, inside);
-  }
-
-  // End is exclusive
-  coversRange(from, to, inside = false) {
-    return inside
-      ? this.start <= from && this.end >= to
-      : this.start < from && this.end > to;
-  }
-
-  // End is exclusive
-  touchesRange(from, to) {
-    return this.start <= to && this.end >= from;
-  }
-
-  eq({ start, end }) {
-    return this.start === start && this.end === end;
-  }
-
-  get isEmpty() {
-    return this.start >= this.end;
-  }
+/**
+ * Checks if `value` is a flattenable `arguments` object or array.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is flattenable, else `false`.
+ */
+function isFlattenable(value) {
+  return isArray_1(value) || isArguments_1(value) ||
+    !!(spreadableSymbol && value && value[spreadableSymbol]);
 }
+
+var _isFlattenable = isFlattenable;
+
+function baseFlatten(array, depth, predicate, isStrict, result) {
+  var index = -1,
+      length = array.length;
+
+  predicate || (predicate = _isFlattenable);
+  result || (result = []);
+
+  while (++index < length) {
+    var value = array[index];
+    if (depth > 0 && predicate(value)) {
+      if (depth > 1) {
+        // Recursively flatten arrays (susceptible to call stack limits).
+        baseFlatten(value, depth - 1, predicate, isStrict, result);
+      } else {
+        _arrayPush(result, value);
+      }
+    } else if (!isStrict) {
+      result[result.length] = value;
+    }
+  }
+  return result;
+}
+
+var _baseFlatten = baseFlatten;
+
+function flatten$1(array) {
+  var length = array == null ? 0 : array.length;
+  return length ? _baseFlatten(array, 1) : [];
+}
+
+var flatten_1 = flatten$1;
+
+const findOverlappingRangeIndex = (ranges, range) => {
+    return ranges.findIndex(localRange => (localRange.from < range.from && localRange.to > range.from)
+        || (localRange.to > range.to && localRange.from < range.to)
+        || (localRange.from > range.from && localRange.to < range.to));
+};
+const mergeRange = (range1, range2) => ({
+    from: range1.from < range2.from ? range1.from : range2.from,
+    to: range1.to > range2.to ? range1.to : range2.to,
+});
+const mergeRanges = (ranges) => ranges.reduce((acc, range) => {
+    const index = findOverlappingRangeIndex(acc, range);
+    if (index === -1) {
+        return acc.concat(range);
+    }
+    const newRange = acc.slice();
+    newRange.splice(index, 1, mergeRange(range, acc[index]));
+    return newRange;
+}, []);
+
+const getExpandedRange = (index, str, noOfWords = 1) => {
+    const lastIndex = str.length - 1;
+    const from = index === 0
+        ? 0
+        : getPositionOfNthWord(str.slice(0, index), noOfWords, false);
+    const to = index >= lastIndex
+        ? lastIndex
+        : getPositionOfNthWord(str.slice(index), noOfWords) + index;
+    return {
+        from,
+        to,
+        diffFrom: from - index,
+        diffTo: to - index
+    };
+};
+const getPositionOfNthWord = (str, noOfWords, forward = true) => {
+    let words = forward ? str.split(" ") : str.split(" ").reverse();
+    let offset = -1;
+    if (words[0] === "") {
+        words = words.slice(1, words.length - 1);
+        offset++;
+    }
+    for (let i = 0; i <= noOfWords && i <= words.length - 1; i++) {
+        offset += words[i].length + 1;
+    }
+    return forward ? offset : str.length - offset;
+};
+const isString = (str) => {
+    return typeof str === "string" || str instanceof String;
+};
+
+//# sourceMappingURL=string.js.map
 
 var rngBrowser = createCommonjsModule(function (module) {
 // Unique ID creation requires a high quality random # generator.  In the
@@ -15142,113 +15400,6 @@ function bytesToUuid(buf, offset) {
 
 var bytesToUuid_1 = bytesToUuid;
 
-// **`v1()` - Generate time-based UUID**
-//
-// Inspired by https://github.com/LiosK/UUID.js
-// and http://docs.python.org/library/uuid.html
-
-var _nodeId;
-var _clockseq;
-
-// Previous uuid creation time
-var _lastMSecs = 0;
-var _lastNSecs = 0;
-
-// See https://github.com/broofa/node-uuid for API details
-function v1(options, buf, offset) {
-  var i = buf && offset || 0;
-  var b = buf || [];
-
-  options = options || {};
-  var node = options.node || _nodeId;
-  var clockseq = options.clockseq !== undefined ? options.clockseq : _clockseq;
-
-  // node and clockseq need to be initialized to random values if they're not
-  // specified.  We do this lazily to minimize issues related to insufficient
-  // system entropy.  See #189
-  if (node == null || clockseq == null) {
-    var seedBytes = rngBrowser();
-    if (node == null) {
-      // Per 4.5, create and 48-bit node id, (47 random bits + multicast bit = 1)
-      node = _nodeId = [
-        seedBytes[0] | 0x01,
-        seedBytes[1], seedBytes[2], seedBytes[3], seedBytes[4], seedBytes[5]
-      ];
-    }
-    if (clockseq == null) {
-      // Per 4.2.2, randomize (14 bit) clockseq
-      clockseq = _clockseq = (seedBytes[6] << 8 | seedBytes[7]) & 0x3fff;
-    }
-  }
-
-  // UUID timestamps are 100 nano-second units since the Gregorian epoch,
-  // (1582-10-15 00:00).  JSNumbers aren't precise enough for this, so
-  // time is handled internally as 'msecs' (integer milliseconds) and 'nsecs'
-  // (100-nanoseconds offset from msecs) since unix epoch, 1970-01-01 00:00.
-  var msecs = options.msecs !== undefined ? options.msecs : new Date().getTime();
-
-  // Per 4.2.1.2, use count of uuid's generated during the current clock
-  // cycle to simulate higher resolution clock
-  var nsecs = options.nsecs !== undefined ? options.nsecs : _lastNSecs + 1;
-
-  // Time since last uuid creation (in msecs)
-  var dt = (msecs - _lastMSecs) + (nsecs - _lastNSecs)/10000;
-
-  // Per 4.2.1.2, Bump clockseq on clock regression
-  if (dt < 0 && options.clockseq === undefined) {
-    clockseq = clockseq + 1 & 0x3fff;
-  }
-
-  // Reset nsecs if clock regresses (new clockseq) or we've moved onto a new
-  // time interval
-  if ((dt < 0 || msecs > _lastMSecs) && options.nsecs === undefined) {
-    nsecs = 0;
-  }
-
-  // Per 4.2.1.2 Throw error if too many uuids are requested
-  if (nsecs >= 10000) {
-    throw new Error('uuid.v1(): Can\'t create more than 10M uuids/sec');
-  }
-
-  _lastMSecs = msecs;
-  _lastNSecs = nsecs;
-  _clockseq = clockseq;
-
-  // Per 4.1.4 - Convert from unix epoch to Gregorian epoch
-  msecs += 12219292800000;
-
-  // `time_low`
-  var tl = ((msecs & 0xfffffff) * 10000 + nsecs) % 0x100000000;
-  b[i++] = tl >>> 24 & 0xff;
-  b[i++] = tl >>> 16 & 0xff;
-  b[i++] = tl >>> 8 & 0xff;
-  b[i++] = tl & 0xff;
-
-  // `time_mid`
-  var tmh = (msecs / 0x100000000 * 10000) & 0xfffffff;
-  b[i++] = tmh >>> 8 & 0xff;
-  b[i++] = tmh & 0xff;
-
-  // `time_high_and_version`
-  b[i++] = tmh >>> 24 & 0xf | 0x10; // include version
-  b[i++] = tmh >>> 16 & 0xff;
-
-  // `clock_seq_hi_and_reserved` (Per 4.2.2 - include variant)
-  b[i++] = clockseq >>> 8 | 0x80;
-
-  // `clock_seq_low`
-  b[i++] = clockseq & 0xff;
-
-  // `node`
-  for (var n = 0; n < 6; ++n) {
-    b[i + n] = node[n];
-  }
-
-  return buf ? buf : bytesToUuid_1(b);
-}
-
-var v1_1 = v1;
-
 function v4(options, buf, offset) {
   var i = buf && offset || 0;
 
@@ -15276,1226 +15427,286 @@ function v4(options, buf, offset) {
 
 var v4_1 = v4;
 
-// Runs through a Fragment's nodes and runs `updater` on them,
-// which is expected to return a node - either the same one or a modified one -
-// which is then added in place of the old node
-const updateFragmentNodes = updater => prevFrag => {
-  let frag = dist_4$1.empty;
-
-  const appendNodeToFragment = node =>
-    (frag = frag.append(dist_4$1.from(node)));
-
-  prevFrag.forEach(node =>
-    appendNodeToFragment(
-      node.copy(updateFragmentNodes(updater)(updater(node).content))
-    )
-  );
-
-  return frag;
-};
-
-// Changes the attributes on a Mark or MarkType on a node if it exists on that
-// node
-const updateNodeMarkAttrs = (node, mark, attrs = {}) =>
-  mark.isInSet(node.marks)
-    ? node.mark(
-        mark
-          .removeFromSet(node.marks)
-          .concat(mark.type.create(Object.assign(mark.attrs, attrs)))
-      )
-    : node;
-
-// ensures that there are no notes in the document that have the same note id
-// in non-contiguous places, which would result in one large note between the
-// extremes of those places on certain edits
-// e.g. <note id="1">test</note> some <note id="1">stuff</note>
-// results in
-// e.g. <note id="1">test</note> some <note id="2">stuff</note>
-const sanitizeFragmentInner = (frag, markType, createId = v4_1) => {
-  let idMap = {};
-  // the current id of the node according to the input document
-  let currentNoteId = null;
-
-  const setNewId = prevId => {
-    const newId = !idMap[prevId] ? prevId : createId();
-    idMap[prevId] = newId;
-    currentNoteId = prevId;
-    return newId;
-  };
-
-  // This will return an updated id for this id depending on whether it's been
-  // seen before in a previous non-contiguous note range, if it's been seen
-  // before then a new id will be generated and used for this id while the range
-  // is contiguous
-  const getAdjustNoteId = id => {
-    if (id === currentNoteId) {
-      return idMap[id];
+const flatten = (node, descend = true) => {
+    if (!node) {
+        throw new Error('Invalid "node" parameter');
     }
-    return setNewId(id);
-  };
-
-  const closeNote = () => {
-    currentNoteId = null;
-  };
-
-  return updateFragmentNodes(node => {
-    const noteMark = markType.isInSet(node.marks);
-    if (noteMark) {
-      return updateNodeMarkAttrs(node, noteMark, {
-        id: getAdjustNoteId(noteMark.attrs.id)
-      });
-    }
-
-    // if we're in a text node and we don't have a noteMark then assume we are
-    // not in a note and close the range
-    if (node.isText) {
-      closeNote();
-    }
-
-    return node;
-  })(frag);
-};
-
-const wrap = value => (Array.isArray(value) ? value : [value]);
-
-// markTypes can either be a MarkType or MarkType[]
-const sanitizeFragment = (frag, markTypes, createId) =>
-  wrap(markTypes).reduce(
-    (nextFrag, markType) => sanitizeFragmentInner(nextFrag, markType, createId),
-    frag
-  );
-
-// Similar to sanitizeFragment but allows a node to be passed instead
-
-
-// Return an array of all of the new ranges in a document [[start, end], ...]
-const getInsertedRanges = ({ mapping }) => {
-  let ranges = [];
-  mapping.maps.forEach((stepMap, i) => {
-    stepMap.forEach((oldStart, oldEnd, newStart, newEnd) => {
-      ranges.push([
-        mapping.slice(i + 1).map(newStart),
-        mapping.slice(i + 1).map(newEnd)
-      ]);
+    const result = [];
+    node.descendants((child, pos, parent) => {
+        result.push({ node: child, parent, pos });
+        if (!descend) {
+            return false;
+        }
     });
-  });
-  return ranges;
+    return result;
 };
-
-const charsAdded = (oldState, state) =>
-  state.doc.textContent.length - oldState.doc.textContent.length;
-
-/*
- * This takes a doc node and a marktype and hunts for them (assuming the have an id
- * on their attrs) and merges their start and ends (for use with the note tracker)
- * 
- * Unlike sanitizeNode, this will not look for contiguosness when finding the
- * notes as this helper assumes that the consuming code is not interested in
- * sanitizing the code. This should not pose any problems as long as notes
- * are getting sanitized on load and on paste.
- */
-const notesFromDoc = (doc, markType, min = false, max = false) => {
-  const notes = {};
-
-  const { from, to } = new dist_5(doc);
-
-  const _min = min === false ? from : min;
-  const _max = max === false ? to : max;
-
-  doc.nodesBetween(_min, _max, (node, start) => {
-    const end = start + node.nodeSize;
-    const mark = markType.isInSet(node.marks);
-
-    if (mark) {
-      const { id, meta } = mark.attrs;
-
-      notes[id] = notes[id] || {
-        id,
-        meta, // this should be the same across all notes so just set it here
-        nodes: [],
-        start: Infinity,
-        end: -Infinity
-      };
-
-      notes[id] = Object.assign({}, notes[id], {
-        start: Math.min(notes[id].start, start),
-        end: Math.max(notes[id].end, end),
-        nodes: [
-          ...notes[id].nodes,
-          {
-            start,
-            end
-          }
-        ]
-      });
+const findChildren = (node, predicate, descend) => {
+    if (!node) {
+        throw new Error('Invalid "node" parameter');
     }
-  });
-
-  return Object.keys(notes).map(id => notes[id]);
+    else if (!predicate) {
+        throw new Error('Invalid "predicate" parameter');
+    }
+    return flatten(node, descend).filter(child => predicate(child.node));
 };
-
-const ensureType = meta => {
-  if (!meta) {
+const findTextNodes = (node, descend = true) => {
+    return findChildren(node, child => child.isText, descend);
+};
+const getTextMaps = (doc) => (doc instanceof dist_1$1 ? findTextNodes(doc) : [doc]).reduce((acc, textNodeWrapper, index$$1, textNodes) => {
+    const previousMap = acc.positionMap[acc.positionMap.length - 1];
+    const text = textNodeWrapper.node.text || "";
+    const previousNodeWrapper = textNodes[index$$1 - 1];
+    const sharesParentWithPreviousNode = previousNodeWrapper &&
+        textNodeWrapper.parent === previousNodeWrapper.parent;
+    if (sharesParentWithPreviousNode) {
+        const previousPositionMaps = acc.positionMap.slice(0, acc.positionMap.length - 1);
+        const currentText = (previousMap ? previousMap.text : "") + text;
+        return {
+            length: acc.length + text.length,
+            positionMap: previousPositionMaps.concat({
+                text: currentText,
+                start: acc.length - (previousNodeWrapper.node.text || "").length,
+                offset: previousMap.offset
+            })
+        };
+    }
     return {
-      type: "note"
+        length: acc.length + text.length,
+        positionMap: acc.positionMap.concat({
+            text,
+            start: acc.length,
+            offset: textNodeWrapper.pos
+        })
     };
-  } else if (!meta.type) {
-    return Object.assign({}, meta, {
-      type: "note"
-    });
-  }
-  return meta;
+}, {
+    positionMap: [],
+    length: 0
+}).positionMap;
+const Operations = {
+    ANNOTATE: "ANNOTATE",
+    REPLACE: "REPLACE"
 };
-
-class NoteTracker {
-  constructor(notes = [], onNoteCreate = () => {}, sharedNoteStateTracker) {
-    if (!sharedNoteStateTracker) {
-      throw new Error(
-        "[prosemirror-noting]: NoteTracker must be passed an instance of SharedNoteStateTracker on construction"
-      );
-    }
-    this.notes = notes.filter(note => !note.isEmpty);
-    this.onNoteCreate = onNoteCreate;
-    this.sharedNoteStateTracker = sharedNoteStateTracker;
-    sharedNoteStateTracker.addNoteTracker(this);
-  }
-
-  getSharedNoteStateTracker() {
-    return this.sharedNoteStateTracker;
-  }
-
-  /*
-   * Writes does mutate state on this top-level object
-   */
-
-  reset() {
-    this.notes = [];
-  }
-
-  sortNotes() {
-    const toSort = this.notes.slice();
-    toSort.sort((a, b) => a.start - b.start);
-    this.notes = toSort;
-  }
-
-  addNote(from, to, _meta, id = null, ignoreCallback = false) {
-    if (from >= to) {
-      return false;
-    }
-
-    const meta = ensureType(_meta);
-    const range = this.mergeableRange(from, to, meta.type);
-    this.removeRange(range.from, range.to);
-    if (!id || this.hasNoteId(id)) {
-      id = this.nextId();
-    }
-    const note = new Note(range.from, range.to, id, meta);
-    if (!ignoreCallback) {
-      this.onNoteCreate(note); // may mutate the note
-    }
-    this.notes.push(note);
-    this.sortNotes();
-    return note;
-  }
-
-  removeRange(from, to) {
-    let nextId = this.nextId();
-    this.notes = this.notes.reduce(
-      (newNotes, note) => [
-        ...newNotes,
-        ...note
-          .rangesAround(from, to)
-          .filter(({ start, end }) => end > start)
-          .map(
-            ({ start, end }, i, arr) =>
-              new Note(
-                start,
-                end,
-                arr.length === 1 ? note.id : nextId++,
-                arr.length === 1 ? note.meta : cloneDeep(note.meta)
-              )
-          )
-      ],
-      []
-    );
-  }
-
-  mapPositions(startFunc, endFunc = startFunc) {
-    this.notes = this.notes
-      .map(note => note.mapPositions(startFunc, endFunc))
-      .filter(note => !note.isEmpty);
-  }
-
-  /**
-   * Reads
-   */
-
-  getNote(noteId) {
-    return this.notes.filter(({ id }) => id === noteId)[0];
-  }
-
-  nextId() {
-    return v1_1();
-  }
-
-  hasNoteId(noteId) {
-    return !!this.getNote(noteId);
-  }
-
-  noteAt(pos, _bias = 0) {
-    const bias = Math.sign(_bias);
-    const range = [pos, pos + bias];
-    range.sort();
-    const [from, to] = range;
-    return (
-      this.notes.find(note => note.coversRange(from, to, bias !== 0)) || false
-    );
-  }
-
-  noteCoveringRange(from, to, inside = false) {
-    const { notes } = this;
-
-    for (let i = 0; i < notes.length; i += 1) {
-      const note = notes[i];
-      if (note.coversRange(from, to, inside)) {
-        return note;
-      }
-    }
-
-    return false;
-  }
-
-  notesTouchingRange(from, to, type) {
-    return this.notes.filter(
-      note => (!type || note.meta.type === type) && note.touchesRange(from, to)
-    );
-  }
-
-  mergeableRange(from, to, type) {
-    // We filter by type to ensure that only notes of the same type are merged.
-    const mergingNotes = this.notesTouchingRange(from, to, type);
-
-    const [min, max] = mergingNotes.reduce(
-      (out, { start, end }) => [Math.min(out[0], start), Math.max(out[1], end)],
-      [from, to]
-    );
-
-    return {
-      from: min,
-      to: max
-    };
-  }
-
-  rebuildRange(state) {
-    let ranges = getInsertedRanges(state);
-
-    if (!ranges.length) {
-      return false;
-    }
-
-    const start = ranges.reduce(
-      (acc, [from, to]) => Math.min(acc, from, to),
-      Infinity
-    );
-
-    const end = ranges.reduce(
-      (acc, [from, to]) => Math.max(acc, from, to),
-      -Infinity
-    );
-
-    return start < end ? this.mergeableRange(start, end) : false;
-  }
-}
-
-class NoteTransaction {
-  constructor(noteTracker, markType, key, historyPlugin) {
-    this.noteTracker = noteTracker;
-    this.markType = markType;
-    this.key = key;
-    this.historyPlugin = historyPlugin;
-    this.tr = null;
-    this.currentNoteID = false;
-    this.sharedNoteStateTracker = noteTracker.getSharedNoteStateTracker();
-  }
-
-  static get PLACEHOLDER_ID() {
-    return "@@PLACEHOLDER_ID";
-  }
-
-  get currentNote() {
-    return !!this.currentNoteID && this.noteTracker.getNote(this.currentNoteID);
-  }
-
-  filterTransaction(tr, oldState) {
-    this.init(tr, oldState);
-    let meta;
-    if ((meta = tr.getMeta("set-notes-meta")) && meta.key === this.key) {
-      const { specs } = tr.getMeta("set-notes-meta");
-      specs.forEach(({ id, meta }) => this.updateMeta(id, meta));
-    } else if ((meta = tr.getMeta("toggle-note")) && meta.key === this.key) {
-      const { type, cursorToEnd } = tr.getMeta("toggle-note");
-      this.handleToggle(type, cursorToEnd, oldState);
-    } else if (tr.getMeta("paste") || tr.getMeta(this.historyPlugin)) {
-      this.handlePaste();
-    } else {
-      this.handleInput(oldState);
-    }
-    this.setCorrectMark();
-    return this.tr;
-  }
-
-  appendTransaction(tr, oldState, newState) {
-    // @todo -- is this the best place for this hook?
-    if (this.sharedNoteStateTracker.getStallRequests()) {
-      // If we haven't yet set the old cursor positions and there is cursor
-      // information, store the attempted cursor movement so we can use the
-      // position and direction to find notes for that range. We do this because
-      // if there are multiple instances of this plugin, we only have this information
-      // on the first call of appendTransaction - in subsequent calls, oldState
-      // will already contain the new position information.
-      if (
-        !this.sharedNoteStateTracker.hasOldCursorPosition() &&
-        oldState.selection.$cursor &&
-        newState.selection.$cursor
-      ) {
-        this.sharedNoteStateTracker.setOldCursorPosition(
-          oldState.selection.$cursor.pos
-        );
-        this.sharedNoteStateTracker.setAttemptedCursorPosition(
-          newState.selection.$cursor.pos
-        );
-      }
-      let resetStoredMarks = false;
-      if (this.sharedNoteStateTracker.isAtBoundaryBetweenTouchingNotes()) {
-        this.currentNoteID = false;
-        resetStoredMarks = true;
-      }
-      this.sharedNoteStateTracker.transactionCompleted();
-      if (!oldState.selection.$cursor) {
-        return;
-      }
-      // Setting a selection will clear the transaction's stored marks, so if we'd like
-      // to keep them, we must re-append them.
-      const tr = newState.tr.setSelection(
-        dist_1.near(oldState.selection.$cursor)
-      );
-      return resetStoredMarks ? tr : tr.setStoredMarks(newState.storedMarks);
-    }
-  }
-
-  init(tr, oldState) {
-    const { noteTracker, currentNoteID } = this;
-    const { selection: { $cursor: $oldCursor } } = oldState;
-    const { $cursor } = tr.selection;
-
-    /**
-     * Do all the position mapping, this handle deleted notes, we only ever
-     * need to add and rebuild
-     */
-    noteTracker.mapPositions(
-      (pos, id) => tr.mapping.mapResult(pos, id === currentNoteID ? -1 : 1).pos,
-      (pos, id) => tr.mapping.mapResult(pos, id === currentNoteID ? 1 : -1).pos
-    );
-
-    if (!tr.docChanged && $cursor && $oldCursor) {
-      const movement = $cursor.pos - $oldCursor.pos;
-      if (movement === 0) {
-        // A static cursor change, e.g. selecting into text from an unfocused state.
-        this.currentNoteID =
-          this.currentNoteID || (noteTracker.noteAt($cursor.pos) || {}).id;
-      } else if (Math.abs(movement) !== 1) {
-        // A cursor change larger than 1, e.g. selecting another position from a
-        // previous position.
-        this.currentNoteID = (noteTracker.noteAt($cursor.pos) || {}).id;
-      } else if (
-        currentNoteID &&
-        !noteTracker.noteAt($oldCursor.pos) &&
-        (noteTracker.noteAt($oldCursor.pos + movement, -movement) || {}).id !==
-          currentNoteID
-      ) {
-        // A move from an inclusive position to a neutral position.
-        this.currentNoteID = false;
-        this.sharedNoteStateTracker.requestCursorStall();
-      } else if (
-        !currentNoteID &&
-        !noteTracker.noteAt($oldCursor.pos) &&
-        noteTracker.noteAt($oldCursor.pos + movement, -movement)
-      ) {
-        // A move from a neutral position to an inclusive position.
-        this.currentNoteID = noteTracker.noteAt(
-          $oldCursor.pos + movement,
-          -movement
-        ).id;
-        this.sharedNoteStateTracker.requestCursorStall();
-      } else if (noteTracker.noteAt($cursor.pos)) {
-        // A move inside of a note.
-        this.currentNoteID = noteTracker.noteAt($cursor.pos).id;
-      }
-      // If none of these conditions are satisfied, we have a move outside of a note.
-    }
-
-    this.tr = tr;
-    return this;
-  }
-
-  setCorrectMark() {
-    const { tr, markType } = this;
-    const { $cursor } = tr.selection;
-    if ($cursor) {
-      const note = this.currentNote;
-      if (note) {
-        const { id, meta } = note;
-        const newMark = markType.create({ id, meta });
-
-        if (!newMark.isInSet(tr.storedMarks || $cursor.marks())) {
-          this.tr = tr.addStoredMark(newMark);
-        }
-      } else if (!this.hasPlaceholder(this.tr)) {
-        this.tr = tr.removeStoredMark(markType);
-      }
-    }
-    return this;
-  }
-
-  updateMeta(id, meta = {}) {
-    const note = this.noteTracker.getNote(id);
-    if (!note) {
-      return;
-    }
-    note.updateMeta(meta);
-    this.rebuildRange(
-      {
-        from: note.start,
-        to: note.end
-      },
-      [
-        {
-          from: note.start,
-          to: note.end,
-          id: note.id,
-          meta: note.meta
-        }
-      ]
-    );
-    return this;
-  }
-
-  /*
-     * If we are pressing the menu button then if we have a cursor
-     * and are in a note then remove that note otherwise set a placeholder
-     * to start a note.
-     *
-     * If we have a selection decide whether to grow the note or slice it
-     */
-  handleToggle(type, cursorToEnd, oldState) {
-    const { noteTracker, tr, markType } = this;
-    const { $cursor, from, to } = tr.selection;
-
-    if ($cursor) {
-      const note = this.currentNote;
-      if (note) {
-        const { start, end } = note;
-        return this.removeRanges([{ from: start, to: end }]);
-      } else if (this.hasPlaceholder(oldState)) {
-        return tr.removeStoredMark(markType);
-      }
-      return this.startNote(type);
-    } else {
-      const note = noteTracker.noteCoveringRange(from, to, true);
-      if (note) {
-        const { start, end, meta } = note;
-
-        const notes = [];
-        notes.push({
-          from: start,
-          to: from,
-          meta: cloneDeep(meta)
-        });
-
-        // If this is a not of a different type then split add it in
-        // the middle
-        if (note.meta.type && note.meta.type !== type) {
-          notes.push({
-            from,
-            to,
-            meta: {
-              type
-            }
-          });
-        }
-
-        notes.push({
-          from: to,
-          to: end,
-          meta: cloneDeep(meta)
-        });
-
-        return this.rebuildRange(
-          {
-            from: start,
-            to: end
-          },
-          notes
-        );
-      }
-      return this.addNotes([{ from, to, meta: { type } }], cursorToEnd);
-    }
-  }
-
-  /*
-     * If we are pasting or undoing gather the extent of the new content
-     * find any notes overlapping this range, and from this get the max
-     * range to edit.
-     *
-     * Then rebuild this range my removing all the notes and adding them
-     * back in
-     */
-  handlePaste() {
-    const { noteTracker, tr, markType } = this;
-    const rebuildRange = noteTracker.rebuildRange(tr);
-
-    if (rebuildRange) {
-      const { from, to } = rebuildRange;
-      const positions = notesFromDoc(tr.doc, markType, from, to);
-
-      this.rebuildRange(
-        rebuildRange,
-        positions.map(p => ({
-          id: p.id,
-          from: p.start,
-          to: p.end,
-          meta: p.meta
-        }))
-      );
-
-      return this;
-    }
-
-    // Else if rebuildRange is false, mappingPositions will handle removal
-
-    return this;
-  }
-
-  /*
-     * Otherwise if we just have a cursor and this is a normal typing
-     * type update then check whether we need to add a note from a
-     * placeholder
-     */
-  handleInput(oldState) {
-    const { tr } = this;
-    const { $cursor } = tr.selection;
-    if ($cursor) {
-      const { pos } = $cursor;
-      const type = this.hasPlaceholder(oldState);
-      const note = this.currentNote;
-      if (!note && type) {
-        const addedChars = charsAdded(oldState, tr);
-        if (addedChars > 0) {
-          const from = pos - addedChars;
-          const to = pos;
-          return this.addNotes([{ from, to, meta: { type } }], false, true);
-        }
-      }
-    }
-
-    return this;
-  }
-
-  placeholder(type) {
-    const { PLACEHOLDER_ID } = this.constructor;
-    return this.markType.create({ id: PLACEHOLDER_ID, meta: { type } });
-  }
-
-  hasPlaceholder(state) {
-    const mark = this.markType.isInSet(state.storedMarks || []);
-    return mark && mark.attrs.id === this.constructor.PLACEHOLDER_ID
-      ? mark.attrs.meta.type
-      : false;
-  }
-
-  rebuildRange(range, noteRanges) {
-    return this.removeRanges([range]).addNotes(noteRanges);
-  }
-
-  addNotes(ranges, cursorToEnd = false, insideLast = false) {
-    const { tr, noteTracker, markType } = this;
-    const notes = ranges
-      .map(({ from, to, meta, id }) => noteTracker.addNote(from, to, meta, id))
-      .filter(note => note); // remove notes that couldn't be added
-
-    this.tr = notes.reduce((_tr, { id, meta, start, end }) => {
-      const newMark = markType.create({ id, meta });
-      return _tr.removeMark(start, end, markType).addMark(start, end, newMark);
-    }, tr);
-
-    if (cursorToEnd && ranges.length) {
-      const { to } = ranges[ranges.length - 1];
-      const { end } = noteTracker.noteAt(to, -1);
-      const $end = this.tr.doc.resolve(end);
-      this.tr = this.tr.setSelection(dist_1.near($end), 1);
-    } else if (insideLast && notes.length) {
-      this.currentNoteID = notes[notes.length - 1].id;
-    }
-
-    return this;
-  }
-
-  removeRanges(ranges) {
-    const { tr, noteTracker, markType } = this;
-    this.tr = ranges.reduce((_tr, { from, to }) => {
-      noteTracker.removeRange(from, to);
-      return _tr.removeMark(from, to, markType);
-    }, tr);
-    return this;
-  }
-
-  startNote(type) {
-    this.tr = this.tr.addStoredMark(this.placeholder(type));
-    this.currentNoteID = this.constructor.PLACEHOLDER_ID;
-    return this;
-  }
-}
-
-const createNoteWrapper = (
-  meta,
-  cursorPos,
-  inside,
-  pluginPriority = 1,
-  modifyNoteDecoration = () => {}
-) => (id, notePos, side) => {
-  const dom = document.createElement("span");
-
-  // fixes a firefox bug that makes the decos appear selected
-  const content = document.createElement("span");
-  dom.appendChild(content);
-
-  dom.classList.add(
-    `note-${id}`,
-    `note-wrapper--${side < 0 ? "start" : "end"}`,
-    `note-wrapper--${meta.type}`
-  );
-  // This allows the user to mutate the DOM node we've just created. Consumer beware!
-  modifyNoteDecoration(dom, meta, side);
-  dom.dataset.toggleNoteId = id;
-  const cursorAtWidgetAndInsideNote = inside && cursorPos === notePos;
-  // If we have a cursor at the note widget position and we're inside a note,
-  // we need to ensure that other widgets don't alter its render order, so
-  // we keep the sign of the side value and shrink it to ensure it keeps its
-  // precedence.
-  const sideToRender = cursorAtWidgetAndInsideNote
-    ? side - Math.sign(side) / 2
-    : 0 - side;
-  return dist_2$3.widget(notePos, dom, {
-    // MAX_SAFE_INTEGER is here to order note decorations consistently across
-    // plugins without imposing a (realistic) limit on the number of noting
-    // plugins that can run concurrently.
-    side:
-      sideToRender + pluginPriority / Number.MAX_SAFE_INTEGER * Math.sign(side),
-    marks: []
-  });
-};
-
-const placeholderDecos = (noteTransaction, state) => {
-  const type = noteTransaction.hasPlaceholder(state);
-  const noteWrapper = createNoteWrapper(
-    { type },
-    state.selection.$cursor && state.selection.$cursor.pos,
-    true
-  );
-  return state.selection.$cursor && type
-    ? [
-        noteWrapper("NONE", state.selection.$cursor.pos, -1),
-        noteWrapper("NONE", state.selection.$cursor.pos, 1)
-      ]
-    : [];
-};
-
-const createDecorateNotes = (
-  noteTransaction,
-  noteTracker,
-  modifyNoteDecoration,
-  pluginPriority
-) => state => {
-  return dist_3$3.create(state.doc, [
-    ...noteTracker.notes.reduce((out, { id, start, end, meta }) => {
-      const noteWrapper = createNoteWrapper(
-        meta,
-        state.selection.$cursor && state.selection.$cursor.pos,
-        noteTransaction.currentNoteID === id,
-        pluginPriority,
-        modifyNoteDecoration
-      );
-      return [...out, noteWrapper(id, start, -1), noteWrapper(id, end, 1)];
-    }, []),
-    ...placeholderDecos(noteTransaction, state)
-  ]);
-};
-
-const clickHandler = (noteTracker, handleClick) => (
-  { dispatch, state },
-  _,
-  { target }
-) => {
-  const { toggleNoteId } = target.dataset || {};
-  const el = document.querySelector(`[data-note-id="${toggleNoteId}"]`);
-  if (el) {
-    const note = noteTracker.getNote(toggleNoteId);
-    if (note) {
-      // may be from another note mark
-      const command = handleClick(note);
-
-      if (command) {
-        command(state, dispatch);
-        return true;
-      }
-    }
-  }
-};
-
-const hyphenatePascal = str =>
-  str
-    .replace(/([a-z])([A-Z])/g, "$1-$2")
-    .replace(/([A-Z]{2})[a-z]/, "$1-")
-    .toLowerCase();
-
-// Coerce trues
-const attToVal = att => (att === "true" ? true : att);
-
-const noteToAttrs = (id, meta, attrGenerator = () => {}) => {
-  const classes = ["note"]; // allow classes to be added by all
-  const generatedMeta = attrGenerator(meta) || {};
-
-  if (generatedMeta.class) {
-    classes.push(generatedMeta.class);
-  }
-
-  return Object.assign(
-    {},
-    generatedMeta,
-    Object.keys(meta)
-      .filter(key => meta[key] !== false) // remove specials
-      .reduce(
-        (out, key) =>
-          Object.assign({}, out, {
-            [`data-${hyphenatePascal(key)}`]: meta[key]
-          }),
-        {}
-      ),
+const validationLibrary = [
     {
-      class: classes.join(" "),
-      "data-note-id": id
-    }
-  );
-};
-
-const datasetToAttrs = (dataset, defaults = {}) => ({
-  id: dataset.noteId || false,
-  meta: Object.keys(dataset)
-    .filter(key => key !== "noteId" && dataset[key] !== "false") // remove special or falses
-    .reduce(
-      (out, key) =>
-        Object.assign({}, out, {
-          [key]: attToVal(dataset[key]) || defaults[key]
-        }),
-      {}
-    )
-});
-
-const filterTagTypeMap = tagTypeMap =>
-  typeof tagTypeMap === "string" ? { note: tagTypeMap } : tagTypeMap;
-
-const createNoteMark = (_typeTagMap, attrGenerator = () => {}) => {
-  const typeTagMap = filterTagTypeMap(_typeTagMap);
-  const values = Object.keys(typeTagMap).map(key => typeTagMap[key]);
-  if (values.length !== new Set(values).size) {
-    throw new Error(
-      "[prosemirror-noting]: type tags: element types must be unique"
-    );
-  }
-  return {
-    attrs: {
-      id: {},
-      meta: {
-        default: {}
-      }
+        regExp: new RegExp("some validation", "g"),
+        annotation: "You used the word 'validation'",
+        operation: Operations.ANNOTATE,
+        type: markTypes.legal
     },
-    inclusive: false,
-    // Create a rule for every type
-    parseDOM: Object.keys(typeTagMap).map(type => ({
-      tag: typeTagMap[type],
-      getAttrs: ({ dataset }) => {
-        const attrs = datasetToAttrs(dataset);
-        return Object.assign({}, attrs, {
-          meta: Object.assign({}, attrs.meta, {
-            type
-          })
-        });
-      }
-    })),
-    // Spit out the node based on the type
-    toDOM: ({ attrs: { id, meta } }) => [
-      typeTagMap[meta.type],
-      noteToAttrs(id, meta, attrGenerator)
-    ]
-  };
-};
-
-/**
- * @class CurrentNoteTracker
- *
- * Registers NoteTrackers and current note selections from multiple plugins,
- * to enable us to reason about their interactions.
- */
-class SharedNoteStateTracker {
-  constructor() {
-    this.currentNotesByKey = {};
-    this.noteTrackers = [];
-    this.resetCounters();
-  }
-
-  /**
-   * Indicate that the transaction has been completed. Once all of the noteTrackers
-   * are completed, we can reset the counters.
-   */
-  transactionCompleted() {
-    this.transactionsCompleted++;
-    if (this.transactionsCompleted === this.noteTrackers.length) {
-      this.resetCounters();
+    {
+        regExp: new RegExp("Prosemirror", "g"),
+        annotation: "You used the word 'Prosemirror'",
+        operation: Operations.REPLACE,
+        type: markTypes.legal
+    },
+    {
+        regExp: new RegExp("require", "g"),
+        annotation: "You used the word 'require'",
+        operation: Operations.REPLACE,
+        type: markTypes.legal
+    },
+    {
+        regExp: new RegExp("Happy", "g"),
+        annotation: "You used the word 'happy'",
+        operation: Operations.REPLACE,
+        type: markTypes.warn
     }
-  }
-
-  isAtBoundaryBetweenTouchingNotes() {
-    // If we have two stall requests pending and there's less than two notes in the
-    // position the cursor *would* have entered, we're at a boundary between two
-    // touching notes. We check for two notes because this condition can also occur
-    // when two different note types begin at once in the same position; in this
-    // situation, we continue without a reset, or the cursor would be stuck.
-    return (
-      this.getStallRequests() > 1 &&
-      this.notesAt(
-        this.getAttemptedCursorPosition(),
-        -this.getLastAttemptedMovement()
-      ).length < 2
-    );
-  }
-
-  resetCounters() {
-    this.stallRequests = 0;
-    this.transactionsCompleted = 0;
-    this.oldCursorPosition = null;
-    this.attemptedCursorPosition = null;
-  }
-
-  hasOldCursorPosition() {
-    return this.oldCursorPosition !== null;
-  }
-
-  setOldCursorPosition(pos) {
-    this.oldCursorPosition = pos;
-  }
-
-  setAttemptedCursorPosition(pos) {
-    this.attemptedCursorPosition = pos;
-  }
-
-  getAttemptedCursorPosition() {
-    return this.attemptedCursorPosition;
-  }
-
-  getLastAttemptedMovement() {
-    return this.attemptedCursorPosition - this.oldCursorPosition;
-  }
-
-  getStallRequests() {
-    return this.stallRequests;
-  }
-
-  /**
-   * Register an attempt to stall the next cursor movement.
-   */
-  requestCursorStall() {
-    this.stallRequests++;
-  }
-
-  /**
-   * Add a NoteTracker instance to the state.
-   *
-   * @param {NoteTracker} noteTracker
-   */
-  addNoteTracker(noteTracker) {
-    this.noteTrackers.push(noteTracker);
-  }
-
-  /**
-   * Return the note ids for all registered noteTrackers at this position.
-   *
-   * @param {number} pos The cursor position.
-   * @param {number} bias Bias the selected range forward (+), backward (-) or address a point with 0.
-   */
-  notesAt(pos, bias = 0) {
-    return this.noteTrackers
-      .map(noteTracker => noteTracker.noteAt(pos, bias))
-      .filter(noteOption => !!noteOption);
-  }
-}
-
-const toggleNote$1 = key => (type, cursorToEnd = false) => (state, dispatch) =>
-  dispatch
-    ? dispatch(
-        state.tr.setMeta("toggle-note", {
-          key,
-          type,
-          cursorToEnd
-        })
-      )
-    : true;
-
-const setNotesMeta = key => (specs = []) => (state, dispatch) =>
-  dispatch
-    ? dispatch(
-        state.tr.setMeta("set-notes-meta", {
-          key,
-          specs
-        })
-      )
-    : true;
-
-const setNoteMeta$1 = key => (id, meta) => setNotesMeta(key)([{ id, meta }]);
-
-const collapseAllNotes = key => () => (state, dispatch) => {
-  // @TODO: This is searching the entire doc for notes every time.
-  // NoteTracker is essentially the state of the Noter plugin, in
-  // order to make it act like others, and to clean this up, we
-  // should be able to call noter.getState() and read the list of notes from there
-  const allNotes = notesFromDoc(state.doc, state.config.schema.marks.note);
-  let hidden = !allNotes.every(note => note.meta.hidden === true);
-
-  if (!hidden) {
-    return false;
-  }
-
-  const specs = allNotes.map(({ id }) => ({
-    id,
-    meta: {
-      hidden: true
+];
+const getMatchIndexes = (str, offset, regExp) => {
+    const matches = [];
+    let match;
+    while ((match = regExp.exec(str))) {
+        matches.push({ index: match.index + offset, item: match[0] });
     }
-  }));
-
-  return setNotesMeta(key)(specs)(state, dispatch);
+    return matches;
 };
-
-const showAllNotes$1 = key => () => (state, dispatch) => {
-  const allNotes = notesFromDoc(state.doc, state.config.schema.marks.note);
-  let hidden = !allNotes.every(note => note.meta.hidden === true);
-
-  if (hidden) {
-    return false;
-  }
-
-  const specs = allNotes.map(({ id }) => ({
-    id,
-    meta: {
-      hidden: false
+const applyLibraryToValidationMap = (arrayToValidate, validationLibrary, offset = 0) => validationLibrary.reduce((acc, item) => {
+    const isStringMap = isString(arrayToValidate[0]);
+    const matches = flatten_1(isStringMap
+        ? arrayToValidate.map(str => getMatchIndexes(str, offset, item.regExp))
+        : arrayToValidate.map((textMap) => getMatchIndexes(textMap.text, textMap.offset, item.regExp)));
+    return acc.concat(matches
+        .map(match => ({
+        origin: match.index,
+        annotation: item.annotation,
+        type: item.type,
+        startPos: match.index,
+        endPos: match.index + match.item.length
+    }))
+        .filter(match => match));
+}, []);
+const getWidgetNode = (range) => {
+    const widget = document.createElement("span");
+    widget.className = "validation-widget-container";
+    const contentNode = document.createElement("span");
+    contentNode.className = "validation-widget";
+    widget.appendChild(contentNode);
+    const labelNode = document.createElement("span");
+    const labelTextNode = document.createTextNode(range.type);
+    labelNode.appendChild(labelTextNode);
+    labelNode.className = "validation-widget-label";
+    contentNode.appendChild(labelNode);
+    const textNode = document.createTextNode(range.annotation);
+    contentNode.appendChild(textNode);
+    return widget;
+};
+const getValidationDecorationsForNode = (doc, validationLibrary) => {
+    const textMap = getTextMaps(doc);
+    const ranges = applyLibraryToValidationMap(textMap, validationLibrary);
+    const validationDecs = ranges.map(createDecorationForValidationRange);
+    return dist_3$3.create(doc, flatten_1(validationDecs));
+};
+const createDecorationForValidationRange = (range) => {
+    const validationId = v4_1();
+    console.log('Creating decoration', range);
+    return [
+        dist_2$3.inline(range.startPos, range.endPos, {
+            class: "validation-decoration",
+            "data-attr-validation-id": validationId
+        }),
+        dist_2$3.widget(range.startPos, getWidgetNode(range), { validationId })
+    ];
+};
+const findSingleDecoration = (state, predicate) => {
+    const decorations = state.decorations.find(undefined, undefined, predicate);
+    if (!decorations[0]) {
+        return undefined;
     }
-  }));
-
-  return setNotesMeta(key)(specs)(state, dispatch);
+    return decorations[0];
 };
-
-const toggleAllNotes$1 = key => () => (state, dispatch) =>
-  collapseAllNotes(key)()(state)
-    ? collapseAllNotes(key)()(state, dispatch)
-    : showAllNotes$1(key)()(state, dispatch);
-
-const defaultSharedNoteStateTracker = new SharedNoteStateTracker();
-
-let noOfNoterPlugins = 0;
-
-/**
- * The main plugin that setups the noter
- * TODO: maybe NoteTracker could extend Plugin which would mean we could
- * use the plugin instance more normally rather than notePlugin.props.noteTracker
- */
-const buildNoter = (
-  markType,
-  initDoc,
-  key,
-  historyPlugin,
-  {
-    onNoteCreate = () => {},
-    handleClick = null,
-    sharedNoteStateTracker = defaultSharedNoteStateTracker,
-    // modifyNoteDecoration provides a callback that's passed a note decoration
-    // element and the side that it's rendered on, to allow the consumer to
-    // modify the element, e.g. add a title attribute.
-    // (element: HTMLElement, side: Boolean) => void
-    modifyNoteDecoration = () => {}
-  }
-) => {
-  noOfNoterPlugins++;
-  const noteTracker = new NoteTracker([], onNoteCreate, sharedNoteStateTracker);
-  const noteTransaction = new NoteTransaction(
-    noteTracker,
-    markType,
-    key,
-    historyPlugin
-  );
-  const noteDecorator = createDecorateNotes(
-    noteTransaction,
-    noteTracker,
-    modifyNoteDecoration,
-    noOfNoterPlugins
-  );
-
-  notesFromDoc(initDoc, markType).forEach(({ start, end, meta, id }) =>
-    /**
-     * Pass true as fifth argument to make sure that we don't update the
-     * meta in the notetracker with the onNoteCreate callback as this is NOT
-     * a new note and will not be rerendered to the DOM with the new meta
-     * (which it shouldn't) and will cause issues when comparing notes
-     */
-    noteTracker.addNote(start, end, meta, id, true)
-  );
-
-  return {
-    plugin: new dist_8({
-      props: {
-        decorations: noteDecorator,
-        handleClick: handleClick && clickHandler(noteTracker, handleClick),
-        transformPasted: ({ content, openStart, openEnd }) =>
-          new dist_5$1(sanitizeFragment(content, markType), openStart, openEnd)
-      },
-      filterTransaction: (...args) =>
-        noteTransaction.filterTransaction(...args),
-      appendTransaction: (...args) => noteTransaction.appendTransaction(...args)
-    }),
-    toggleNote: toggleNote$1(key),
-    setNoteMeta: setNoteMeta$1(key),
-    collapseAllNotes: collapseAllNotes(key),
-    showAllNotes: showAllNotes$1(key),
-    toggleAllNotes: toggleAllNotes$1(key)
-  };
+const updateView = (plugin) => (view, prevState) => {
+    const pluginState = plugin.getState(view.state);
+    const validationId = pluginState.validationId;
+    const prevValidationId = plugin.getState(prevState).validationId;
+    if (prevValidationId === validationId) {
+        return;
+    }
+    if (!prevValidationId && validationId) {
+        const decoration = findSingleDecoration(pluginState, spec => spec.validationId === validationId);
+        if (!decoration) {
+            return;
+        }
+        decoration.type.widget.classList.add("validation-widget-container--is-hovering");
+        return;
+    }
+    const decoration = findSingleDecoration(pluginState, spec => spec.validationId === prevValidationId);
+    if (!decoration) {
+        return;
+    }
+    decoration.type.widget && decoration.type.widget.classList.remove("validation-widget-container--is-hovering");
 };
-
-const toggleNoteIcon = {
-  width: 512,
-  height: 512,
-  path:
-    "M448,0H64C46.328,0,32,14.313,32,32v448c0,17.688,14.328,32,32,32h288l128-128V32C480,14.313,465.688,0,448,0z M352,466.75  V384h82.75L352,466.75z M448,352h-96c-17.688,0-32,14.313-32,32v96H64V32h384V352z M96,112c0-8.844,7.156-16,16-16h288  c8.844,0,16,7.156,16,16s-7.156,16-16,16H112C103.156,128,96,120.844,96,112z M96,208c0-8.844,7.156-16,16-16h288  c8.844,0,16,7.156,16,16s-7.156,16-16,16H112C103.156,224,96,216.844,96,208z M96,304c0-8.844,7.156-16,16-16h288  c8.844,0,16,7.156,16,16s-7.156,16-16,16H112C103.156,320,96,312.844,96,304z"
+const getReplaceStepRangesFromTransaction = (tr) => tr.steps
+    .filter(step => step instanceof dist_16 || step instanceof dist_17)
+    .map((step) => ({
+    from: step.from,
+    to: step.to
+}));
+const expandRange = (range, doc) => {
+    const fromPos = doc.resolve(range.from);
+    const parent = fromPos.node(fromPos.depth);
+    const { diffFrom, diffTo } = getExpandedRange(fromPos.parentOffset, parent.textContent, 2);
+    return { from: range.from + diffFrom, to: range.to + diffTo };
 };
-
-const collapseNoteIcon = {
-  width: 128,
-  height: 121.451,
-  path: `M39.637 53.63H8.69l-.01 10.105h30.945L25.68 81.865l4.468 4.46L56.07 60.41v-3.476l-25.918-25.91-4.46 4.47zm48.504 10.1h30.27l.008-10.1-30.266-.007 13.942-18.13-4.465-4.47L71.714 56.94l-.008 3.484 25.91 25.902 4.47-4.468z`
+const createDecorationRevalidator = (schema) => (ranges, decorations, doc) => {
+    console.log(decorations.find().length);
+    let { decorations: newDecorations, validationRanges: newRanges } = ranges.reduce((acc, range) => {
+        const removalRange = expandRange({ from: range.from, to: range.to }, doc);
+        const decorationsToRemove = decorations.find(removalRange.from, removalRange.to);
+        decorationsToRemove.map(console.log);
+        const decorationRanges = decorationsToRemove.length
+            ? decorationsToRemove.map(dec => ({
+                from: dec.from,
+                to: dec.to
+            }))
+            : [removalRange];
+        const validationRanges = decorationRanges.map(decRange => expandRange({ from: decRange.from, to: decRange.to }, doc));
+        return {
+            validationRanges: acc.validationRanges.concat(validationRanges),
+            decorations: decorations.remove(decorationsToRemove)
+        };
+    }, { decorations, validationRanges: [] });
+    const validationRanges = flatten_1(mergeRanges(newRanges).map(range => applyLibraryToValidationMap([doc.textBetween(range.from, range.to)], validationLibrary, range.from)));
+    const additionalDecorations = validationRanges.map(createDecorationForValidationRange);
+    const finalDecs = additionalDecorations.reduce((acc, decoration) => acc.add(doc, decoration), newDecorations);
+    return finalDecs;
 };
+const documentValidatorPlugin = (schema) => {
+    const decorationRevalidator = createDecorationRevalidator(schema);
+    const plugin = new dist_8({
+        state: {
+            init(_, { doc }) {
+                return {
+                    decorations: getValidationDecorationsForNode(doc, validationLibrary)
+                };
+            },
+            apply(tr, { decorations }) {
+                const replaceRanges = getReplaceStepRangesFromTransaction(tr);
+                let newDecorations = decorations.map(tr.mapping, tr.doc);
+                if (replaceRanges.length) {
+                    newDecorations = decorationRevalidator(replaceRanges, newDecorations, tr.doc);
+                }
+                return {
+                    decorations: newDecorations,
+                    validationId: tr.getMeta("validationId")
+                };
+            }
+        },
+        props: {
+            decorations: state => {
+                return plugin.getState(state).decorations;
+            },
+            handleDOMEvents: {
+                mouseover: (view, e) => {
+                    const target = e.target;
+                    if (target) {
+                        const targetAttr = target.getAttribute("data-attr-validation-id");
+                        const newValidationId = targetAttr
+                            ? targetAttr
+                            : undefined;
+                        if (newValidationId !== plugin.getState(view.state).validationId) {
+                            view.dispatch(view.state.tr.setMeta("validationId", newValidationId));
+                        }
+                    }
+                    return false;
+                }
+            }
+        },
+        view(view) {
+            return {
+                update: updateView(plugin)
+            };
+        }
+    });
+    return plugin;
+};
+const validateDocument = (state, dispatch) => dispatch && dispatch(state.tr.setMeta("validate-document", true));
 
 const mySchema = new dist_8$1({
-  nodes: schemaBasic_1,
-  marks: Object.assign({}, schemaBasic_2, {
-    note: createNoteMark("gu-note", meta => ({
-      class: meta.hidden ? "note--collapsed" : "",
-      title: "My Title",
-      contenteditable: !meta.hidden
-    })),
-    flag: createNoteMark(
-      {
-        flag: "gu-flag",
-        correct: "gu-correct"
-      },
-      meta => ({
-        class: meta.hidden ? "note--collapsed" : "",
-        title: "My Title",
-        contenteditable: !meta.hidden
-      })
-    )
-  })
+    nodes: schemaList_4(schemaBasic_3.spec.nodes, "paragraph block*", "block"),
+    marks: Object.assign({}, schemaBasic_2, validationMarks)
 });
-
-const doc = dist_12.fromSchema(mySchema).parse(
-  document.querySelector("#content")
-);
-
-const onNoteCreate = note => {
-  note.meta = Object.assign({}, note.meta, {
-    createdAt: Date.now()
-  });
-};
-
+const contentElement = document.querySelector("#content") || document.createElement("content");
+const doc = dist_12.fromSchema(mySchema).parse(contentElement);
 const historyPlugin = history_4();
-const {
-  plugin: noterPlugin,
-  toggleAllNotes,
-  showAllNotes,
-  toggleNote,
-  setNoteMeta
-} = buildNoter(mySchema.marks.note, doc, "noter", historyPlugin, {
-  onNoteCreate,
-  handleClick: note =>
-    setNoteMeta(note.id, {
-      hidden: !note.meta.hidden
-    })
-});
-
-const {
-  plugin: flagPlugin,
-  toggleNote: toggleFlag,
-  setNoteMeta: setFlagMeta
-} = buildNoter(
-  mySchema.marks.flag,
-  doc,
-  "flagger",
-  historyPlugin,
-  onNoteCreate,
-  note => {
-    const toggleTypes = ["flag", "correct"];
-    const toggleIndex = toggleTypes.indexOf(note.meta.type);
-    return toggleIndex > -1
-      ? setFlagMeta(note.id, {
-          type: toggleTypes[1 - toggleIndex]
+const editorElement = document.querySelector("#editor");
+editorElement &&
+    (window.editor = new dist_1$3(editorElement, {
+        state: dist_7.create({
+            doc,
+            plugins: [
+                ...dist_4$4({
+                    schema: mySchema,
+                    history: false,
+                    menuContent: dist_1$4(mySchema).fullMenu
+                }),
+                keymap_2({
+                    F6: validateDocument
+                }),
+                historyPlugin,
+                documentValidatorPlugin(mySchema)
+            ]
         })
-      : null;
-  }
-);
-
-window.editor = new dist_1$3(document.querySelector("#editor"), {
-  state: dist_7.create({
-    doc: dist_12.fromSchema(mySchema).parse(
-      document.querySelector("#content")
-    ),
-    plugins: [
-      ...dist_4$4({
-        schema: mySchema,
-        history: false,
-        menuContent: [
-          ...dist_1$4(mySchema).fullMenu,
-          [
-            new dist_1$6({
-              title: "Toggle Note",
-              label: "Toggle Note",
-              icon: toggleNoteIcon,
-              run: toggleNote("note")
-            }),
-            new dist_1$6({
-              title: "Collapse Notes",
-              icon: collapseNoteIcon,
-              run: toggleAllNotes(),
-              active: showAllNotes()
-            })
-          ]
-        ]
-      }),
-      keymap_2({
-        F6: toggleFlag("flag", true),
-        F7: toggleFlag("correct", true),
-        F10: toggleNote("note", true)
-      }),
-      historyPlugin,
-
-      flagPlugin,
-      noterPlugin
-    ]
-  })
-});
+    }));
+//# sourceMappingURL=index.js.map
 
 }());

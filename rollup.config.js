@@ -3,40 +3,38 @@ import commonjs from "rollup-plugin-commonjs";
 import eslint from "rollup-plugin-eslint";
 import scss from "rollup-plugin-scss";
 import babel from "rollup-plugin-babel";
+import typescript from "rollup-plugin-typescript";
 
 export default [
   {
-    input: "src/js/index.js",
+    input: "src/js/index.ts",
     output: {
       file: "dist/noting.js",
       format: "cjs"
     },
     plugins: [
+      typescript(),
       scss({
         output: "dist/noting.css"
-      }),
-      eslint({
-        exclude: ["node_modules/**"]
       }),
       babel()
     ]
   },
   {
     // Github pages
-    input: "pages/index.js",
+    input: "pages/index.ts",
     output: {
       file: "pages/dist/bundle.js",
       format: "iife",
       name: "Pages"
     },
     plugins: [
+
+      resolve({ browser: true }),
+      typescript(),
       scss({
         output: "pages/dist/styles.css"
       }),
-      eslint({
-        exclude: ["node_modules/**"]
-      }),
-      resolve({ browser: true }),
       commonjs()
     ]
   }
