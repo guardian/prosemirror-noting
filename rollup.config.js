@@ -21,6 +21,14 @@ export default [
     ]
   },
   {
+    input: "src/js/worker.ts",
+    output: {
+      file: "dist/worker.js",
+      format: "cjs"
+    },
+    plugins: [typescript(), babel()]
+  },
+  {
     // Github pages
     input: "pages/index.ts",
     output: {
@@ -29,7 +37,6 @@ export default [
       name: "Pages"
     },
     plugins: [
-
       resolve({ browser: true }),
       typescript(),
       scss({

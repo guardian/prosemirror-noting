@@ -17,6 +17,10 @@ describe("Range utils", () => {
                 to: 8
             })).toEqual(0);
             expect(findOverlappingRangeIndex(ranges, {
+                from: 5,
+                to: 10
+            })).toEqual(0);
+            expect(findOverlappingRangeIndex(ranges, {
                 from: 8,
                 to: 15
             })).toEqual(0);

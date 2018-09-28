@@ -15009,6 +15009,43 @@ const validationMarks = Object.keys(markTypes).reduce((acc, markName) => {
 }, {});
 //# sourceMappingURL=schema.js.map
 
+/*! *****************************************************************************
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the
+License at http://www.apache.org/licenses/LICENSE-2.0
+
+THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
+WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+MERCHANTABLITY OR NON-INFRINGEMENT.
+
+See the Apache Version 2.0 License for specific language governing permissions
+and limitations under the License.
+***************************************************************************** */
+/* global Reflect, Promise */
+
+
+
+
+
+
+
+
+
+
+
+
+
+function __awaiter(thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+}
+
 /**
  * Appends the elements of `values` to `array`.
  *
@@ -15041,9 +15078,9 @@ var root = _freeGlobal || freeSelf || Function('return this')();
 
 var _root = root;
 
-var Symbol = _root.Symbol;
+var Symbol$1 = _root.Symbol;
 
-var _Symbol = Symbol;
+var _Symbol = Symbol$1;
 
 var objectProto$1 = Object.prototype;
 
@@ -15289,10 +15326,414 @@ function flatten$1(array) {
 
 var flatten_1 = flatten$1;
 
+/**
+ * The base implementation of `_.slice` without an iteratee call guard.
+ *
+ * @private
+ * @param {Array} array The array to slice.
+ * @param {number} [start=0] The start position.
+ * @param {number} [end=array.length] The end position.
+ * @returns {Array} Returns the slice of `array`.
+ */
+function baseSlice(array, start, end) {
+  var index = -1,
+      length = array.length;
+
+  if (start < 0) {
+    start = -start > length ? 0 : (length + start);
+  }
+  end = end > length ? length : end;
+  if (end < 0) {
+    end += length;
+  }
+  length = start > end ? 0 : ((end - start) >>> 0);
+  start >>>= 0;
+
+  var result = Array(length);
+  while (++index < length) {
+    result[index] = array[index + start];
+  }
+  return result;
+}
+
+var _baseSlice = baseSlice;
+
+/**
+ * Performs a
+ * [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
+ * comparison between two values to determine if they are equivalent.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to compare.
+ * @param {*} other The other value to compare.
+ * @returns {boolean} Returns `true` if the values are equivalent, else `false`.
+ * @example
+ *
+ * var object = { 'a': 1 };
+ * var other = { 'a': 1 };
+ *
+ * _.eq(object, object);
+ * // => true
+ *
+ * _.eq(object, other);
+ * // => false
+ *
+ * _.eq('a', 'a');
+ * // => true
+ *
+ * _.eq('a', Object('a'));
+ * // => false
+ *
+ * _.eq(NaN, NaN);
+ * // => true
+ */
+function eq(value, other) {
+  return value === other || (value !== value && other !== other);
+}
+
+var eq_1 = eq;
+
+/**
+ * Checks if `value` is the
+ * [language type](http://www.ecma-international.org/ecma-262/7.0/#sec-ecmascript-language-types)
+ * of `Object`. (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an object, else `false`.
+ * @example
+ *
+ * _.isObject({});
+ * // => true
+ *
+ * _.isObject([1, 2, 3]);
+ * // => true
+ *
+ * _.isObject(_.noop);
+ * // => true
+ *
+ * _.isObject(null);
+ * // => false
+ */
+function isObject(value) {
+  var type = typeof value;
+  return value != null && (type == 'object' || type == 'function');
+}
+
+var isObject_1 = isObject;
+
+var asyncTag = '[object AsyncFunction]';
+var funcTag = '[object Function]';
+var genTag = '[object GeneratorFunction]';
+var proxyTag = '[object Proxy]';
+
+/**
+ * Checks if `value` is classified as a `Function` object.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a function, else `false`.
+ * @example
+ *
+ * _.isFunction(_);
+ * // => true
+ *
+ * _.isFunction(/abc/);
+ * // => false
+ */
+function isFunction(value) {
+  if (!isObject_1(value)) {
+    return false;
+  }
+  // The use of `Object#toString` avoids issues with the `typeof` operator
+  // in Safari 9 which returns 'object' for typed arrays and other constructors.
+  var tag = _baseGetTag(value);
+  return tag == funcTag || tag == genTag || tag == asyncTag || tag == proxyTag;
+}
+
+var isFunction_1 = isFunction;
+
+/** Used as references for various `Number` constants. */
+var MAX_SAFE_INTEGER = 9007199254740991;
+
+/**
+ * Checks if `value` is a valid array-like length.
+ *
+ * **Note:** This method is loosely based on
+ * [`ToLength`](http://ecma-international.org/ecma-262/7.0/#sec-tolength).
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a valid length, else `false`.
+ * @example
+ *
+ * _.isLength(3);
+ * // => true
+ *
+ * _.isLength(Number.MIN_VALUE);
+ * // => false
+ *
+ * _.isLength(Infinity);
+ * // => false
+ *
+ * _.isLength('3');
+ * // => false
+ */
+function isLength(value) {
+  return typeof value == 'number' &&
+    value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
+}
+
+var isLength_1 = isLength;
+
+function isArrayLike(value) {
+  return value != null && isLength_1(value.length) && !isFunction_1(value);
+}
+
+var isArrayLike_1 = isArrayLike;
+
+/** Used as references for various `Number` constants. */
+var MAX_SAFE_INTEGER$1 = 9007199254740991;
+
+/** Used to detect unsigned integer values. */
+var reIsUint = /^(?:0|[1-9]\d*)$/;
+
+/**
+ * Checks if `value` is a valid array-like index.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @param {number} [length=MAX_SAFE_INTEGER] The upper bounds of a valid index.
+ * @returns {boolean} Returns `true` if `value` is a valid index, else `false`.
+ */
+function isIndex(value, length) {
+  var type = typeof value;
+  length = length == null ? MAX_SAFE_INTEGER$1 : length;
+
+  return !!length &&
+    (type == 'number' ||
+      (type != 'symbol' && reIsUint.test(value))) &&
+        (value > -1 && value % 1 == 0 && value < length);
+}
+
+var _isIndex = isIndex;
+
+function isIterateeCall(value, index, object) {
+  if (!isObject_1(object)) {
+    return false;
+  }
+  var type = typeof index;
+  if (type == 'number'
+        ? (isArrayLike_1(object) && _isIndex(index, object.length))
+        : (type == 'string' && index in object)
+      ) {
+    return eq_1(object[index], value);
+  }
+  return false;
+}
+
+var _isIterateeCall = isIterateeCall;
+
+var symbolTag = '[object Symbol]';
+
+/**
+ * Checks if `value` is classified as a `Symbol` primitive or object.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a symbol, else `false`.
+ * @example
+ *
+ * _.isSymbol(Symbol.iterator);
+ * // => true
+ *
+ * _.isSymbol('abc');
+ * // => false
+ */
+function isSymbol(value) {
+  return typeof value == 'symbol' ||
+    (isObjectLike_1(value) && _baseGetTag(value) == symbolTag);
+}
+
+var isSymbol_1 = isSymbol;
+
+var NAN = 0 / 0;
+
+/** Used to match leading and trailing whitespace. */
+var reTrim = /^\s+|\s+$/g;
+
+/** Used to detect bad signed hexadecimal string values. */
+var reIsBadHex = /^[-+]0x[0-9a-f]+$/i;
+
+/** Used to detect binary string values. */
+var reIsBinary = /^0b[01]+$/i;
+
+/** Used to detect octal string values. */
+var reIsOctal = /^0o[0-7]+$/i;
+
+/** Built-in method references without a dependency on `root`. */
+var freeParseInt = parseInt;
+
+/**
+ * Converts `value` to a number.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to process.
+ * @returns {number} Returns the number.
+ * @example
+ *
+ * _.toNumber(3.2);
+ * // => 3.2
+ *
+ * _.toNumber(Number.MIN_VALUE);
+ * // => 5e-324
+ *
+ * _.toNumber(Infinity);
+ * // => Infinity
+ *
+ * _.toNumber('3.2');
+ * // => 3.2
+ */
+function toNumber(value) {
+  if (typeof value == 'number') {
+    return value;
+  }
+  if (isSymbol_1(value)) {
+    return NAN;
+  }
+  if (isObject_1(value)) {
+    var other = typeof value.valueOf == 'function' ? value.valueOf() : value;
+    value = isObject_1(other) ? (other + '') : other;
+  }
+  if (typeof value != 'string') {
+    return value === 0 ? value : +value;
+  }
+  value = value.replace(reTrim, '');
+  var isBinary = reIsBinary.test(value);
+  return (isBinary || reIsOctal.test(value))
+    ? freeParseInt(value.slice(2), isBinary ? 2 : 8)
+    : (reIsBadHex.test(value) ? NAN : +value);
+}
+
+var toNumber_1 = toNumber;
+
+var INFINITY = 1 / 0;
+var MAX_INTEGER = 1.7976931348623157e+308;
+
+/**
+ * Converts `value` to a finite number.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.12.0
+ * @category Lang
+ * @param {*} value The value to convert.
+ * @returns {number} Returns the converted number.
+ * @example
+ *
+ * _.toFinite(3.2);
+ * // => 3.2
+ *
+ * _.toFinite(Number.MIN_VALUE);
+ * // => 5e-324
+ *
+ * _.toFinite(Infinity);
+ * // => 1.7976931348623157e+308
+ *
+ * _.toFinite('3.2');
+ * // => 3.2
+ */
+function toFinite(value) {
+  if (!value) {
+    return value === 0 ? value : 0;
+  }
+  value = toNumber_1(value);
+  if (value === INFINITY || value === -INFINITY) {
+    var sign = (value < 0 ? -1 : 1);
+    return sign * MAX_INTEGER;
+  }
+  return value === value ? value : 0;
+}
+
+var toFinite_1 = toFinite;
+
+function toInteger(value) {
+  var result = toFinite_1(value),
+      remainder = result % 1;
+
+  return result === result ? (remainder ? result - remainder : result) : 0;
+}
+
+var toInteger_1 = toInteger;
+
+var nativeCeil = Math.ceil;
+var nativeMax = Math.max;
+
+/**
+ * Creates an array of elements split into groups the length of `size`.
+ * If `array` can't be split evenly, the final chunk will be the remaining
+ * elements.
+ *
+ * @static
+ * @memberOf _
+ * @since 3.0.0
+ * @category Array
+ * @param {Array} array The array to process.
+ * @param {number} [size=1] The length of each chunk
+ * @param- {Object} [guard] Enables use as an iteratee for methods like `_.map`.
+ * @returns {Array} Returns the new array of chunks.
+ * @example
+ *
+ * _.chunk(['a', 'b', 'c', 'd'], 2);
+ * // => [['a', 'b'], ['c', 'd']]
+ *
+ * _.chunk(['a', 'b', 'c', 'd'], 3);
+ * // => [['a', 'b', 'c'], ['d']]
+ */
+function chunk(array, size, guard) {
+  if ((guard ? _isIterateeCall(array, size, guard) : size === undefined)) {
+    size = 1;
+  } else {
+    size = nativeMax(toInteger_1(size), 0);
+  }
+  var length = array == null ? 0 : array.length;
+  if (!length || size < 1) {
+    return [];
+  }
+  var index = 0,
+      resIndex = 0,
+      result = Array(nativeCeil(length / size));
+
+  while (index < length) {
+    result[resIndex++] = _baseSlice(array, index, (index += size));
+  }
+  return result;
+}
+
+var chunk_1 = chunk;
+
 const findOverlappingRangeIndex = (ranges, range) => {
-    return ranges.findIndex(localRange => (localRange.from < range.from && localRange.to > range.from)
-        || (localRange.to > range.to && localRange.from < range.to)
-        || (localRange.from > range.from && localRange.to < range.to));
+    return ranges.findIndex(localRange => (localRange.from <= range.from && localRange.to >= range.from)
+        || (localRange.to >= range.to && localRange.from <= range.to)
+        || (localRange.from >= range.from && localRange.to <= range.to));
 };
 const mergeRange = (range1, range2) => ({
     from: range1.from < range2.from ? range1.from : range2.from,
@@ -15307,6 +15748,7 @@ const mergeRanges = (ranges) => ranges.reduce((acc, range) => {
     newRange.splice(index, 1, mergeRange(range, acc[index]));
     return newRange;
 }, []);
+//# sourceMappingURL=range.js.map
 
 const getExpandedRange = (index, str, noOfWords = 1) => {
     const lastIndex = str.length - 1;
@@ -15427,6 +15869,58 @@ function v4(options, buf, offset) {
 
 var v4_1 = v4;
 
+/**
+ * This method returns `undefined`.
+ *
+ * @static
+ * @memberOf _
+ * @since 2.3.0
+ * @category Util
+ * @example
+ *
+ * _.times(2, _.noop);
+ * // => [undefined, undefined]
+ */
+function noop() {
+  // No operation performed.
+}
+
+var noop_1 = noop;
+
+function runWithCancel(fn, ...args) {
+    const gen = fn(...args);
+    let cancelled = false;
+    let cancel = noop_1;
+    const promise = new Promise((resolve, reject) => {
+        cancel = () => {
+            cancelled = true;
+            reject({ reason: "cancelled" });
+        };
+        function onFulfilled(res) {
+            if (!cancelled) {
+                let result;
+                try {
+                    result = gen.next(res);
+                }
+                catch (e) {
+                    return reject(e);
+                }
+                next(result);
+                return null;
+            }
+        }
+        onFulfilled();
+        function next({ done, value }) {
+            if (done) {
+                return resolve(value);
+            }
+            return onFulfilled(value);
+        }
+    });
+    return { promise, cancel };
+}
+//# sourceMappingURL=async.js.map
+
 const flatten = (node, descend = true) => {
     if (!node) {
         throw new Error('Invalid "node" parameter');
@@ -15486,32 +15980,26 @@ const Operations = {
     ANNOTATE: "ANNOTATE",
     REPLACE: "REPLACE"
 };
-const validationLibrary = [
-    {
-        regExp: new RegExp("some validation", "g"),
-        annotation: "You used the word 'validation'",
+const withoutIndex = (arr, index$$1) => arr.slice(0, index$$1).concat(arr.slice(index$$1 + 1));
+const permutations = seq => seq.reduce((acc, el, index$$1, arr) => {
+    if (!arr.length)
+        return [[]];
+    if (arr.length === 1)
+        return [arr];
+    return [
+        ...acc,
+        ...permutations(withoutIndex(arr, index$$1)).map(perms => [el, ...perms], [])
+    ];
+}, []);
+const validationLibrary = chunk_1(permutations(Array.from("qwertyui")).map(perm => {
+    const str = perm.join("");
+    return {
+        regExp: new RegExp(str, "g"),
+        annotation: `You used the word ${str}`,
         operation: Operations.ANNOTATE,
         type: markTypes.legal
-    },
-    {
-        regExp: new RegExp("Prosemirror", "g"),
-        annotation: "You used the word 'Prosemirror'",
-        operation: Operations.REPLACE,
-        type: markTypes.legal
-    },
-    {
-        regExp: new RegExp("require", "g"),
-        annotation: "You used the word 'require'",
-        operation: Operations.REPLACE,
-        type: markTypes.legal
-    },
-    {
-        regExp: new RegExp("Happy", "g"),
-        annotation: "You used the word 'happy'",
-        operation: Operations.REPLACE,
-        type: markTypes.warn
-    }
-];
+    };
+}), 500);
 const getMatchIndexes = (str, offset, regExp) => {
     const matches = [];
     let match;
@@ -15520,21 +16008,30 @@ const getMatchIndexes = (str, offset, regExp) => {
     }
     return matches;
 };
-const applyLibraryToValidationMap = (arrayToValidate, validationLibrary, offset = 0) => validationLibrary.reduce((acc, item) => {
-    const isStringMap = isString(arrayToValidate[0]);
-    const matches = flatten_1(isStringMap
-        ? arrayToValidate.map(str => getMatchIndexes(str, offset, item.regExp))
-        : arrayToValidate.map((textMap) => getMatchIndexes(textMap.text, textMap.offset, item.regExp)));
-    return acc.concat(matches
-        .map(match => ({
-        origin: match.index,
-        annotation: item.annotation,
-        type: item.type,
-        startPos: match.index,
-        endPos: match.index + match.item.length
-    }))
-        .filter(match => match));
-}, []);
+const applyLibraryToValidationMapCancelable = (arrayToValidate, validationLibrary, offset = 0) => runWithCancel(applyLibraryToValidationMap, arrayToValidate, validationLibrary, offset);
+function* applyLibraryToValidationMap(arrayToValidate, validationLibrary, offset = 0) {
+    let matches = [];
+    for (let i = 0; i < validationLibrary.length - 1; i++) {
+        yield;
+        for (let j = 0; j < validationLibrary[i].length - 1; j++) {
+            const isStringMap = isString(arrayToValidate[0]);
+            const rule = validationLibrary[i][j];
+            const ruleMatches = flatten_1(isStringMap
+                ? arrayToValidate.map(str => getMatchIndexes(str, offset, rule.regExp))
+                : arrayToValidate.map((textMap) => getMatchIndexes(textMap.text, textMap.offset, rule.regExp)));
+            matches = matches.concat(ruleMatches
+                .map(match => ({
+                origin: match.index,
+                annotation: rule.annotation,
+                type: rule.type,
+                startPos: match.index,
+                endPos: match.index + match.item.length
+            }))
+                .filter(match => match));
+        }
+    }
+    return matches;
+}
 const getWidgetNode = (range) => {
     const widget = document.createElement("span");
     widget.className = "validation-widget-container";
@@ -15550,15 +16047,8 @@ const getWidgetNode = (range) => {
     contentNode.appendChild(textNode);
     return widget;
 };
-const getValidationDecorationsForNode = (doc, validationLibrary) => {
-    const textMap = getTextMaps(doc);
-    const ranges = applyLibraryToValidationMap(textMap, validationLibrary);
-    const validationDecs = ranges.map(createDecorationForValidationRange);
-    return dist_3$3.create(doc, flatten_1(validationDecs));
-};
 const createDecorationForValidationRange = (range) => {
     const validationId = v4_1();
-    console.log('Creating decoration', range);
     return [
         dist_2$3.inline(range.startPos, range.endPos, {
             class: "validation-decoration",
@@ -15567,6 +16057,18 @@ const createDecorationForValidationRange = (range) => {
         dist_2$3.widget(range.startPos, getWidgetNode(range), { validationId })
     ];
 };
+const getValidationRangesForDocument = (doc, lib) => __awaiter(undefined, void 0, void 0, function* () {
+    const textMap = getTextMaps(doc);
+    return applyLibraryToValidationMapCancelable(textMap, lib);
+});
+const getValidationRangesForRanges = (ranges, doc, lib) => __awaiter(undefined, void 0, void 0, function* () {
+    const validationRanges = ranges.map(range => applyLibraryToValidationMapCancelable([doc.textBetween(range.from, range.to)], lib, range.from));
+    return {
+        promise: Promise.all(validationRanges.map(_ => _.promise)).then(flatten_1),
+        cancel: () => validationRanges.forEach(_ => _.cancel())
+    };
+});
+const getDecorationsForValidationRanges = (ranges) => flatten_1(ranges.map(createDecorationForValidationRange));
 const findSingleDecoration = (state, predicate) => {
     const decorations = state.decorations.find(undefined, undefined, predicate);
     if (!decorations[0]) {
@@ -15593,7 +16095,8 @@ const updateView = (plugin) => (view, prevState) => {
     if (!decoration) {
         return;
     }
-    decoration.type.widget && decoration.type.widget.classList.remove("validation-widget-container--is-hovering");
+    decoration.type.widget &&
+        decoration.type.widget.classList.remove("validation-widget-container--is-hovering");
 };
 const getReplaceStepRangesFromTransaction = (tr) => tr.steps
     .filter(step => step instanceof dist_16 || step instanceof dist_17)
@@ -15607,12 +16110,10 @@ const expandRange = (range, doc) => {
     const { diffFrom, diffTo } = getExpandedRange(fromPos.parentOffset, parent.textContent, 2);
     return { from: range.from + diffFrom, to: range.to + diffTo };
 };
-const createDecorationRevalidator = (schema) => (ranges, decorations, doc) => {
-    console.log(decorations.find().length);
-    let { decorations: newDecorations, validationRanges: newRanges } = ranges.reduce((acc, range) => {
+const revalidationRangefinder = (ranges, decorations, doc) => {
+    const { decorations: localDecorations, validationRanges } = ranges.reduce((acc, range) => {
         const removalRange = expandRange({ from: range.from, to: range.to }, doc);
         const decorationsToRemove = decorations.find(removalRange.from, removalRange.to);
-        decorationsToRemove.map(console.log);
         const decorationRanges = decorationsToRemove.length
             ? decorationsToRemove.map(dec => ({
                 from: dec.from,
@@ -15625,29 +16126,70 @@ const createDecorationRevalidator = (schema) => (ranges, decorations, doc) => {
             decorations: decorations.remove(decorationsToRemove)
         };
     }, { decorations, validationRanges: [] });
-    const validationRanges = flatten_1(mergeRanges(newRanges).map(range => applyLibraryToValidationMap([doc.textBetween(range.from, range.to)], validationLibrary, range.from)));
-    const additionalDecorations = validationRanges.map(createDecorationForValidationRange);
-    const finalDecs = additionalDecorations.reduce((acc, decoration) => acc.add(doc, decoration), newDecorations);
-    return finalDecs;
+    return {
+        decorations: localDecorations,
+        rangesToValidate: mergeRanges(validationRanges)
+    };
 };
 const documentValidatorPlugin = (schema) => {
-    const decorationRevalidator = createDecorationRevalidator(schema);
+    let localView = undefined;
     const plugin = new dist_8({
         state: {
             init(_, { doc }) {
+                let cancel;
+                getValidationRangesForDocument(doc, validationLibrary)
+                    .then(_ => {
+                    cancel = _.cancel;
+                    return _.promise;
+                })
+                    .then(validationRanges => {
+                    localView &&
+                        localView.dispatch(localView.state.tr.setMeta("applyValidationRanges", validationRanges));
+                });
                 return {
-                    decorations: getValidationDecorationsForNode(doc, validationLibrary)
+                    decorations: dist_3$3.create(doc, []),
+                    docOnValidationStart: doc
                 };
             },
-            apply(tr, { decorations }) {
+            apply(tr, { decorations, isValidating = false, bufferedTrs = [], docOnValidationStart, cancelValidation }) {
                 const replaceRanges = getReplaceStepRangesFromTransaction(tr);
-                let newDecorations = decorations.map(tr.mapping, tr.doc);
+                let _newDecorations = decorations.map(tr.mapping, tr.doc);
+                let _isValidating = isValidating;
+                let _bufferedTrs = bufferedTrs;
+                let _docOnValidationStart = null;
+                if (isValidating) {
+                    _bufferedTrs = bufferedTrs.concat(tr);
+                }
                 if (replaceRanges.length) {
-                    newDecorations = decorationRevalidator(replaceRanges, newDecorations, tr.doc);
+                    if (cancelValidation) {
+                        cancelValidation("Validation superseded");
+                    }
+                    const { decorations: prunedDecorations, rangesToValidate } = revalidationRangefinder(replaceRanges, _newDecorations, tr.doc);
+                    _newDecorations = prunedDecorations;
+                    _docOnValidationStart = tr.doc;
+                    getValidationRangesForRanges(rangesToValidate, tr.doc, validationLibrary)
+                        .then(_ => {
+                        cancelValidation = _.cancel;
+                        return _.promise;
+                    })
+                        .then(validationRanges => {
+                        localView &&
+                            localView.dispatch(localView.state.tr.setMeta("applyValidationRanges", validationRanges));
+                    });
+                }
+                const validationRanges = tr.getMeta("applyValidationRanges");
+                if (validationRanges) {
+                    const decorationsToAdd = getDecorationsForValidationRanges(validationRanges);
+                    const existingDecorations = _newDecorations.find();
+                    _newDecorations = _bufferedTrs.reduce((acc, _tr) => acc.map(_tr.mapping, _tr.doc), dist_3$3.create(docOnValidationStart, decorationsToAdd));
+                    _newDecorations = _newDecorations.add(tr.doc, existingDecorations);
                 }
                 return {
-                    decorations: newDecorations,
-                    validationId: tr.getMeta("validationId")
+                    decorations: _newDecorations,
+                    validationId: tr.getMeta("validationId"),
+                    isValidating: _isValidating,
+                    bufferedTrs: _bufferedTrs,
+                    docOnValidationStart: _docOnValidationStart
                 };
             }
         },
@@ -15660,9 +16202,7 @@ const documentValidatorPlugin = (schema) => {
                     const target = e.target;
                     if (target) {
                         const targetAttr = target.getAttribute("data-attr-validation-id");
-                        const newValidationId = targetAttr
-                            ? targetAttr
-                            : undefined;
+                        const newValidationId = targetAttr ? targetAttr : undefined;
                         if (newValidationId !== plugin.getState(view.state).validationId) {
                             view.dispatch(view.state.tr.setMeta("validationId", newValidationId));
                         }
@@ -15672,6 +16212,7 @@ const documentValidatorPlugin = (schema) => {
             }
         },
         view(view) {
+            localView = view;
             return {
                 update: updateView(plugin)
             };

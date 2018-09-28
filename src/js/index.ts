@@ -2,11 +2,13 @@ import { Plugin, Transaction, EditorState } from "prosemirror-state";
 import { Node, Schema, Slice } from "prosemirror-model";
 import { DecorationSet, Decoration, EditorView } from "prosemirror-view";
 import flatMap from "lodash/flatten";
+import chunk from "lodash/chunk";
 import { markTypes } from "./utils/schema";
 import { mergeRanges } from "./utils/range";
 import { getExpandedRange, isString } from "./utils/string";
 import { ReplaceStep, ReplaceAroundStep } from "prosemirror-transform";
-import uuid from 'uuid/v4';
+import uuid from "uuid/v4";
+import { runWithCancel } from "./utils/async";
 
 /**
  * Flatten a node and its children into a single array of objects, containing
@@ -119,34 +121,33 @@ type ValidationLibrary = {
   annotation: string;
   operation: "ANNOTATE" | "REPLACE";
   type: string;
-}[];
+}[][];
 
-const validationLibrary: ValidationLibrary = [
-  {
-    regExp: new RegExp("some validation", "g"),
-    annotation: "You used the word 'validation'",
-    operation: Operations.ANNOTATE,
-    type: markTypes.legal
-  },
-  {
-    regExp: new RegExp("Prosemirror", "g"),
-    annotation: "You used the word 'Prosemirror'",
-    operation: Operations.REPLACE,
-    type: markTypes.legal
-  },
-  {
-    regExp: new RegExp("require", "g"),
-    annotation: "You used the word 'require'",
-    operation: Operations.REPLACE,
-    type: markTypes.legal
-  },
-  {
-    regExp: new RegExp("Happy", "g"),
-    annotation: "You used the word 'happy'",
-    operation: Operations.REPLACE,
-    type: markTypes.warn
-  }
-];
+const withoutIndex = <T>(arr: Array<T>, index: number) =>
+  arr.slice(0, index).concat(arr.slice(index + 1));
+
+const permutations: <T>(seq: Array<T>) => T[][] = seq =>
+  seq.reduce((acc, el, index, arr) => {
+    if (!arr.length) return [[]];
+    if (arr.length === 1) return [arr];
+    return [
+      ...acc,
+      ...permutations(withoutIndex(arr, index)).map(perms => [el, ...perms], [])
+    ];
+  }, []);
+
+const validationLibrary: ValidationLibrary = chunk(
+  permutations(Array.from("qwertyui")).map(perm => {
+    const str = perm.join("");
+    return {
+      regExp: new RegExp(str, "g"),
+      annotation: `You used the word ${str}`,
+      operation: Operations.ANNOTATE,
+      type: markTypes.legal
+    };
+  }),
+  500
+);
 
 /**
  * Get the matches and indexes for a given string and regex.
@@ -168,40 +169,58 @@ type ValidationRange = {
   endPos: number;
 };
 
-/**
- * Apply a library to a text map, returning a list of validation ranges.
- */
-const applyLibraryToValidationMap = (
+const applyLibraryToValidationMapCancelable = (
   arrayToValidate: TextMap[] | string[],
   validationLibrary: ValidationLibrary,
   offset = 0
 ) =>
-  validationLibrary.reduce(
-    (acc, item) => {
+  runWithCancel(
+    applyLibraryToValidationMap,
+    arrayToValidate,
+    validationLibrary,
+    offset
+  );
+
+/**
+ * Apply a library to a text map, returning a list of validation ranges.
+ */
+function* applyLibraryToValidationMap(
+  arrayToValidate: TextMap[] | string[],
+  validationLibrary: ValidationLibrary,
+  offset = 0
+) {
+  let matches: ValidationRange[] = [];
+
+  for (let i = 0; i < validationLibrary.length - 1; i++) {
+    yield;
+    for (let j = 0; j < validationLibrary[i].length - 1; j++) {
       const isStringMap = isString(arrayToValidate[0]);
-      const matches = flatMap(
+      const rule = validationLibrary[i][j];
+      const ruleMatches = flatMap(
         isStringMap
           ? (arrayToValidate as string[]).map(str =>
-              getMatchIndexes(str, offset, item.regExp)
+              getMatchIndexes(str, offset, rule.regExp)
             )
           : (arrayToValidate as TextMap[]).map((textMap: TextMap) =>
-              getMatchIndexes(textMap.text, textMap.offset, item.regExp)
+              getMatchIndexes(textMap.text, textMap.offset, rule.regExp)
             )
       );
-      return acc.concat(
-        matches
+      matches = matches.concat(
+        ruleMatches
           .map(match => ({
             origin: match.index,
-            annotation: item.annotation,
-            type: item.type,
+            annotation: rule.annotation,
+            type: rule.type,
             startPos: match.index,
             endPos: match.index + match.item.length
           }))
           .filter(match => match)
       );
-    },
-    [] as ValidationRange[]
-  );
+    }
+  }
+
+  return matches;
+}
 
 /**
  * Get a widget DOM node given a validation range.
@@ -228,23 +247,10 @@ const getWidgetNode = (range: ValidationRange) => {
 };
 
 /**
- * Given a validation library, gets validation decorations for a node.
+ * Create a validation decoration for the given range.
  */
-const getValidationDecorationsForNode = (
-  doc: Node,
-  validationLibrary: ValidationLibrary
-) => {
-  const textMap = getTextMaps(doc);
-  const ranges = applyLibraryToValidationMap(textMap, validationLibrary);
-  const validationDecs = ranges.map(createDecorationForValidationRange);
-  return DecorationSet.create(doc, flatMap(validationDecs));
-};
-
-const createDecorationForValidationRange = (
-  range: ValidationRange
-) => {
+const createDecorationForValidationRange = (range: ValidationRange) => {
   const validationId = uuid();
-  console.log('Creating decoration', range);
   return [
     Decoration.inline(range.startPos, range.endPos, {
       class: "validation-decoration",
@@ -253,6 +259,40 @@ const createDecorationForValidationRange = (
     Decoration.widget(range.startPos, getWidgetNode(range), { validationId })
   ];
 };
+
+/**
+ * Given a validation library, gets validation decorations for a node.
+ */
+const getValidationRangesForDocument = async (
+  doc: Node,
+  lib: ValidationLibrary
+) => {
+  const textMap = getTextMaps(doc);
+  return applyLibraryToValidationMapCancelable(textMap, lib);
+};
+
+const getValidationRangesForRanges = async (
+  ranges: Range[],
+  doc: Node,
+  lib: ValidationLibrary
+) => {
+  // Revalidate and redecorate each range.
+  const validationRanges = ranges.map(range =>
+    applyLibraryToValidationMapCancelable(
+      [doc.textBetween(range.from, range.to)],
+      lib,
+      range.from
+    )
+  );
+
+  return {
+    promise: Promise.all(validationRanges.map(_ => _.promise)).then(flatMap),
+    cancel: () => validationRanges.forEach(_ => _.cancel())
+  };
+};
+
+const getDecorationsForValidationRanges = (ranges: ValidationRange[]) =>
+  flatMap(ranges.map(createDecorationForValidationRange));
 
 const findSingleDecoration = (
   state: PluginState,
@@ -299,9 +339,10 @@ const updateView = (plugin: Plugin) => (
   if (!decoration) {
     return;
   }
-  decoration.type.widget && decoration.type.widget.classList.remove(
-    "validation-widget-container--is-hovering"
-  );
+  decoration.type.widget &&
+    decoration.type.widget.classList.remove(
+      "validation-widget-container--is-hovering"
+    );
 };
 
 /**
@@ -334,29 +375,25 @@ const expandRange = (range: Range, doc: Node): Range => {
 };
 
 /**
- * Given a schema, create a function that revalidates a set of decorations
- * for the given ranges.
+ * Given a schema, create a function that invalidates a set of decorations
+ * for the given ranges, supplying a new range to validate.
  */
-const createDecorationRevalidator = (schema: Schema) => (
+const revalidationRangefinder = (
   ranges: Range[],
   decorations: DecorationSet,
   doc: Node
 ) => {
-  console.log(decorations.find().length);
-  // Remove any decorations that impinge on these ranges, retaining their
-  // ranges for revalidation
-  let {
-    decorations: newDecorations,
-    validationRanges: newRanges
-  } = ranges.reduce(
+  const { decorations: localDecorations, validationRanges } = ranges.reduce(
     (acc, range: Range) => {
       // @todo - there will be a bug here for large ranges, as the widget decorator
       // lives on the left of the inline decoration and if this range doesn't reach it
       // stale widgets will be left in the document. Buuuut, this is innovation
       // week (tm), so...
-      const removalRange = expandRange({ from: range.from, to: range.to }, doc)
-      const decorationsToRemove = decorations.find(removalRange.from, removalRange.to);
-      decorationsToRemove.map(console.log)
+      const removalRange = expandRange({ from: range.from, to: range.to }, doc);
+      const decorationsToRemove = decorations.find(
+        removalRange.from,
+        removalRange.to
+      );
       const decorationRanges = decorationsToRemove.length
         ? decorationsToRemove.map(dec => ({
             from: dec.from,
@@ -377,34 +414,19 @@ const createDecorationRevalidator = (schema: Schema) => (
     },
     { decorations, validationRanges: [] as Range[] }
   );
-
-
-  // Revalidate and redecorate each range.
-  const validationRanges = flatMap(
-    mergeRanges(newRanges).map(range =>
-      applyLibraryToValidationMap(
-        [doc.textBetween(range.from, range.to)],
-        validationLibrary,
-        range.from
-      )
-    )
-  );
-
-  const additionalDecorations = validationRanges.map(
-    createDecorationForValidationRange
-  );
-  
-  const finalDecs = additionalDecorations.reduce(
-    (acc: DecorationSet, decoration) => acc.add(doc, decoration),
-    newDecorations
-  );
-
-  return finalDecs;
+  return {
+    decorations: localDecorations,
+    rangesToValidate: mergeRanges(validationRanges)
+  };
 };
 
 type PluginState = {
   decorations: DecorationSet;
+  isValidating: boolean;
+  bufferedTrs: Transaction[];
   validationId?: string;
+  docOnValidationStart: Node;
+  cancelValidation: (reason?: string) => void;
 };
 
 /**
@@ -412,27 +434,112 @@ type PluginState = {
  * validation decorations to the document.
  */
 const documentValidatorPlugin = (schema: Schema) => {
-  const decorationRevalidator = createDecorationRevalidator(schema);
+  let localView: undefined | EditorView = undefined;
   const plugin: Plugin = new Plugin({
     state: {
       init(_, { doc }) {
+        let cancel;
+        getValidationRangesForDocument(doc, validationLibrary)
+          .then(_ => {
+            cancel = _.cancel;
+            return _.promise;
+          })
+          .then(validationRanges => {
+            localView &&
+              localView.dispatch(
+                localView.state.tr.setMeta(
+                  "applyValidationRanges",
+                  validationRanges
+                )
+              );
+          });
         return {
-          decorations: getValidationDecorationsForNode(doc, validationLibrary)
+          decorations: DecorationSet.create(doc, []),
+          docOnValidationStart: doc
         };
       },
-      apply(tr: Transaction, { decorations }: PluginState) {
+      apply(
+        tr: Transaction,
+        {
+          decorations,
+          isValidating = false,
+          bufferedTrs = [],
+          docOnValidationStart,
+          cancelValidation
+        }: PluginState
+      ) {
         const replaceRanges = getReplaceStepRangesFromTransaction(tr);
-        let newDecorations = decorations.map(tr.mapping, tr.doc);
-        if (replaceRanges.length) {
-          newDecorations = decorationRevalidator(
-            replaceRanges,
-            newDecorations,
-            tr.doc
-          );
+        let _newDecorations = decorations.map(tr.mapping, tr.doc);
+        let _isValidating = isValidating;
+        let _bufferedTrs = bufferedTrs;
+        let _docOnValidationStart = null;
+        let _cancelValidation = cancelValidation;
+
+        // If we're currently validating, buffer the incoming transaction.
+        if (isValidating) {
+          _bufferedTrs = bufferedTrs.concat(tr);
         }
+
+        if (replaceRanges.length) {
+          // The editor is changing the document. We should inspect it, and submit
+          // new ranges to validate.
+          if (cancelValidation) {
+            cancelValidation("Validation superseded");
+          }
+          const {
+            decorations: prunedDecorations,
+            rangesToValidate
+          } = revalidationRangefinder(replaceRanges, _newDecorations, tr.doc);
+          _newDecorations = prunedDecorations;
+          _docOnValidationStart = tr.doc;
+          getValidationRangesForRanges(
+            rangesToValidate,
+            tr.doc,
+            validationLibrary
+          )
+            .then(_ => {
+              cancelValidation = _.cancel;
+              return _.promise;
+            })
+            .then(validationRanges => {
+              localView &&
+                localView.dispatch(
+                  localView.state.tr.setMeta(
+                    "applyValidationRanges",
+                    validationRanges
+                  )
+                );
+            });
+        }
+
+        const validationRanges: ValidationRange[] = tr.getMeta(
+          "applyValidationRanges"
+        );
+        if (validationRanges) {
+          // There are new validations available; apply them to the document.
+          const decorationsToAdd = getDecorationsForValidationRanges(
+            validationRanges
+          );
+
+          const existingDecorations = _newDecorations.find();
+
+          // We map the decorations through the accumulated tr maps until
+          // they map on to the new document.
+          _newDecorations = _bufferedTrs.reduce(
+            (acc, _tr) => acc.map(_tr.mapping, _tr.doc),
+            DecorationSet.create(docOnValidationStart, decorationsToAdd)
+          );
+
+          // Finally, we add the existing decorations to this new map.
+          _newDecorations = _newDecorations.add(tr.doc, existingDecorations);
+        }
+
         return {
-          decorations: newDecorations,
-          validationId: tr.getMeta("validationId")
+          decorations: _newDecorations,
+          validationId: tr.getMeta("validationId"),
+          isValidating: _isValidating,
+          bufferedTrs: _bufferedTrs,
+          docOnValidationStart: _docOnValidationStart
         };
       }
     },
@@ -445,9 +552,7 @@ const documentValidatorPlugin = (schema: Schema) => {
           const target = e.target;
           if (target) {
             const targetAttr = target.getAttribute("data-attr-validation-id");
-            const newValidationId = targetAttr
-              ? targetAttr
-              : undefined;
+            const newValidationId = targetAttr ? targetAttr : undefined;
             if (newValidationId !== plugin.getState(view.state).validationId) {
               view.dispatch(
                 view.state.tr.setMeta("validationId", newValidationId)
@@ -459,6 +564,7 @@ const documentValidatorPlugin = (schema: Schema) => {
       }
     },
     view(view: EditorView) {
+      localView = view;
       return {
         update: updateView(plugin)
       };
