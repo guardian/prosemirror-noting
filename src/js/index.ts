@@ -1,226 +1,22 @@
 import { Plugin, Transaction, EditorState } from "prosemirror-state";
-import { Node, Schema, Slice } from "prosemirror-model";
+import { Node, Schema } from "prosemirror-model";
 import { DecorationSet, Decoration, EditorView } from "prosemirror-view";
 import flatMap from "lodash/flatten";
-import chunk from "lodash/chunk";
-import { markTypes } from "./utils/schema";
 import { mergeRanges } from "./utils/range";
-import { getExpandedRange, isString } from "./utils/string";
+import { getExpandedRange } from "./utils/string";
 import { ReplaceStep, ReplaceAroundStep } from "prosemirror-transform";
 import uuid from "uuid/v4";
-import { runWithCancel } from "./utils/async";
+import clamp from "lodash/clamp";
+import { ValidationRange } from "./validate";
+import { getTextMaps } from "./utils/prosemirror";
+import validationService, {
+  ValidationEvents,
+  ValidationResponse
+} from "./ValidationService";
 
-/**
- * Flatten a node and its children into a single array of objects, containing
- * the node and the node's position in the document.
- */
-const flatten = (node: Node, descend = true) => {
-  if (!node) {
-    throw new Error('Invalid "node" parameter');
-  }
-  const result: { node: Node; parent: Node; pos: number }[] = [];
-  node.descendants((child, pos, parent) => {
-    result.push({ node: child, parent, pos });
-    if (!descend) {
-      return false;
-    }
-  });
-  return result;
+const TransactionMetaKeys = {
+  VALIDATION_RESPONSE: "VALIDATION_RESPONSE"
 };
-
-/**
- * Find all children in a node that satisfy the given predicate.
- */
-const findChildren = (
-  node: Node,
-  predicate: (node: Node) => boolean,
-  descend: boolean
-): { node: Node; parent: Node; pos: number }[] => {
-  if (!node) {
-    throw new Error('Invalid "node" parameter');
-  } else if (!predicate) {
-    throw new Error('Invalid "predicate" parameter');
-  }
-  return flatten(node, descend).filter(child => predicate(child.node));
-};
-
-/**
- * Find any text nodes in the given node.
- */
-const findTextNodes = (
-  node: Node,
-  descend: boolean = true
-): { node: Node; parent: Node; pos: number }[] => {
-  return findChildren(node, child => child.isText, descend);
-};
-
-type TextMap = { text: string; start: number; offset: number };
-
-/**
- * Get a single string of text, and an array of position mappings,
- * from a Prosemirror document. The mappings can be used to map an
- * index in the text back to a position in the document.
- */
-const getTextMaps = (doc: Node) =>
-  (doc instanceof Node ? findTextNodes(doc) : [doc]).reduce(
-    (
-      acc: { positionMap: TextMap[]; length: number },
-      textNodeWrapper,
-      index,
-      textNodes
-    ) => {
-      const previousMap = acc.positionMap[acc.positionMap.length - 1];
-      const text = textNodeWrapper.node.text || "";
-      const previousNodeWrapper = textNodes[index - 1];
-      const sharesParentWithPreviousNode =
-        previousNodeWrapper &&
-        textNodeWrapper.parent === previousNodeWrapper.parent;
-      if (sharesParentWithPreviousNode) {
-        // If this node shares a parent with the previous, add its text and
-        // mapping to the last node's position map. In this way, contiguous
-        // text nodes are treated as single lines of text for validation.
-        const previousPositionMaps = acc.positionMap.slice(
-          0,
-          acc.positionMap.length - 1
-        );
-        const currentText = (previousMap ? previousMap.text : "") + text;
-        return {
-          length: acc.length + text.length,
-          positionMap: previousPositionMaps.concat({
-            text: currentText,
-            start: acc.length - (previousNodeWrapper.node.text || "").length,
-            offset: previousMap.offset
-          })
-        };
-      }
-      // Add a new position map.
-      return {
-        length: acc.length + text.length,
-        positionMap: acc.positionMap.concat({
-          text,
-          start: acc.length,
-          offset: textNodeWrapper.pos
-        })
-      };
-    },
-    {
-      positionMap: [],
-      length: 0
-    }
-  ).positionMap;
-
-const Operations: {
-  [key: string]: "ANNOTATE" | "REPLACE";
-} = {
-  ANNOTATE: "ANNOTATE",
-  REPLACE: "REPLACE"
-};
-
-type ValidationLibrary = {
-  regExp: RegExp;
-  annotation: string;
-  operation: "ANNOTATE" | "REPLACE";
-  type: string;
-}[][];
-
-const withoutIndex = <T>(arr: Array<T>, index: number) =>
-  arr.slice(0, index).concat(arr.slice(index + 1));
-
-const permutations: <T>(seq: Array<T>) => T[][] = seq =>
-  seq.reduce((acc, el, index, arr) => {
-    if (!arr.length) return [[]];
-    if (arr.length === 1) return [arr];
-    return [
-      ...acc,
-      ...permutations(withoutIndex(arr, index)).map(perms => [el, ...perms], [])
-    ];
-  }, []);
-
-const validationLibrary: ValidationLibrary = chunk(
-  permutations(Array.from("qwertyui")).map(perm => {
-    const str = perm.join("");
-    return {
-      regExp: new RegExp(str, "g"),
-      annotation: `You used the word ${str}`,
-      operation: Operations.ANNOTATE,
-      type: markTypes.legal
-    };
-  }),
-  500
-);
-
-/**
- * Get the matches and indexes for a given string and regex.
- */
-const getMatchIndexes = (str: string, offset: number, regExp: RegExp) => {
-  const matches = [];
-  let match;
-  while ((match = regExp.exec(str))) {
-    matches.push({ index: match.index + offset, item: match[0] });
-  }
-  return matches;
-};
-
-type ValidationRange = {
-  origin: number;
-  annotation: string;
-  type: string;
-  startPos: number;
-  endPos: number;
-};
-
-const applyLibraryToValidationMapCancelable = (
-  arrayToValidate: TextMap[] | string[],
-  validationLibrary: ValidationLibrary,
-  offset = 0
-) =>
-  runWithCancel(
-    applyLibraryToValidationMap,
-    arrayToValidate,
-    validationLibrary,
-    offset
-  );
-
-/**
- * Apply a library to a text map, returning a list of validation ranges.
- */
-function* applyLibraryToValidationMap(
-  arrayToValidate: TextMap[] | string[],
-  validationLibrary: ValidationLibrary,
-  offset = 0
-) {
-  let matches: ValidationRange[] = [];
-
-  for (let i = 0; i < validationLibrary.length - 1; i++) {
-    yield;
-    for (let j = 0; j < validationLibrary[i].length - 1; j++) {
-      const isStringMap = isString(arrayToValidate[0]);
-      const rule = validationLibrary[i][j];
-      const ruleMatches = flatMap(
-        isStringMap
-          ? (arrayToValidate as string[]).map(str =>
-              getMatchIndexes(str, offset, rule.regExp)
-            )
-          : (arrayToValidate as TextMap[]).map((textMap: TextMap) =>
-              getMatchIndexes(textMap.text, textMap.offset, rule.regExp)
-            )
-      );
-      matches = matches.concat(
-        ruleMatches
-          .map(match => ({
-            origin: match.index,
-            annotation: rule.annotation,
-            type: rule.type,
-            startPos: match.index,
-            endPos: match.index + match.item.length
-          }))
-          .filter(match => match)
-      );
-    }
-  }
-
-  return matches;
-}
 
 /**
  * Get a widget DOM node given a validation range.
@@ -263,32 +59,22 @@ const createDecorationForValidationRange = (range: ValidationRange) => {
 /**
  * Given a validation library, gets validation decorations for a node.
  */
-const getValidationRangesForDocument = async (
-  doc: Node,
-  lib: ValidationLibrary
-) => {
+const getValidationRangesForDocument = async (doc: Node) => {
   const textMap = getTextMaps(doc);
-  return applyLibraryToValidationMapCancelable(textMap, lib);
+  console.log(textMap);
+  return validationService.validate(textMap);
+  // return applyLibraryToValidationMapCancelable(textMap, lib);
 };
 
-const getValidationRangesForRanges = async (
-  ranges: Range[],
-  doc: Node,
-  lib: ValidationLibrary
-) => {
+const getValidationRangesForRanges = async (ranges: Range[], doc: Node) => {
   // Revalidate and redecorate each range.
-  const validationRanges = ranges.map(range =>
-    applyLibraryToValidationMapCancelable(
-      [doc.textBetween(range.from, range.to)],
-      lib,
-      range.from
-    )
-  );
 
-  return {
-    promise: Promise.all(validationRanges.map(_ => _.promise)).then(flatMap),
-    cancel: () => validationRanges.forEach(_ => _.cancel())
-  };
+  return validationService.validate(
+    ranges.map(range => ({
+      str: doc.textBetween(range.from, range.to),
+      offset: range.from
+    }))
+  );
 };
 
 const getDecorationsForValidationRanges = (ranges: ValidationRange[]) =>
@@ -403,9 +189,10 @@ const revalidationRangefinder = (
 
       // Expand the ranges. This is an arbitrary expansion of a few words but could,
       // for example, relate to the longest match in the dictionary or similar.
-      const validationRanges = decorationRanges.map(decRange =>
-        expandRange({ from: decRange.from, to: decRange.to }, doc)
-      );
+      const validationRanges = decorationRanges.map(decRange => ({
+        from: decRange.from,
+        to: clamp(decRange.to, doc.content.size)
+      }));
 
       return {
         validationRanges: acc.validationRanges.concat(validationRanges),
@@ -439,20 +226,25 @@ const documentValidatorPlugin = (schema: Schema) => {
     state: {
       init(_, { doc }) {
         let cancel;
-        getValidationRangesForDocument(doc, validationLibrary)
-          .then(_ => {
-            cancel = _.cancel;
-            return _.promise;
-          })
-          .then(validationRanges => {
-            localView &&
+        getValidationRangesForDocument(doc);
+
+        // Hook up our validation events.
+        validationService.on(
+          ValidationEvents.VALIDATION_COMPLETE,
+          (validationResponse: ValidationResponse) =>
+            console.log(
+              TransactionMetaKeys.VALIDATION_RESPONSE,
+              validationResponse
+            ) ||
+            (localView &&
               localView.dispatch(
                 localView.state.tr.setMeta(
-                  "applyValidationRanges",
-                  validationRanges
+                  TransactionMetaKeys.VALIDATION_RESPONSE,
+                  validationResponse
                 )
-              );
-          });
+              ))
+        );
+
         return {
           decorations: DecorationSet.create(doc, []),
           docOnValidationStart: doc
@@ -492,33 +284,16 @@ const documentValidatorPlugin = (schema: Schema) => {
           } = revalidationRangefinder(replaceRanges, _newDecorations, tr.doc);
           _newDecorations = prunedDecorations;
           _docOnValidationStart = tr.doc;
-          getValidationRangesForRanges(
-            rangesToValidate,
-            tr.doc,
-            validationLibrary
-          )
-            .then(_ => {
-              cancelValidation = _.cancel;
-              return _.promise;
-            })
-            .then(validationRanges => {
-              localView &&
-                localView.dispatch(
-                  localView.state.tr.setMeta(
-                    "applyValidationRanges",
-                    validationRanges
-                  )
-                );
-            });
+          getValidationRangesForRanges(rangesToValidate, tr.doc);
         }
 
-        const validationRanges: ValidationRange[] = tr.getMeta(
-          "applyValidationRanges"
+        const validationResponse: ValidationResponse = tr.getMeta(
+          TransactionMetaKeys.VALIDATION_RESPONSE
         );
-        if (validationRanges) {
+        if (validationResponse && validationResponse.ranges.length) {
           // There are new validations available; apply them to the document.
           const decorationsToAdd = getDecorationsForValidationRanges(
-            validationRanges
+            validationResponse.ranges
           );
 
           const existingDecorations = _newDecorations.find();
@@ -551,7 +326,9 @@ const documentValidatorPlugin = (schema: Schema) => {
         mouseover: (view: EditorView, e: Event) => {
           const target = e.target;
           if (target) {
-            const targetAttr = target.getAttribute("data-attr-validation-id");
+            const targetAttr = (target as HTMLElement).getAttribute(
+              "data-attr-validation-id"
+            );
             const newValidationId = targetAttr ? targetAttr : undefined;
             if (newValidationId !== plugin.getState(view.state).validationId) {
               view.dispatch(

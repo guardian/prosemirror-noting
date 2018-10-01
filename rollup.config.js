@@ -1,6 +1,5 @@
 import resolve from "rollup-plugin-node-resolve";
 import commonjs from "rollup-plugin-commonjs";
-import eslint from "rollup-plugin-eslint";
 import scss from "rollup-plugin-scss";
 import babel from "rollup-plugin-babel";
 import typescript from "rollup-plugin-typescript";
@@ -21,12 +20,13 @@ export default [
     ]
   },
   {
-    input: "src/js/worker.ts",
+    input: "src/js/ValidationWorker.ts",
     output: {
-      file: "dist/worker.js",
-      format: "cjs"
+      file: "pages/dist/worker.js",
+      format: "iife",
+      name: "Worker"
     },
-    plugins: [typescript(), babel()]
+    plugins: [resolve({ browser: true }), typescript(), commonjs()]
   },
   {
     // Github pages

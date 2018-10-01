@@ -6,7 +6,7 @@ import { addListNodes } from "prosemirror-schema-list";
 import { history } from "prosemirror-history";
 import { keymap } from "prosemirror-keymap";
 import { exampleSetup, buildMenuItems } from "prosemirror-example-setup";
-import { validationMarks } from "../src/js/utils/schema";
+import { validationMarks } from "../src/js/utils/prosemirror";
 
 import "prosemirror-view/style/prosemirror.css";
 import "prosemirror-menu/style/menu.css";
@@ -15,6 +15,16 @@ import "../src/css/noting.scss";
 import createDocumentValidatorPlugin, {
   validateDocument
 } from "../src/js/index";
+
+const spinMe = document.getElementById("spin-me");
+let rotation = 0;
+const commenceTheSpinning = () => {
+  spinMe && (spinMe.style.transform = `rotate(${rotation}deg)`);
+  rotation += 4;
+  if (rotation > 360) rotation = 0;
+  requestAnimationFrame(commenceTheSpinning);
+};
+commenceTheSpinning();
 
 const mySchema = new Schema({
   nodes: addListNodes(schema.spec.nodes, "paragraph block*", "block"),

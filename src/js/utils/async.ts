@@ -1,10 +1,14 @@
-import noop from 'lodash/noop';
-
-export function runWithCancel<T>(fn: (...args: any[]) => IterableIterator<T>, ...args: any[]) {
+export function runWithCancel<T>(
+  fn: (...args: any[]) => IterableIterator<T>,
+  ...args: any[]
+): {
+  promise: Promise<T>;
+  cancel: () => void;
+} {
   const gen = fn(...args);
   let cancelled = false;
-  let cancel = noop;
-  const promise = new Promise((resolve, reject) => {
+  let cancel = () => {};
+  const promise = new Promise<T>((resolve, reject) => {
     // We define a cancel function to return it from our function.
     cancel = () => {
       cancelled = true;
@@ -36,7 +40,7 @@ export function runWithCancel<T>(fn: (...args: any[]) => IterableIterator<T>, ..
       next(result);
     }
 
-    function next({ done, value }: any) {
+    function next({ done, value }: { done: boolean; value: T }) {
       if (done) {
         return resolve(value);
       }
