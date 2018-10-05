@@ -7,7 +7,7 @@
     "sourceMap": true,
     "strictNullChecks": true,
     "target": "es6",
-    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
     "lib": ["webworker", "dom", "scripthost", "es2015"]
   }
 }

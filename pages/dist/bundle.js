@@ -15381,17 +15381,17 @@ function flatten$1(array) {
 
 var flatten_1 = flatten$1;
 
-const findOverlappingRangeIndex = (ranges, range) => {
-    return ranges.findIndex(localRange => (localRange.from <= range.from && localRange.to >= range.from)
-        || (localRange.to >= range.to && localRange.from <= range.to)
-        || (localRange.from >= range.from && localRange.to <= range.to));
+const findOverlappingRangeIndex = (range, ranges) => {
+    return ranges.findIndex(localRange => (localRange.from <= range.from && localRange.to >= range.from) ||
+        (localRange.to >= range.to && localRange.from <= range.to) ||
+        (localRange.from >= range.from && localRange.to <= range.to));
 };
 const mergeRange = (range1, range2) => ({
     from: range1.from < range2.from ? range1.from : range2.from,
-    to: range1.to > range2.to ? range1.to : range2.to,
+    to: range1.to > range2.to ? range1.to : range2.to
 });
 const mergeRanges = (ranges) => ranges.reduce((acc, range) => {
-    const index = findOverlappingRangeIndex(acc, range);
+    const index = findOverlappingRangeIndex(range, acc);
     if (index === -1) {
         return acc.concat(range);
     }
@@ -15399,7 +15399,6 @@ const mergeRanges = (ranges) => ranges.reduce((acc, range) => {
     newRange.splice(index, 1, mergeRange(range, acc[index]));
     return newRange;
 }, []);
-//# sourceMappingURL=range.js.map
 
 const getExpandedRange = (index, str, noOfWords = 1) => {
     const lastIndex = str.length - 1;
@@ -15428,7 +15427,6 @@ const getPositionOfNthWord = (str, noOfWords, forward = true) => {
     }
     return forward ? offset : str.length - offset;
 };
-
 
 //# sourceMappingURL=string.js.map
 
@@ -15749,40 +15747,30 @@ class ValidationStateManager extends EventEmitter {
 const serviceName = "[validationService]";
 const ValidationEvents = {
     VALIDATION_COMPLETE: "VALIDATION_COMPLETE",
-    VALIDATION_ERROR: "VALIDATION_ERROR"
+    VALIDATION_ERROR: "VALIDATION_ERROR",
+    CANCELLATION_COMPLETE: "CANCELLATION_COMPLETE"
 };
 class ValidationService extends ValidationStateManager {
     constructor() {
         super();
         this.worker = new Worker("./worker.js");
-        this.cancelValidation = (ranges) => {
+        this.cancelValidation = () => {
             this.worker.postMessage({
-                type: CANCEL_REQUEST,
-                payload: {
-                    ids: this.getIdsOfRunningValidations(ranges)
-                }
+                type: CANCEL_REQUEST
             });
         };
         this.handleMessage = (e) => {
             console.log("serviceMessage", e.data);
             const event = e.data;
             if (event.type === CANCEL_RESPONSE) {
-                this.handleCancelledValidations(event.payload.ids);
+                this.handleCancelledValidations();
             }
             if (event.type === VALIDATE_RESPONSE) {
                 this.handleCompleteValidation(event.payload.id, event.payload.validationRanges);
             }
         };
-        this.handleCancelledValidations = (ids) => {
-            ids.forEach(id => {
-                const runningValidation = this.findRunningValidation(id);
-                if (runningValidation) {
-                    this.removeRunningValidation(runningValidation);
-                }
-                else {
-                    console.warn(`${serviceName} Received cancellation from worker, but no match in running validations for id ${id}`);
-                }
-            });
+        this.handleCancelledValidations = () => {
+            this.emit(ValidationEvents.CANCELLATION_COMPLETE);
         };
         this.handleCompleteValidation = (id, validationRanges) => {
             const completeValidation = this.findRunningValidation(id);
@@ -15810,9 +15798,7 @@ class ValidationService extends ValidationStateManager {
         return new Promise((resolve, reject) => {
             this.addRunningValidation({
                 id,
-                ranges,
-                resolve,
-                reject
+                ranges
             });
         });
     }
@@ -15940,7 +15926,7 @@ const documentValidatorPlugin = (schema) => {
                     docOnValidationStart: doc
                 };
             },
-            apply(tr, { decorations, isValidating = false, bufferedTrs = [], docOnValidationStart, cancelValidation }) {
+            apply(tr, { decorations, isValidating = false, bufferedTrs = [], docOnValidationStart }) {
                 const replaceRanges = getReplaceStepRangesFromTransaction(tr);
                 let _newDecorations = decorations.map(tr.mapping, tr.doc);
                 let _isValidating = isValidating;
@@ -15950,9 +15936,6 @@ const documentValidatorPlugin = (schema) => {
                     _bufferedTrs = bufferedTrs.concat(tr);
                 }
                 if (replaceRanges.length) {
-                    if (cancelValidation) {
-                        cancelValidation("Validation superseded");
-                    }
                     const { decorations: prunedDecorations, rangesToValidate } = revalidationRangefinder(replaceRanges, _newDecorations, tr.doc);
                     _newDecorations = prunedDecorations;
                     _docOnValidationStart = tr.doc;

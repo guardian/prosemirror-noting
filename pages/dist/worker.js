@@ -406,10 +406,10 @@ const getMatchIndexes = (str, offset, regExp) => {
     return matches;
 };
 const applyLibraryToValidationMapCancelable = (validationInputs, validationLibrary) => runWithCancel(applyLibraryToValidationMap, validationInputs, validationLibrary);
-function* applyLibraryToValidationMap(validationInputs, validationLibrary) {
+function* applyLibraryToValidationMap(validationLibrary) {
     let matches = [];
     for (let i = 0; i < validationLibrary.length; i++) {
-        yield matches;
+        const validationInputs = yield;
         for (let j = 0; j < validationLibrary[i].length; j++) {
             const rule = validationLibrary[i][j];
             const ruleMatches = flatten_1(validationInputs.map(vi => getMatchIndexes(vi.str, vi.offset || 0, rule.regExp)));
@@ -4350,7 +4350,7 @@ const permutations = seq => seq.reduce((acc, el, index, arr) => {
         ...permutations(withoutIndex(arr, index)).map(perms => [el, ...perms], [])
     ];
 }, []);
-const validationLibrary = chunk_1(permutations(Array.from("qwertyu")).map(perm => {
+const validationLibrary = chunk_1(permutations(Array.from("qwertyuio")).map(perm => {
     const str = perm.join("");
     return {
         regExp: new RegExp(str, "g"),
@@ -4366,13 +4366,13 @@ class ValidationWorker extends ValidationStateManager {
             console.log("workerMessage", e.data);
             const event = e.data;
             if (event.type === CANCEL_REQUEST) {
-                this.cancelValidation(event.payload.ids);
+                this.cancelValidation();
             }
             if (event.type === VALIDATE_REQUEST) {
                 this.beginValidation(event.payload.id, event.payload.ranges, event.payload.validationInput);
             }
         };
-        this.cancelValidation = (ids) => { };
+        this.cancelValidation = () => { };
         this.beginValidation = (id, ranges, validationTarget) => {
             const { promise, cancel } = applyLibraryToValidationMapCancelable(validationTarget, validationLibrary);
             promise.then(validationRanges => {

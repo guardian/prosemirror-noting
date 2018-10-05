@@ -30,7 +30,7 @@ const permutations: <T>(seq: Array<T>) => T[][] = seq =>
   }, []);
 
 const validationLibrary: ValidationLibrary = chunk(
-  permutations(Array.from("qwertyu")).map(perm => {
+  permutations(Array.from("qwertyuio")).map(perm => {
     const str = perm.join("");
     return {
       regExp: new RegExp(str, "g"),
@@ -52,7 +52,7 @@ class ValidationWorker extends ValidationStateManager<RunningWorkerValidation> {
     console.log("workerMessage", e.data);
     const event: WorkerEvents = e.data;
     if (event.type === CANCEL_REQUEST) {
-      this.cancelValidation(event.payload.ids);
+      this.cancelValidation();
     }
     if (event.type === VALIDATE_REQUEST) {
       this.beginValidation(
@@ -63,7 +63,7 @@ class ValidationWorker extends ValidationStateManager<RunningWorkerValidation> {
     }
   };
 
-  private cancelValidation = (ids: string[]) => {};
+  private cancelValidation = () => {};
 
   private beginValidation = (
     id: string,

@@ -1,5 +1,5 @@
 import { ValidationRange, ValidationInput } from "./validate";
-import { Range } from ".";
+import { Range } from "./index";
 import {
   VALIDATE_REQUEST,
   VALIDATE_RESPONSE,
@@ -11,13 +11,13 @@ import v4 from "uuid/v4";
 import ValidationStateManager, {
   RunningServiceValidation
 } from "./ValidationStateManager";
-import { EventEmitter } from "events";
 
 const serviceName = "[validationService]";
 
 export const ValidationEvents = {
   VALIDATION_COMPLETE: "VALIDATION_COMPLETE",
-  VALIDATION_ERROR: "VALIDATION_ERROR"
+  VALIDATION_ERROR: "VALIDATION_ERROR",
+  CANCELLATION_COMPLETE: "CANCELLATION_COMPLETE"
 };
 
 export type ValidationResponse = {
@@ -25,6 +25,11 @@ export type ValidationResponse = {
   id: string;
 };
 
+/**
+ * The validation service. Calls to validate() begin validations
+ * for ranges, which are returned via an event, VALIDATION_COMPLETE.
+ *
+ */
 class ValidationService extends ValidationStateManager<
   RunningServiceValidation
 > {
@@ -55,24 +60,18 @@ class ValidationService extends ValidationStateManager<
     return new Promise((resolve, reject) => {
       this.addRunningValidation({
         id,
-        ranges,
-        resolve,
-        reject
+        ranges
       });
     });
   }
 
   /**
-   * Cancel running validations. If no ranges are supplied, cancel all validations,
-   * else just cancel the validations running for the given ranges.
+   * Cancel all running validations.
    */
-  public cancelValidation = (ranges?: Range[]) => {
+  public cancelValidation = () => {
     // @todo: partially cancel validations
     this.worker.postMessage({
-      type: CANCEL_REQUEST,
-      payload: {
-        ids: this.getIdsOfRunningValidations(ranges)
-      }
+      type: CANCEL_REQUEST
     } as WorkerEvents);
   };
 
@@ -83,7 +82,7 @@ class ValidationService extends ValidationStateManager<
     console.log("serviceMessage", e.data);
     const event: WorkerEvents = e.data;
     if (event.type === CANCEL_RESPONSE) {
-      this.handleCancelledValidations(event.payload.ids);
+      this.handleCancelledValidations();
     }
     if (event.type === VALIDATE_RESPONSE) {
       this.handleCompleteValidation(
@@ -96,17 +95,8 @@ class ValidationService extends ValidationStateManager<
   /**
    * Handle cancelled validations.
    */
-  handleCancelledValidations = (ids: string[]) => {
-    ids.forEach(id => {
-      const runningValidation = this.findRunningValidation(id);
-      if (runningValidation) {
-        this.removeRunningValidation(runningValidation);
-      } else {
-        console.warn(
-          `${serviceName} Received cancellation from worker, but no match in running validations for id ${id}`
-        );
-      }
-    });
+  handleCancelledValidations = () => {
+    this.emit(ValidationEvents.CANCELLATION_COMPLETE);
   };
 
   /**

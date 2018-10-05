@@ -9,7 +9,7 @@
     "email": "richard.beddington@guardian.co.uk"
   },
   "scripts": {
-    "test": "NODE_ENV=test jest test 'test/*.spec.js'",
+    "test": "NODE_ENV=test jest",
     "pages": "npm run build && http-server ./pages/dist",
     "prepublishOnly": "yarn build",
     "build": "rollup -c",
@@ -23,13 +23,13 @@
     "@types/jest": "^23.3.2",
     "@types/uuid": "^3.4.4",
     "babel-core": "^7.0.0-0",
-    "babel-jest": "^22.0.1",
+    "babel-jest": "^23.6.0",
     "eslint": "^4.13.1",
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-plugin-import": "^2.8.0",
     "eslint-plugin-prettier": "^2.4.0",
     "http-server": "^0.10.0",
-    "jest": "^22.0.1",
+    "jest": "^23.6.0",
     "prettier": "^1.9.2",
     "prosemirror-example-setup": "^1.0.1",
     "prosemirror-history": "^1.0.0",
@@ -45,9 +45,9 @@
     "rollup-plugin-node-resolve": "^3.4.0",
     "rollup-plugin-scss": "^0.4.0",
     "rollup-plugin-typescript": "^1.0.0",
-    "ts-jest": "^23.10.2",
+    "ts-jest": "^23.10.3",
     "tslib": "^1.9.3",
-    "typescript": "^3.0.3"
+    "typescript": "^3.1.1"
   },
   "dependencies": {
     "@types/lodash": "^4.14.116",
@@ -62,10 +62,5 @@
     "prosemirror-state": "^1.0.0",
     "prosemirror-view": "^1.2.0",
     "uuid": "^3.1.0"
-  },
-  "jest": {
-    "moduleNameMapper": {
-      "\\.(css|scss)$": "<rootDir>/test/mocks/style.js"
-    }
   }
 }

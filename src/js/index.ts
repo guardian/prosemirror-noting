@@ -256,8 +256,7 @@ const documentValidatorPlugin = (schema: Schema) => {
           decorations,
           isValidating = false,
           bufferedTrs = [],
-          docOnValidationStart,
-          cancelValidation
+          docOnValidationStart
         }: PluginState
       ) {
         const replaceRanges = getReplaceStepRangesFromTransaction(tr);
@@ -265,7 +264,6 @@ const documentValidatorPlugin = (schema: Schema) => {
         let _isValidating = isValidating;
         let _bufferedTrs = bufferedTrs;
         let _docOnValidationStart = null;
-        let _cancelValidation = cancelValidation;
 
         // If we're currently validating, buffer the incoming transaction.
         if (isValidating) {
@@ -273,11 +271,6 @@ const documentValidatorPlugin = (schema: Schema) => {
         }
 
         if (replaceRanges.length) {
-          // The editor is changing the document. We should inspect it, and submit
-          // new ranges to validate.
-          if (cancelValidation) {
-            cancelValidation("Validation superseded");
-          }
           const {
             decorations: prunedDecorations,
             rangesToValidate

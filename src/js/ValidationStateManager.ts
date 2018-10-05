@@ -12,15 +12,13 @@ import { EventEmitter } from "./EventEmitter";
 export type RunningServiceValidation = {
   id: string;
   ranges?: Range[];
-  resolve: (ranges: ValidationRange[]) => void;
-  reject: (reason: string) => void;
 };
 
 export type RunningWorkerValidation = {
   id: string;
   ranges?: Range[];
   promise: Promise<ValidationRange[]>;
-  cancel: () => void;
+  cancel: (ranges?: Range[]) => void;
 };
 
 /**

@@ -26,13 +26,7 @@ export type WorkerEvents =
     }
   | {
       type: "CANCEL_REQUEST";
-      payload: {
-        ids: string[];
-      };
     }
   | {
       type: "CANCEL_RESPONSE";
-      payload: {
-        ids: string[];
-      };
     };

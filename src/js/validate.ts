@@ -1,6 +1,5 @@
-import { runWithCancel } from "./utils/async";
-import { isString } from "./utils/string";
 import flatMap from "lodash/flatten";
+import { diffValidationInputs } from "./utils/range";
 
 export type ValidationInput = { str: string; offset: number };
 export type ValidationLibrary = {
@@ -36,27 +35,39 @@ const getMatchIndexes = (str: string, offset: number, regExp: RegExp) => {
   return matches;
 };
 
-export const applyLibraryToValidationMapCancelable = (
+export const validationRunner = (
   validationInputs: ValidationInput[],
   validationLibrary: ValidationLibrary
-) =>
-  runWithCancel<ValidationRange[]>(
-    applyLibraryToValidationMap,
-    validationInputs,
-    validationLibrary
-  );
+) => {
+  const gen = applyLibraryToValidationMap(validationLibrary);
+  let cancelled = false;
+  let currentInputs = validationInputs;
+
+  return {
+    promise: new Promise((resolve, reject) => {
+      const getNextRange = () => {
+        const { done, value } = gen.next(currentInputs);
+        if (done) {
+          resolve(value);
+        }
+        setTimeout(getNextRange);
+      };
+    }),
+    cancel: () => (cancelled = true),
+    omitRanges: (newInputs: ValidationInput[]) =>
+      (currentInputs = diffValidationInputs(currentInputs, newInputs))
+  };
+};
 
 /**
  * Apply a library to a text map, returning a list of validation ranges.
  */
 export function* applyLibraryToValidationMap(
-  validationInputs: ValidationInput[],
   validationLibrary: ValidationLibrary
 ) {
   let matches: ValidationRange[] = [];
-
   for (let i = 0; i < validationLibrary.length; i++) {
-    yield matches;
+    const validationInputs: ValidationInput[] = yield matches;
     for (let j = 0; j < validationLibrary[i].length; j++) {
       const rule = validationLibrary[i][j];
       const ruleMatches = flatMap(
