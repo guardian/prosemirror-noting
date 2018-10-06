@@ -1,4 +1,4 @@
-import { ValidationRange, ValidationInput } from "./validate";
+import { ValidationOutput, ValidationInput } from "./validate";
 import { Range } from "./index";
 import {
   VALIDATE_REQUEST,
@@ -21,7 +21,7 @@ export const ValidationEvents = {
 };
 
 export type ValidationResponse = {
-  ranges: ValidationRange[];
+  validationOutputs: ValidationOutput[];
   id: string;
 };
 
@@ -44,15 +44,13 @@ class ValidationService extends ValidationStateManager<
    * Validate a Prosemirror node, restricting checks to ranges if they're supplied.
    */
   public validate(
-    validationInput: ValidationInput[],
-    ranges?: Range[]
-  ): Promise<ValidationRange[]> {
+    validationInputs: ValidationInput[]
+  ): Promise<ValidationOutput[]> {
     const id = v4();
     this.worker.postMessage({
       type: VALIDATE_REQUEST,
       payload: {
-        validationInput,
-        ranges,
+        validationInputs,
         id
       }
     } as WorkerEvents);
@@ -60,7 +58,7 @@ class ValidationService extends ValidationStateManager<
     return new Promise((resolve, reject) => {
       this.addRunningValidation({
         id,
-        ranges
+        validationInputs
       });
     });
   }
@@ -87,7 +85,7 @@ class ValidationService extends ValidationStateManager<
     if (event.type === VALIDATE_RESPONSE) {
       this.handleCompleteValidation(
         event.payload.id,
-        event.payload.validationRanges
+        event.payload.validationOutputs
       );
     }
   };
@@ -104,7 +102,7 @@ class ValidationService extends ValidationStateManager<
    */
   private handleCompleteValidation = (
     id: string,
-    validationRanges: ValidationRange[]
+    validationOutputs: ValidationOutput[]
   ) => {
     const completeValidation = this.findRunningValidation(id);
     if (!completeValidation) {
@@ -114,7 +112,7 @@ class ValidationService extends ValidationStateManager<
     }
     this.emit(ValidationEvents.VALIDATION_COMPLETE, {
       id,
-      ranges: validationRanges
+      validationOutputs
     });
     this.removeRunningValidation(completeValidation);
   };

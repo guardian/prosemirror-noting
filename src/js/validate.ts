@@ -1,19 +1,16 @@
 import flatMap from "lodash/flatten";
 import { diffValidationInputs } from "./utils/range";
 
-export type ValidationInput = { str: string; offset: number };
+export type ValidationInput = { str: string; from: number; to: number };
 export type ValidationLibrary = {
   regExp: RegExp;
   annotation: string;
   operation: "ANNOTATE" | "REPLACE";
   type: string;
 }[][];
-export type ValidationRange = {
-  origin: number;
+export type ValidationOutput = ValidationInput & {
   annotation: string;
   type: string;
-  startPos: number;
-  endPos: number;
 };
 
 export const Operations: {
@@ -26,11 +23,11 @@ export const Operations: {
 /**
  * Get the matches and indexes for a given string and regex.
  */
-const getMatchIndexes = (str: string, offset: number, regExp: RegExp) => {
+const getMatchIndexes = (str: string, from: number, regExp: RegExp) => {
   const matches = [];
   let match;
   while ((match = regExp.exec(str))) {
-    matches.push({ index: match.index + offset, item: match[0] });
+    matches.push({ index: match.index + from, item: match[0] });
   }
   return matches;
 };
@@ -38,24 +35,35 @@ const getMatchIndexes = (str: string, offset: number, regExp: RegExp) => {
 export const validationRunner = (
   validationInputs: ValidationInput[],
   validationLibrary: ValidationLibrary
-) => {
+): {
+  cancel: () => {};
+  omitOverlappingInputs: (inputs: ValidationInput[]) => void;
+  promise: Promise<ValidationOutput[]>;
+} => {
   const gen = applyLibraryToValidationMap(validationLibrary);
   let cancelled = false;
   let currentInputs = validationInputs;
+  let inputsToOmit: ValidationInput[] = [];
 
   return {
-    promise: new Promise((resolve, reject) => {
+    promise: new Promise(resolve => {
       const getNextRange = () => {
+        if (cancelled) {
+          resolve([]);
+        }
         const { done, value } = gen.next(currentInputs);
         if (done) {
-          resolve(value);
+          return resolve(diffValidationInputs(value, inputsToOmit));
         }
         setTimeout(getNextRange);
       };
+      getNextRange();
     }),
     cancel: () => (cancelled = true),
-    omitRanges: (newInputs: ValidationInput[]) =>
-      (currentInputs = diffValidationInputs(currentInputs, newInputs))
+    omitOverlappingInputs: (newInputs: ValidationInput[]) => {
+      currentInputs = diffValidationInputs(currentInputs, newInputs);
+      inputsToOmit = inputsToOmit.concat(newInputs);
+    }
   };
 };
 
@@ -65,24 +73,24 @@ export const validationRunner = (
 export function* applyLibraryToValidationMap(
   validationLibrary: ValidationLibrary
 ) {
-  let matches: ValidationRange[] = [];
+  let matches: ValidationOutput[] = [];
   for (let i = 0; i < validationLibrary.length; i++) {
     const validationInputs: ValidationInput[] = yield matches;
     for (let j = 0; j < validationLibrary[i].length; j++) {
       const rule = validationLibrary[i][j];
       const ruleMatches = flatMap(
         validationInputs.map(vi =>
-          getMatchIndexes(vi.str, vi.offset || 0, rule.regExp)
+          getMatchIndexes(vi.str, vi.from || 0, rule.regExp)
         )
       );
       matches = matches.concat(
         ruleMatches
           .map(match => ({
-            origin: match.index,
             annotation: rule.annotation,
             type: rule.type,
-            startPos: match.index,
-            endPos: match.index + match.item.length
+            from: match.index,
+            to: match.index + match.item.length,
+            str: match.item
           }))
           .filter(match => match)
       );

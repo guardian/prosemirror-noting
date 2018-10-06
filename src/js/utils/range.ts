@@ -1,13 +1,13 @@
 import flatMap from "lodash/flatten";
 import { Range } from "../index";
-import { ValidationRange, ValidationInput } from "../validate";
+import { ValidationOutput, ValidationInput } from "../validate";
 
 export const findOverlappingRangeIndex = (range: Range, ranges: Range[]) => {
   return ranges.findIndex(
     localRange =>
       // Overlaps to the left of the range
       (localRange.from <= range.from && localRange.to >= range.from) ||
-      // Within the range
+      // Overlaps within the range
       (localRange.to >= range.to && localRange.from <= range.to) ||
       // Overlaps to the right of the range
       (localRange.from >= range.from && localRange.to <= range.to)
@@ -55,7 +55,10 @@ export const diffRanges = (
       };
       // If the compared range overlaps our range completely, chop the end off...
       if (overlappingRange.to >= range.to) {
-        return acc.concat(firstShortenedRange);
+        // (ranges of 0 aren't valid)
+        return firstShortenedRange.from === firstShortenedRange.to
+          ? acc
+          : acc.concat(firstShortenedRange);
       }
       // ... else, split the range and diff the latter segment recursively.
       return acc.concat(
@@ -76,30 +79,35 @@ export const diffRanges = (
 };
 
 export const validationInputToRange = (vi: ValidationInput) => ({
-  from: vi.offset,
-  to: vi.offset + vi.str.length
+  from: vi.from,
+  to: vi.from + vi.str.length
 });
 
-const getValInputsFromRange = (
+const getValRangesFromRange = <T extends ValidationInput | ValidationOutput>(
   range: Range,
-  valInputs: ValidationInput[]
-): ValidationInput[] =>
-  valInputs.reduce(
-    (acc, vi) => {
-      if (range.from >= vi.offset && range.from <= vi.offset + vi.str.length) {
-        const from = range.from - vi.offset;
-        const to = range.from - vi.offset + (range.to - range.from);
-        return acc.concat({
-          offset: range.from,
-          str: vi.str.slice(from > 0 ? from - 1 : 0, to)
-        });
+  valRanges: T[]
+): T[] =>
+  valRanges.reduce(
+    (acc, vi: T) => {
+      // If this validation input touches this range, remove it.
+      if (range.from >= vi.from && range.from <= vi.from + vi.str.length) {
+        const from = range.from - vi.from;
+        const to = range.from - vi.from + (range.to - range.from);
+        const str = vi.str.slice(from > 0 ? from - 1 : 0, to);
+        return str
+          ? acc.concat(
+              // Why not spread? See https://github.com/Microsoft/TypeScript/pull/13288
+              Object.assign({}, vi, {
+                from: range.from,
+                to: range.to,
+                str
+              })
+            )
+          : acc;
       }
-      return acc.concat({
-        str: vi.str,
-        offset: range.from
-      });
+      return acc;
     },
-    [] as ValidationInput[]
+    [] as T[]
   );
 
 /**
@@ -109,13 +117,15 @@ const getValInputsFromRange = (
  * This function works on the assumption that all ranges
  * in each set of validation inputs are merged.
  */
-export const diffValidationInputs = (
-  firstValInputs: ValidationInput[],
-  secondValInputs: ValidationInput[]
-) =>
+export const diffValidationInputs = <
+  T extends ValidationInput | ValidationOutput
+>(
+  firstValInputs: T[],
+  secondValInputs: (ValidationInput | ValidationOutput)[]
+): T[] =>
   flatMap(
     diffRanges(
       firstValInputs.map(validationInputToRange),
       secondValInputs.map(validationInputToRange)
-    ).map(range => getValInputsFromRange(range, firstValInputs))
+    ).map(range => getValRangesFromRange(range, firstValInputs))
   );

@@ -7,7 +7,7 @@ import { getExpandedRange } from "./utils/string";
 import { ReplaceStep, ReplaceAroundStep } from "prosemirror-transform";
 import uuid from "uuid/v4";
 import clamp from "lodash/clamp";
-import { ValidationRange } from "./validate";
+import { ValidationOutput } from "./validate";
 import { getTextMaps } from "./utils/prosemirror";
 import validationService, {
   ValidationEvents,
@@ -22,7 +22,7 @@ const TransactionMetaKeys = {
  * Get a widget DOM node given a validation range.
  * Keeps our DOM magic out of the way of lifecycle methods.
  */
-const getWidgetNode = (range: ValidationRange) => {
+const getWidgetNode = (range: ValidationOutput) => {
   const widget = document.createElement("span");
   widget.className = "validation-widget-container";
 
@@ -45,14 +45,14 @@ const getWidgetNode = (range: ValidationRange) => {
 /**
  * Create a validation decoration for the given range.
  */
-const createDecorationForValidationRange = (range: ValidationRange) => {
+const createDecorationForValidationRange = (range: ValidationOutput) => {
   const validationId = uuid();
   return [
-    Decoration.inline(range.startPos, range.endPos, {
+    Decoration.inline(range.from, range.to, {
       class: "validation-decoration",
       "data-attr-validation-id": validationId
     } as any),
-    Decoration.widget(range.startPos, getWidgetNode(range), { validationId })
+    Decoration.widget(range.from, getWidgetNode(range), { validationId })
   ];
 };
 
@@ -72,12 +72,12 @@ const getValidationRangesForRanges = async (ranges: Range[], doc: Node) => {
   return validationService.validate(
     ranges.map(range => ({
       str: doc.textBetween(range.from, range.to),
-      offset: range.from
+      ...range
     }))
   );
 };
 
-const getDecorationsForValidationRanges = (ranges: ValidationRange[]) =>
+const getDecorationsForValidationRanges = (ranges: ValidationOutput[]) =>
   flatMap(ranges.map(createDecorationForValidationRange));
 
 const findSingleDecoration = (
@@ -283,10 +283,10 @@ const documentValidatorPlugin = (schema: Schema) => {
         const validationResponse: ValidationResponse = tr.getMeta(
           TransactionMetaKeys.VALIDATION_RESPONSE
         );
-        if (validationResponse && validationResponse.ranges.length) {
+        if (validationResponse && validationResponse.validationOutputs.length) {
           // There are new validations available; apply them to the document.
           const decorationsToAdd = getDecorationsForValidationRanges(
-            validationResponse.ranges
+            validationResponse.validationOutputs
           );
 
           const existingDecorations = _newDecorations.find();

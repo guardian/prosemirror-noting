@@ -20,7 +20,7 @@ export default [
     ]
   },
   {
-    input: "src/js/ValidationWorker.ts",
+    input: "src/js/worker.ts",
     output: {
       file: "pages/dist/worker.js",
       format: "iife",

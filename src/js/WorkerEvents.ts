@@ -1,5 +1,5 @@
 import { Range } from ".";
-import { ValidationRange, ValidationInput } from "./validate";
+import { ValidationOutput, ValidationInput } from "./validate";
 
 export type WorkerEventTypes = "VALIDATE" | "CANCEl";
 
@@ -13,7 +13,7 @@ export type WorkerEvents =
       type: "VALIDATE_REQUEST";
       payload: {
         id: string;
-        validationInput: ValidationInput[];
+        validationInputs: ValidationInput[];
         ranges: Range[];
       };
     }
@@ -21,7 +21,7 @@ export type WorkerEvents =
       type: "VALIDATE_RESPONSE";
       payload: {
         id: string;
-        validationRanges: ValidationRange[];
+        validationOutputs: ValidationOutput[];
       };
     }
   | {

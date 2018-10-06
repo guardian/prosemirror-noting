@@ -177,51 +177,107 @@ describe("Range utils", () => {
     });
   });
   describe("diffValidationInputs", () => {
-    expect(
-      diffValidationInputs(
-        [
-          {
-            str: "example",
-            offset: 5
-          }
-        ],
-        [
-          {
-            str: "example",
-            offset: 7
-          }
-        ]
-      )
-    ).toEqual([
-      {
-        str: "ex",
-        offset: 5
-      }
-    ]);
-    expect(
-      diffValidationInputs(
-        [
-          {
-            str: "examplestringoverlaps",
-            offset: 5
-          }
-        ],
-        [
-          {
-            str: "string",
-            offset: 12
-          }
-        ]
-      )
-    ).toEqual([
-      {
-        str: "example",
-        offset: 5
-      },
-      {
-        str: "overlaps",
-        offset: 19
-      }
-    ]);
+    it("should remove the second validation inputs from the first where they overlap", () => {
+      expect(
+        diffValidationInputs(
+          [
+            {
+              str: "example",
+              from: 5,
+              to: 12
+            }
+          ],
+          [
+            {
+              str: "example",
+              from: 7,
+              to: 14
+            }
+          ]
+        )
+      ).toEqual([
+        {
+          str: "ex",
+          from: 5,
+          to: 7
+        }
+      ]);
+      expect(
+        diffValidationInputs(
+          [
+            {
+              str: "examplestringoverlaps",
+              from: 5,
+              to: 26
+            }
+          ],
+          [
+            {
+              str: "string",
+              from: 12,
+              to: 19
+            }
+          ]
+        )
+      ).toEqual([
+        {
+          str: "example",
+          from: 5,
+          to: 12
+        },
+        {
+          str: "overlaps",
+          from: 19,
+          to: 26
+        }
+      ]);
+      expect(
+        diffValidationInputs(
+          [
+            {
+              str: "example",
+              from: 5,
+              to: 12
+            }
+          ],
+          [
+            {
+              str: "example",
+              from: 5,
+              to: 12
+            }
+          ]
+        )
+      ).toEqual([]);
+      expect(
+        diffValidationInputs(
+          [
+            {
+              str: "example string with match",
+              from: 10,
+              to: 35
+            },
+            {
+              str: "example string with match also",
+              from: 40,
+              to: 70
+            }
+          ],
+          [
+            {
+              str: "example string with no match",
+              from: 10,
+              to: 38
+            }
+          ]
+        )
+      ).toEqual([
+        {
+          str: "example string with match also",
+          from: 40,
+          to: 70
+        }
+      ]);
+    });
   });
 });

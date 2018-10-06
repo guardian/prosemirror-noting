@@ -33,7 +33,8 @@ export const getTextMaps = (doc: Node) =>
           length: acc.length + str.length,
           positionMap: previousPositionMaps.concat({
             str: currentText,
-            offset: previousMap.offset
+            from: previousMap.from,
+            to: previousMap.from + currentText.length
           })
         };
       }
@@ -42,7 +43,8 @@ export const getTextMaps = (doc: Node) =>
         length: acc.length + str.length,
         positionMap: acc.positionMap.concat({
           str: str,
-          offset: textNodeWrapper.pos
+          from: textNodeWrapper.pos,
+          to: textNodeWrapper.pos + str.length
         })
       };
     },

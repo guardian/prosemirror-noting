@@ -1,4 +1,4 @@
-import { ValidationRange } from "./validate";
+import { ValidationOutput, ValidationInput } from "./validate";
 import { Range } from ".";
 import {
   VALIDATE_REQUEST,
@@ -11,24 +11,24 @@ import { EventEmitter } from "./EventEmitter";
 
 export type RunningServiceValidation = {
   id: string;
-  ranges?: Range[];
+  validationInputs: ValidationInput[];
 };
 
 export type RunningWorkerValidation = {
   id: string;
-  ranges?: Range[];
-  promise: Promise<ValidationRange[]>;
-  cancel: (ranges?: Range[]) => void;
+  validationInputs: ValidationInput[];
+  promise: Promise<ValidationOutput[]>;
+  omitOverlappingInputs: (inputs?: ValidationInput[]) => void;
 };
 
 /**
  * A base class to handle the state of running validations
- * and provide methods common operations on that state.
+ * and provide methods for common operations on that state.
  */
 class ValidationStateManager<
   T extends RunningServiceValidation | RunningWorkerValidation
 > extends EventEmitter {
-  private runningValidations: T[] = [];
+  protected runningValidations: T[] = [];
 
   protected addRunningValidation = (rv: T) => {
     this.runningValidations.push(rv);

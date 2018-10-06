@@ -67,40 +67,6 @@ class ValidationStateManager extends EventEmitter {
 
 //# sourceMappingURL=ValidationStateManager.js.map
 
-function runWithCancel(fn, ...args) {
-    const gen = fn(...args);
-    let cancelled = false;
-    let cancel = () => { };
-    const promise = new Promise((resolve, reject) => {
-        cancel = () => {
-            cancelled = true;
-            reject({ reason: "cancelled" });
-        };
-        function onFulfilled(res) {
-            if (!cancelled) {
-                let result;
-                try {
-                    result = gen.next(res);
-                }
-                catch (e) {
-                    return reject(e);
-                }
-                next(result);
-                return null;
-            }
-        }
-        onFulfilled();
-        function next({ done, value }) {
-            if (done) {
-                return resolve(value);
-            }
-            return onFulfilled(value);
-        }
-    });
-    return { promise, cancel };
-}
-//# sourceMappingURL=async.js.map
-
 /**
  * Appends the elements of `values` to `array`.
  *
@@ -393,38 +359,177 @@ function flatten(array) {
 
 var flatten_1 = flatten;
 
+const findOverlappingRangeIndex = (range, ranges) => {
+    return ranges.findIndex(localRange => (localRange.from <= range.from && localRange.to >= range.from) ||
+        (localRange.to >= range.to && localRange.from <= range.to) ||
+        (localRange.from >= range.from && localRange.to <= range.to));
+};
+const mergeRange = (range1, range2) => ({
+    from: range1.from < range2.from ? range1.from : range2.from,
+    to: range1.to > range2.to ? range1.to : range2.to
+});
+const mergeRanges = (ranges) => ranges.reduce((acc, range) => {
+    const index = findOverlappingRangeIndex(range, acc);
+    if (index === -1) {
+        return acc.concat(range);
+    }
+    const newRange = acc.slice();
+    newRange.splice(index, 1, mergeRange(range, acc[index]));
+    return newRange;
+}, []);
+const diffRanges = (firstRanges, secondRanges) => {
+    const firstRangesMerged = mergeRanges(firstRanges);
+    const secondRangesMerged = mergeRanges(secondRanges);
+    return firstRangesMerged.reduce((acc, range) => {
+        const overlap = findOverlappingRangeIndex(range, secondRangesMerged);
+        if (overlap === -1) {
+            return acc.concat(range);
+        }
+        const overlappingRange = secondRangesMerged[overlap];
+        const firstShortenedRange = {
+            from: range.from,
+            to: secondRangesMerged[overlap].from
+        };
+        if (overlappingRange.to >= range.to) {
+            return firstShortenedRange.from === firstShortenedRange.to
+                ? acc
+                : acc.concat(firstShortenedRange);
+        }
+        return acc.concat(firstShortenedRange, diffRanges([
+            {
+                from: overlappingRange.to + 1,
+                to: range.to
+            }
+        ], secondRangesMerged));
+    }, []);
+};
+const validationInputToRange = (vi) => ({
+    from: vi.from,
+    to: vi.from + vi.str.length
+});
+const getValRangesFromRange = (range, valRanges) => valRanges.reduce((acc, vi) => {
+    if (range.from >= vi.from && range.from <= vi.from + vi.str.length) {
+        const from = range.from - vi.from;
+        const to = range.from - vi.from + (range.to - range.from);
+        const str = vi.str.slice(from > 0 ? from - 1 : 0, to);
+        return str
+            ? acc.concat(Object.assign({}, vi, {
+                from: range.from,
+                to: range.to,
+                str
+            }))
+            : acc;
+    }
+    return acc;
+}, []);
+const diffValidationInputs = (firstValInputs, secondValInputs) => flatten_1(diffRanges(firstValInputs.map(validationInputToRange), secondValInputs.map(validationInputToRange)).map(range => getValRangesFromRange(range, firstValInputs)));
+//# sourceMappingURL=range.js.map
+
 const Operations = {
     ANNOTATE: "ANNOTATE",
     REPLACE: "REPLACE"
 };
-const getMatchIndexes = (str, offset, regExp) => {
+const getMatchIndexes = (str, from, regExp) => {
     const matches = [];
     let match;
     while ((match = regExp.exec(str))) {
-        matches.push({ index: match.index + offset, item: match[0] });
+        matches.push({ index: match.index + from, item: match[0] });
     }
     return matches;
 };
-const applyLibraryToValidationMapCancelable = (validationInputs, validationLibrary) => runWithCancel(applyLibraryToValidationMap, validationInputs, validationLibrary);
+const validationRunner = (validationInputs, validationLibrary) => {
+    const gen = applyLibraryToValidationMap(validationLibrary);
+    let cancelled = false;
+    let currentInputs = validationInputs;
+    let inputsToOmit = [];
+    return {
+        promise: new Promise(resolve => {
+            const getNextRange = () => {
+                if (cancelled) {
+                    resolve([]);
+                }
+                const { done, value } = gen.next(currentInputs);
+                if (done) {
+                    return resolve(diffValidationInputs(value, inputsToOmit));
+                }
+                setTimeout(getNextRange);
+            };
+            getNextRange();
+        }),
+        cancel: () => (cancelled = true),
+        omitOverlappingInputs: (newInputs) => {
+            currentInputs = diffValidationInputs(currentInputs, newInputs);
+            inputsToOmit = inputsToOmit.concat(newInputs);
+        }
+    };
+};
 function* applyLibraryToValidationMap(validationLibrary) {
     let matches = [];
     for (let i = 0; i < validationLibrary.length; i++) {
-        const validationInputs = yield;
+        const validationInputs = yield matches;
         for (let j = 0; j < validationLibrary[i].length; j++) {
             const rule = validationLibrary[i][j];
-            const ruleMatches = flatten_1(validationInputs.map(vi => getMatchIndexes(vi.str, vi.offset || 0, rule.regExp)));
+            const ruleMatches = flatten_1(validationInputs.map(vi => getMatchIndexes(vi.str, vi.from || 0, rule.regExp)));
             matches = matches.concat(ruleMatches
                 .map(match => ({
-                origin: match.index,
                 annotation: rule.annotation,
                 type: rule.type,
-                startPos: match.index,
-                endPos: match.index + match.item.length
+                from: match.index,
+                to: match.index + match.item.length,
+                str: match.item
             }))
                 .filter(match => match));
         }
     }
     return matches;
+}
+//# sourceMappingURL=validate.js.map
+
+class ValidationWorker extends ValidationStateManager {
+    constructor(validationLibrary, registerEventHandler, eventEmitter) {
+        super();
+        this.handleMessage = (e) => {
+            console.log("workerMessage", e.data);
+            const event = e.data;
+            if (event.type === CANCEL_REQUEST) {
+                this.cancelValidation();
+            }
+            if (event.type === VALIDATE_REQUEST) {
+                this.beginValidation(event.payload.id, event.payload.validationInputs);
+            }
+        };
+        this.cancelValidation = () => { };
+        this.beginValidation = (id, validationInputs) => {
+            const { promise, omitOverlappingInputs } = validationRunner(validationInputs, this.validationLibrary);
+            this.runningValidations.forEach(_ => _.omitOverlappingInputs(validationInputs));
+            promise.then(validationOutputs => {
+                this.postMessage({
+                    type: VALIDATE_RESPONSE,
+                    payload: {
+                        id,
+                        validationOutputs
+                    }
+                });
+            });
+            this.addRunningValidation({
+                id,
+                validationInputs,
+                promise,
+                omitOverlappingInputs
+            });
+        };
+        if (registerEventHandler) {
+            registerEventHandler(this.handleMessage);
+        }
+        else {
+            onmessage = this.handleMessage;
+        }
+        this.emitEvent = eventEmitter;
+        this.validationLibrary = validationLibrary;
+    }
+    postMessage(e) {
+        this.emitEvent ? this.emitEvent(e) : postMessage(e);
+    }
 }
 
 /**
@@ -4359,42 +4464,9 @@ const validationLibrary = chunk_1(permutations(Array.from("qwertyuio")).map(perm
         type: MarkTypes.legal
     };
 }), 500);
-class ValidationWorker extends ValidationStateManager {
-    constructor() {
-        super();
-        this.handleMessage = (e) => {
-            console.log("workerMessage", e.data);
-            const event = e.data;
-            if (event.type === CANCEL_REQUEST) {
-                this.cancelValidation();
-            }
-            if (event.type === VALIDATE_REQUEST) {
-                this.beginValidation(event.payload.id, event.payload.ranges, event.payload.validationInput);
-            }
-        };
-        this.cancelValidation = () => { };
-        this.beginValidation = (id, ranges, validationTarget) => {
-            const { promise, cancel } = applyLibraryToValidationMapCancelable(validationTarget, validationLibrary);
-            promise.then(validationRanges => {
-                postMessage({
-                    type: VALIDATE_RESPONSE,
-                    payload: {
-                        id,
-                        validationRanges
-                    }
-                });
-            });
-            this.addRunningValidation({
-                id,
-                ranges,
-                promise,
-                cancel
-            });
-        };
-        onmessage = this.handleMessage;
-    }
-}
-const validationWorker = new ValidationWorker();
-//# sourceMappingURL=ValidationWorker.js.map
+//# sourceMappingURL=library.js.map
+
+const worker = new ValidationWorker(validationLibrary);
+//# sourceMappingURL=worker.js.map
 
 }());

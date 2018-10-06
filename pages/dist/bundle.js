@@ -15004,7 +15004,8 @@ const getTextMaps = (doc) => (doc instanceof dist_1$1 ? findTextNodes(doc) : [do
             length: acc.length + str.length,
             positionMap: previousPositionMaps.concat({
                 str: currentText,
-                offset: previousMap.offset
+                from: previousMap.from,
+                to: previousMap.from + currentText.length
             })
         };
     }
@@ -15012,7 +15013,8 @@ const getTextMaps = (doc) => (doc instanceof dist_1$1 ? findTextNodes(doc) : [do
         length: acc.length + str.length,
         positionMap: acc.positionMap.concat({
             str: str,
-            offset: textNodeWrapper.pos
+            from: textNodeWrapper.pos,
+            to: textNodeWrapper.pos + str.length
         })
     };
 }, {
@@ -15400,6 +15402,10 @@ const mergeRanges = (ranges) => ranges.reduce((acc, range) => {
     return newRange;
 }, []);
 
+
+
+//# sourceMappingURL=range.js.map
+
 const getExpandedRange = (index, str, noOfWords = 1) => {
     const lastIndex = str.length - 1;
     const from = index === 0
@@ -15766,39 +15772,38 @@ class ValidationService extends ValidationStateManager {
                 this.handleCancelledValidations();
             }
             if (event.type === VALIDATE_RESPONSE) {
-                this.handleCompleteValidation(event.payload.id, event.payload.validationRanges);
+                this.handleCompleteValidation(event.payload.id, event.payload.validationOutputs);
             }
         };
         this.handleCancelledValidations = () => {
             this.emit(ValidationEvents.CANCELLATION_COMPLETE);
         };
-        this.handleCompleteValidation = (id, validationRanges) => {
+        this.handleCompleteValidation = (id, validationOutputs) => {
             const completeValidation = this.findRunningValidation(id);
             if (!completeValidation) {
                 return console.warn(`${serviceName} Received validation from worker, but no match in running validations for id ${id}`);
             }
             this.emit(ValidationEvents.VALIDATION_COMPLETE, {
                 id,
-                ranges: validationRanges
+                validationOutputs
             });
             this.removeRunningValidation(completeValidation);
         };
         this.worker.onmessage = this.handleMessage;
     }
-    validate(validationInput, ranges) {
+    validate(validationInputs) {
         const id = v4_1();
         this.worker.postMessage({
             type: VALIDATE_REQUEST,
             payload: {
-                validationInput,
-                ranges,
+                validationInputs,
                 id
             }
         });
         return new Promise((resolve, reject) => {
             this.addRunningValidation({
                 id,
-                ranges
+                validationInputs
             });
         });
     }
@@ -15828,11 +15833,11 @@ const getWidgetNode = (range) => {
 const createDecorationForValidationRange = (range) => {
     const validationId = v4_1();
     return [
-        dist_2$3.inline(range.startPos, range.endPos, {
+        dist_2$3.inline(range.from, range.to, {
             class: "validation-decoration",
             "data-attr-validation-id": validationId
         }),
-        dist_2$3.widget(range.startPos, getWidgetNode(range), { validationId })
+        dist_2$3.widget(range.from, getWidgetNode(range), { validationId })
     ];
 };
 const getValidationRangesForDocument = (doc) => __awaiter(undefined, void 0, void 0, function* () {
@@ -15841,10 +15846,7 @@ const getValidationRangesForDocument = (doc) => __awaiter(undefined, void 0, voi
     return validationService.validate(textMap);
 });
 const getValidationRangesForRanges = (ranges, doc) => __awaiter(undefined, void 0, void 0, function* () {
-    return validationService.validate(ranges.map(range => ({
-        str: doc.textBetween(range.from, range.to),
-        offset: range.from
-    })));
+    return validationService.validate(ranges.map(range => (Object.assign({ str: doc.textBetween(range.from, range.to) }, range))));
 });
 const getDecorationsForValidationRanges = (ranges) => flatten_1(ranges.map(createDecorationForValidationRange));
 const findSingleDecoration = (state, predicate) => {
@@ -15942,8 +15944,8 @@ const documentValidatorPlugin = (schema) => {
                     getValidationRangesForRanges(rangesToValidate, tr.doc);
                 }
                 const validationResponse = tr.getMeta(TransactionMetaKeys.VALIDATION_RESPONSE);
-                if (validationResponse && validationResponse.ranges.length) {
-                    const decorationsToAdd = getDecorationsForValidationRanges(validationResponse.ranges);
+                if (validationResponse && validationResponse.validationOutputs.length) {
+                    const decorationsToAdd = getDecorationsForValidationRanges(validationResponse.validationOutputs);
                     const existingDecorations = _newDecorations.find();
                     _newDecorations = _bufferedTrs.reduce((acc, _tr) => acc.map(_tr.mapping, _tr.doc), dist_3$3.create(docOnValidationStart, decorationsToAdd));
                     _newDecorations = _newDecorations.add(tr.doc, existingDecorations);
