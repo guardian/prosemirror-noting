@@ -59,8 +59,8 @@ class ValidationStateManager extends EventEmitter {
         this.findRunningValidation = (id) => {
             return this.runningValidations.find(_ => _.id === id);
         };
-        this.getIdsOfRunningValidations = (ranges) => {
-            return this.runningValidations.map(_ => _.id);
+        this.getRunningValidations = (ranges) => {
+            return this.runningValidations;
         };
     }
 }
@@ -467,6 +467,9 @@ function* applyLibraryToValidationMap(validationLibrary) {
     let matches = [];
     for (let i = 0; i < validationLibrary.length; i++) {
         const validationInputs = yield matches;
+        if (!validationInputs.length) {
+            break;
+        }
         for (let j = 0; j < validationLibrary[i].length; j++) {
             const rule = validationLibrary[i][j];
             const ruleMatches = flatten_1(validationInputs.map(vi => getMatchIndexes(vi.str, vi.from || 0, rule.regExp)));
@@ -531,6 +534,8 @@ class ValidationWorker extends ValidationStateManager {
         this.emitEvent ? this.emitEvent(e) : postMessage(e);
     }
 }
+
+//# sourceMappingURL=ValidationWorker.js.map
 
 /**
  * The base implementation of `_.slice` without an iteratee call guard.
@@ -4455,7 +4460,7 @@ const permutations = seq => seq.reduce((acc, el, index, arr) => {
         ...permutations(withoutIndex(arr, index)).map(perms => [el, ...perms], [])
     ];
 }, []);
-const validationLibrary = chunk_1(permutations(Array.from("qwertyuio")).map(perm => {
+const validationLibrary = chunk_1(permutations(Array.from("qwer")).map(perm => {
     const str = perm.join("");
     return {
         regExp: new RegExp(str, "g"),

@@ -76,6 +76,10 @@ export function* applyLibraryToValidationMap(
   let matches: ValidationOutput[] = [];
   for (let i = 0; i < validationLibrary.length; i++) {
     const validationInputs: ValidationInput[] = yield matches;
+    if (!validationInputs.length) {
+      // There aren't any inputs, so we can stop validation.
+      break;
+    }
     for (let j = 0; j < validationLibrary[i].length; j++) {
       const rule = validationLibrary[i][j];
       const ruleMatches = flatMap(

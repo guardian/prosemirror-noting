@@ -44,9 +44,9 @@ class ValidationService extends ValidationStateManager<
    * Validate a Prosemirror node, restricting checks to ranges if they're supplied.
    */
   public validate(
-    validationInputs: ValidationInput[]
+    validationInputs: ValidationInput[],
+    id: string | number
   ): Promise<ValidationOutput[]> {
-    const id = v4();
     this.worker.postMessage({
       type: VALIDATE_REQUEST,
       payload: {

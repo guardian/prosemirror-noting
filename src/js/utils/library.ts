@@ -18,7 +18,7 @@ const permutations: <T>(seq: Array<T>) => T[][] = seq =>
   }, []);
 
 export const validationLibrary: ValidationLibrary = chunk(
-  permutations(Array.from("qwertyuio")).map(perm => {
+  permutations(Array.from("qwer")).map(perm => {
     const str = perm.join("");
     return {
       regExp: new RegExp(str, "g"),

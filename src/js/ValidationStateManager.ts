@@ -10,12 +10,12 @@ import {
 import { EventEmitter } from "./EventEmitter";
 
 export type RunningServiceValidation = {
-  id: string;
+  id: string | number;
   validationInputs: ValidationInput[];
 };
 
 export type RunningWorkerValidation = {
-  id: string;
+  id: string | number;
   validationInputs: ValidationInput[];
   promise: Promise<ValidationOutput[]>;
   omitOverlappingInputs: (inputs?: ValidationInput[]) => void;
@@ -49,9 +49,9 @@ class ValidationStateManager<
    * Get validation ids for the given ranges. If no ranges are supplied,
    * return all current validation ids.
    */
-  protected getIdsOfRunningValidations = (ranges?: Range[]) => {
+  public getRunningValidations = (ranges?: Range[]) => {
     // @todo: get validations by range
-    return this.runningValidations.map(_ => _.id);
+    return this.runningValidations;
   };
 }
 

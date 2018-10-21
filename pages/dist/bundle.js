@@ -15742,8 +15742,8 @@ class ValidationStateManager extends EventEmitter {
         this.findRunningValidation = (id) => {
             return this.runningValidations.find(_ => _.id === id);
         };
-        this.getIdsOfRunningValidations = (ranges) => {
-            return this.runningValidations.map(_ => _.id);
+        this.getRunningValidations = (ranges) => {
+            return this.runningValidations;
         };
     }
 }
@@ -15791,8 +15791,7 @@ class ValidationService extends ValidationStateManager {
         };
         this.worker.onmessage = this.handleMessage;
     }
-    validate(validationInputs) {
-        const id = v4_1();
+    validate(validationInputs, id) {
         this.worker.postMessage({
             type: VALIDATE_REQUEST,
             payload: {
@@ -15842,11 +15841,10 @@ const createDecorationForValidationRange = (range) => {
 };
 const getValidationRangesForDocument = (doc) => __awaiter(undefined, void 0, void 0, function* () {
     const textMap = getTextMaps(doc);
-    console.log(textMap);
-    return validationService.validate(textMap);
+    return validationService.validate(textMap, 0);
 });
-const getValidationRangesForRanges = (ranges, doc) => __awaiter(undefined, void 0, void 0, function* () {
-    return validationService.validate(ranges.map(range => (Object.assign({ str: doc.textBetween(range.from, range.to) }, range))));
+const getValidationRangesForRanges = (ranges, tr) => __awaiter(undefined, void 0, void 0, function* () {
+    return validationService.validate(ranges.map(range => (Object.assign({ str: tr.doc.textBetween(range.from, range.to) }, range))), tr.time);
 });
 const getDecorationsForValidationRanges = (ranges) => flatten_1(ranges.map(createDecorationForValidationRange));
 const findSingleDecoration = (state, predicate) => {
@@ -15914,6 +15912,20 @@ const revalidationRangefinder = (ranges, decorations, doc) => {
         rangesToValidate: mergeRanges(validationRanges)
     };
 };
+const getNewDecorationsForValidationResponse = (response, decorationSet, trs, currentTr) => {
+    console.log(trs);
+    const initialTransaction = trs.find(tr => tr.time === parseInt(response.id));
+    if (!initialTransaction && trs.length > 1) {
+        console.log("No initial transaction found", response.id);
+        return decorationSet;
+    }
+    const decorationsToAdd = getDecorationsForValidationRanges(response.validationOutputs);
+    const existingDecorations = decorationSet.find();
+    decorationSet = trs.reduce((acc, tr) => {
+        return tr.time >= parseInt(response.id) ? acc.map(tr.mapping, tr.doc) : acc;
+    }, dist_3$3.create((initialTransaction || currentTr).doc, decorationsToAdd));
+    return decorationSet.add(currentTr.doc, existingDecorations);
+};
 const documentValidatorPlugin = (schema) => {
     let localView = undefined;
     const plugin = new dist_8({
@@ -15924,38 +15936,32 @@ const documentValidatorPlugin = (schema) => {
                     (localView &&
                         localView.dispatch(localView.state.tr.setMeta(TransactionMetaKeys.VALIDATION_RESPONSE, validationResponse))));
                 return {
-                    decorations: dist_3$3.create(doc, []),
-                    docOnValidationStart: doc
+                    decorations: dist_3$3.create(doc, [])
                 };
             },
-            apply(tr, { decorations, isValidating = false, bufferedTrs = [], docOnValidationStart }) {
+            apply(tr, { decorations, bufferedTrs = [], bufferedRanges = [], lastValidationTime = 0 }) {
                 const replaceRanges = getReplaceStepRangesFromTransaction(tr);
-                let _newDecorations = decorations.map(tr.mapping, tr.doc);
-                let _isValidating = isValidating;
+                const isValidating = validationService.getRunningValidations().length;
                 let _bufferedTrs = bufferedTrs;
-                let _docOnValidationStart = null;
-                if (isValidating) {
-                    _bufferedTrs = bufferedTrs.concat(tr);
-                }
+                window.bufferedTrs = bufferedTrs;
+                let _newDecorations = decorations.map(tr.mapping, tr.doc);
                 if (replaceRanges.length) {
+                    _bufferedTrs =
+                        bufferedTrs.length > 25
+                            ? bufferedTrs.slice(1).concat(tr)
+                            : bufferedTrs.concat(tr);
                     const { decorations: prunedDecorations, rangesToValidate } = revalidationRangefinder(replaceRanges, _newDecorations, tr.doc);
                     _newDecorations = prunedDecorations;
-                    _docOnValidationStart = tr.doc;
-                    getValidationRangesForRanges(rangesToValidate, tr.doc);
+                    getValidationRangesForRanges(rangesToValidate, tr);
                 }
-                const validationResponse = tr.getMeta(TransactionMetaKeys.VALIDATION_RESPONSE);
-                if (validationResponse && validationResponse.validationOutputs.length) {
-                    const decorationsToAdd = getDecorationsForValidationRanges(validationResponse.validationOutputs);
-                    const existingDecorations = _newDecorations.find();
-                    _newDecorations = _bufferedTrs.reduce((acc, _tr) => acc.map(_tr.mapping, _tr.doc), dist_3$3.create(docOnValidationStart, decorationsToAdd));
-                    _newDecorations = _newDecorations.add(tr.doc, existingDecorations);
+                const response = tr.getMeta(TransactionMetaKeys.VALIDATION_RESPONSE);
+                if (response && response.validationOutputs.length) {
+                    _newDecorations = getNewDecorationsForValidationResponse(response, _newDecorations, bufferedTrs, tr);
                 }
                 return {
                     decorations: _newDecorations,
-                    validationId: tr.getMeta("validationId"),
-                    isValidating: _isValidating,
-                    bufferedTrs: _bufferedTrs,
-                    docOnValidationStart: _docOnValidationStart
+                    isValidating,
+                    bufferedTrs: _bufferedTrs
                 };
             }
         },

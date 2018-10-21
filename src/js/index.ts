@@ -61,19 +61,22 @@ const createDecorationForValidationRange = (range: ValidationOutput) => {
  */
 const getValidationRangesForDocument = async (doc: Node) => {
   const textMap = getTextMaps(doc);
-  console.log(textMap);
-  return validationService.validate(textMap);
+  return validationService.validate(textMap, 0);
   // return applyLibraryToValidationMapCancelable(textMap, lib);
 };
 
-const getValidationRangesForRanges = async (ranges: Range[], doc: Node) => {
+const getValidationRangesForRanges = async (
+  ranges: Range[],
+  tr: Transaction
+) => {
   // Revalidate and redecorate each range.
 
   return validationService.validate(
     ranges.map(range => ({
-      str: doc.textBetween(range.from, range.to),
+      str: tr.doc.textBetween(range.from, range.to),
       ...range
-    }))
+    })),
+    tr.time
   );
 };
 
@@ -207,13 +210,42 @@ const revalidationRangefinder = (
   };
 };
 
+const getNewDecorationsForValidationResponse = (
+  response: ValidationResponse,
+  decorationSet: DecorationSet,
+  trs: Transaction[],
+  currentTr: Transaction
+) => {
+  console.log(trs);
+  const initialTransaction = trs.find(tr => tr.time === parseInt(response.id));
+  if (!initialTransaction && trs.length > 1) {
+    console.log("No initial transaction found", response.id);
+
+    return decorationSet;
+  }
+
+  // There are new validations available; apply them to the document.
+  const decorationsToAdd = getDecorationsForValidationRanges(
+    response.validationOutputs
+  );
+
+  const existingDecorations = decorationSet.find();
+    
+  // We map the decorations through the accumulated tr maps until
+  // they map on to the new document using the transaction times.
+  decorationSet = trs.reduce((acc, tr) => {
+    return tr.time >= parseInt(response.id) ? acc.map(tr.mapping, tr.doc) : acc;
+  }, DecorationSet.create((initialTransaction || currentTr).doc, decorationsToAdd));
+
+  // Finally, we add the existing decorations to this new map.
+  return decorationSet.add(currentTr.doc, existingDecorations);
+};
+
 type PluginState = {
   decorations: DecorationSet;
-  isValidating: boolean;
   bufferedTrs: Transaction[];
-  validationId?: string;
-  docOnValidationStart: Node;
-  cancelValidation: (reason?: string) => void;
+  bufferedRanges: Range[];
+  lastValidationTime: number;
 };
 
 /**
@@ -225,7 +257,6 @@ const documentValidatorPlugin = (schema: Schema) => {
   const plugin: Plugin = new Plugin({
     state: {
       init(_, { doc }) {
-        let cancel;
         getValidationRangesForDocument(doc);
 
         // Hook up our validation events.
@@ -246,68 +277,64 @@ const documentValidatorPlugin = (schema: Schema) => {
         );
 
         return {
-          decorations: DecorationSet.create(doc, []),
-          docOnValidationStart: doc
+          decorations: DecorationSet.create(doc, [])
         };
       },
       apply(
         tr: Transaction,
         {
           decorations,
-          isValidating = false,
           bufferedTrs = [],
-          docOnValidationStart
+          bufferedRanges = [],
+          lastValidationTime = 0
         }: PluginState
       ) {
         const replaceRanges = getReplaceStepRangesFromTransaction(tr);
-        let _newDecorations = decorations.map(tr.mapping, tr.doc);
-        let _isValidating = isValidating;
+        const isValidating = validationService.getRunningValidations().length;
         let _bufferedTrs = bufferedTrs;
-        let _docOnValidationStart = null;
+        (window as any).bufferedTrs = bufferedTrs;
+        let _newDecorations = decorations.map(tr.mapping, tr.doc);
 
-        // If we're currently validating, buffer the incoming transaction.
-        if (isValidating) {
-          _bufferedTrs = bufferedTrs.concat(tr);
-        }
+        // We need to aggregate ranges here, before we submit them to the
+        // validation service. Effectively this means batching ranges; once
+        // we're ready to submit we join the ranges, examine the document to
+        // grab the relevant text and submit as usual.
+
+        // if lastValidationTime < window
+        // add to buffered ranges
+        // else
+        // collapse validation ranges
+        // submit validations
 
         if (replaceRanges.length) {
+          _bufferedTrs =
+            bufferedTrs.length > 25
+              ? bufferedTrs.slice(1).concat(tr)
+              : bufferedTrs.concat(tr);
           const {
             decorations: prunedDecorations,
             rangesToValidate
           } = revalidationRangefinder(replaceRanges, _newDecorations, tr.doc);
           _newDecorations = prunedDecorations;
-          _docOnValidationStart = tr.doc;
-          getValidationRangesForRanges(rangesToValidate, tr.doc);
+          getValidationRangesForRanges(rangesToValidate, tr);
         }
 
-        const validationResponse: ValidationResponse = tr.getMeta(
+        const response: ValidationResponse = tr.getMeta(
           TransactionMetaKeys.VALIDATION_RESPONSE
         );
-        if (validationResponse && validationResponse.validationOutputs.length) {
-          // There are new validations available; apply them to the document.
-          const decorationsToAdd = getDecorationsForValidationRanges(
-            validationResponse.validationOutputs
+
+        if (response && response.validationOutputs.length) {
+          _newDecorations = getNewDecorationsForValidationResponse(
+            response,
+            _newDecorations,
+            bufferedTrs,
+            tr
           );
-
-          const existingDecorations = _newDecorations.find();
-
-          // We map the decorations through the accumulated tr maps until
-          // they map on to the new document.
-          _newDecorations = _bufferedTrs.reduce(
-            (acc, _tr) => acc.map(_tr.mapping, _tr.doc),
-            DecorationSet.create(docOnValidationStart, decorationsToAdd)
-          );
-
-          // Finally, we add the existing decorations to this new map.
-          _newDecorations = _newDecorations.add(tr.doc, existingDecorations);
         }
-
         return {
           decorations: _newDecorations,
-          validationId: tr.getMeta("validationId"),
-          isValidating: _isValidating,
-          bufferedTrs: _bufferedTrs,
-          docOnValidationStart: _docOnValidationStart
+          isValidating,
+          bufferedTrs: _bufferedTrs
         };
       }
     },
