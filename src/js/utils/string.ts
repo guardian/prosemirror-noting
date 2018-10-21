@@ -1,3 +1,5 @@
+import { ValidationInput } from "../interfaces/Validation";
+
 /**
  * From a string, get a range from the given index that looks
  * outward for the given number of words.
@@ -41,3 +43,13 @@ export const getPositionOfNthWord = (
 export const isString = (str: any) => {
   return typeof str === "string" || str instanceof String;
 };
+
+/**
+ * Create a single string from an array of validation inputs.
+ * Assumes ordered inputs that do not overlap.
+ */
+export const createStringFromValidationInputs = (inputs: ValidationInput[]) =>
+  inputs.reduce(
+    (acc, input) => acc + " ".repeat(input.from - acc.length) + input.str,
+    ""
+  );

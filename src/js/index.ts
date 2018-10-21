@@ -7,12 +7,9 @@ import { getExpandedRange } from "./utils/string";
 import { ReplaceStep, ReplaceAroundStep } from "prosemirror-transform";
 import uuid from "uuid/v4";
 import clamp from "lodash/clamp";
-import { ValidationOutput } from "./validate";
+import { ValidationOutput, ValidationResponse } from "./interfaces/Validation";
 import { getTextMaps } from "./utils/prosemirror";
-import validationService, {
-  ValidationEvents,
-  ValidationResponse
-} from "./ValidationService";
+import validationService, { ValidationEvents } from "./ValidationAPIService";
 
 const TransactionMetaKeys = {
   VALIDATION_RESPONSE: "VALIDATION_RESPONSE"
@@ -103,8 +100,8 @@ const updateView = (plugin: Plugin) => (
   prevState: EditorState
 ) => {
   const pluginState: PluginState = plugin.getState(view.state);
-  const validationId = pluginState.validationId;
-  const prevValidationId = plugin.getState(prevState).validationId;
+  const validationId = pluginState.hoverId;
+  const prevValidationId = plugin.getState(prevState).hoverId;
   if (prevValidationId === validationId) {
     return;
   }
@@ -230,7 +227,7 @@ const getNewDecorationsForValidationResponse = (
   );
 
   const existingDecorations = decorationSet.find();
-    
+
   // We map the decorations through the accumulated tr maps until
   // they map on to the new document using the transaction times.
   decorationSet = trs.reduce((acc, tr) => {
@@ -246,6 +243,7 @@ type PluginState = {
   bufferedTrs: Transaction[];
   bufferedRanges: Range[];
   lastValidationTime: number;
+  hoverId: string;
 };
 
 /**
@@ -285,6 +283,7 @@ const documentValidatorPlugin = (schema: Schema) => {
         {
           decorations,
           bufferedTrs = [],
+          hoverId,
           bufferedRanges = [],
           lastValidationTime = 0
         }: PluginState
@@ -331,10 +330,12 @@ const documentValidatorPlugin = (schema: Schema) => {
             tr
           );
         }
+        console.log(hoverId);
         return {
           decorations: _newDecorations,
           isValidating,
-          bufferedTrs: _bufferedTrs
+          bufferedTrs: _bufferedTrs,
+          hoverId: tr.getMeta("hoverId")
         };
       }
     },
@@ -350,10 +351,8 @@ const documentValidatorPlugin = (schema: Schema) => {
               "data-attr-validation-id"
             );
             const newValidationId = targetAttr ? targetAttr : undefined;
-            if (newValidationId !== plugin.getState(view.state).validationId) {
-              view.dispatch(
-                view.state.tr.setMeta("validationId", newValidationId)
-              );
+            if (newValidationId !== plugin.getState(view.state).hoverId) {
+              view.dispatch(view.state.tr.setMeta("hoverId", newValidationId));
             }
           }
           return false;

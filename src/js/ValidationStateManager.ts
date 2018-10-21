@@ -1,12 +1,5 @@
-import { ValidationOutput, ValidationInput } from "./validate";
+import { ValidationOutput, ValidationInput } from "./interfaces/Validation";
 import { Range } from ".";
-import {
-  VALIDATE_REQUEST,
-  VALIDATE_RESPONSE,
-  CANCEL_REQUEST,
-  CANCEL_RESPONSE,
-  WorkerEvents
-} from "./WorkerEvents";
 import { EventEmitter } from "./EventEmitter";
 
 export type RunningServiceValidation = {

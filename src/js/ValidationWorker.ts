@@ -2,15 +2,14 @@ import {
   VALIDATE_REQUEST,
   VALIDATE_RESPONSE,
   CANCEL_REQUEST,
-  CANCEL_RESPONSE,
   WorkerEvents
 } from "./WorkerEvents";
-import { ValidationInput } from "./validate";
+import { ValidationInput,ValidationLibrary } from "./interfaces/Validation";
 import ValidationStateManager, {
   RunningWorkerValidation
 } from "./ValidationStateManager";
 import { validationRunner } from "./validate";
-import { ValidationLibrary, Operations } from "./validate";
+import {  } from "./validate";
 
 class ValidationWorker extends ValidationStateManager<RunningWorkerValidation> {
   private validationLibrary: ValidationLibrary;

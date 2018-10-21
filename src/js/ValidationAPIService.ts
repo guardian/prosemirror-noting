@@ -1,5 +1,4 @@
-import { ValidationOutput, ValidationInput } from "./validate";
-import { Range } from "./index";
+import { ValidationOutput, ValidationInput } from "./interfaces/Validation";
 import {
   VALIDATE_REQUEST,
   VALIDATE_RESPONSE,
@@ -7,22 +6,18 @@ import {
   CANCEL_RESPONSE,
   WorkerEvents
 } from "./WorkerEvents";
-import v4 from "uuid/v4";
 import ValidationStateManager, {
   RunningServiceValidation
 } from "./ValidationStateManager";
+import IValidationService from "./interfaces/IValidationService";
+import { createStringFromValidationInputs } from './utils/string';
 
-const serviceName = "[validationService]";
+const serviceName = "[validationAPIService]";
 
 export const ValidationEvents = {
   VALIDATION_COMPLETE: "VALIDATION_COMPLETE",
   VALIDATION_ERROR: "VALIDATION_ERROR",
   CANCELLATION_COMPLETE: "CANCELLATION_COMPLETE"
-};
-
-export type ValidationResponse = {
-  validationOutputs: ValidationOutput[];
-  id: string;
 };
 
 /**
@@ -32,7 +27,7 @@ export type ValidationResponse = {
  */
 class ValidationService extends ValidationStateManager<
   RunningServiceValidation
-> {
+> implements IValidationService {
   private worker = new Worker("./worker.js");
 
   constructor() {
@@ -44,21 +39,27 @@ class ValidationService extends ValidationStateManager<
    * Validate a Prosemirror node, restricting checks to ranges if they're supplied.
    */
   public validate(
-    validationInputs: ValidationInput[],
+    inputs: ValidationInput[],
     id: string | number
   ): Promise<ValidationOutput[]> {
-    this.worker.postMessage({
-      type: VALIDATE_REQUEST,
-      payload: {
-        validationInputs,
-        id
-      }
-    } as WorkerEvents);
+    fetch('https://languagetool.org/api/v2/check', {
+      method: 'POST',
+      headers: new Headers({
+        'Content-Type': 'application/json'
+      }),
+      body: JSON.stringify({
+        'data': {
+          'annotation': [{
+            'text': createStringFromValidationInputs(inputs)
+          }]
+        }
+      })
+    })
 
     return new Promise((resolve, reject) => {
       this.addRunningValidation({
         id,
-        validationInputs
+        validationInputs: inputs
       });
     });
   }

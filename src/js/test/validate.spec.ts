@@ -1,9 +1,10 @@
 import {
   applyLibraryToValidationMap,
   validationRunner,
-  ValidationLibrary,
-  ValidationInput
 } from "../validate";
+import {
+  ValidationLibrary,
+  ValidationInput} from '../interfaces/Validation';
 import { validationLibrary } from "./helpers/fixtures";
 
 describe("Validation functions", () => {

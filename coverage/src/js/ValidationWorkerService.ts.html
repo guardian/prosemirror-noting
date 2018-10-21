@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for src/js/ValidationWorkerService.ts</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../prettify.css" />
+    <link rel="stylesheet" href="../../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../../index.html">All files</a> / <a href="index.html">src/js</a> ValidationWorkerService.ts
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>0/29</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>0/6</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>0/7</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>0/29</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line low'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { ValidationOutput, ValidationInput } from "./interfaces/Validation";
+&nbsp;
+<span class="cstat-no" title="statement not covered" >import {</span>
+  VALIDATE_REQUEST,
+  VALIDATE_RESPONSE,
+  CANCEL_REQUEST,
+  CANCEL_RESPONSE,
+  WorkerEvents
+} from "./WorkerEvents";
+<span class="cstat-no" title="statement not covered" >import ValidationStateManager, {</span>
+  RunningServiceValidation
+} from "./ValidationStateManager";
+&nbsp;
+const serviceName = <span class="cstat-no" title="statement not covered" >"[validationService]";</span>
+&nbsp;
+export const <span class="cstat-no" title="statement not covered" >ValidationEvents = {</span>
+  VALIDATION_COMPLETE: "VALIDATION_COMPLETE",
+  VALIDATION_ERROR: "VALIDATION_ERROR",
+  CANCELLATION_COMPLETE: "CANCELLATION_COMPLETE"
+};
+&nbsp;
+&nbsp;
+&nbsp;
+/**
+ * The validation service. Calls to validate() begin validations
+ * for ranges, which are returned via an event, VALIDATION_COMPLETE.
+ *
+ */
+class ValidationService extends ValidationStateManager&lt;
+  RunningServiceValidation
+&gt; {
+  private <span class="cstat-no" title="statement not covered" >worker = new Worker("./worker.js");</span>
+&nbsp;
+<span class="fstat-no" title="function not covered" >  constructor() {</span>
+<span class="cstat-no" title="statement not covered" >    super();</span>
+<span class="cstat-no" title="statement not covered" >    this.worker.onmessage = this.handleMessage;</span>
+  }
+&nbsp;
+  /**
+   * Validate a Prosemirror node, restricting checks to ranges if they're supplied.
+   */
+  public <span class="fstat-no" title="function not covered" >validate</span>(
+    validationInputs: ValidationInput[],
+    id: string | number
+  ): Promise&lt;ValidationOutput[]&gt; {
+<span class="cstat-no" title="statement not covered" >    this.worker.postMessage({</span>
+      type: VALIDATE_REQUEST,
+      payload: {
+        validationInputs,
+        id
+      }
+    } as WorkerEvents);
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    return new Promise(<span class="fstat-no" title="function not covered" >(r</span>esolve, reject) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >      this.addRunningValidation({</span>
+        id,
+        validationInputs
+      });
+    });
+  }
+&nbsp;
+  /**
+   * Cancel all running validations.
+   */
+  public <span class="cstat-no" title="statement not covered" >cancelValidation = <span class="fstat-no" title="function not covered" >() </span>=&gt; {</span>
+    // @todo: partially cancel validations
+<span class="cstat-no" title="statement not covered" >    this.worker.postMessage({</span>
+      type: CANCEL_REQUEST
+    } as WorkerEvents);
+  };
+&nbsp;
+  /**
+   * Handle a worker message.
+   */
+  private <span class="cstat-no" title="statement not covered" >handleMessage = <span class="fstat-no" title="function not covered" >(e</span>: MessageEvent) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    console.log("serviceMessage", e.data);</span>
+    const event: WorkerEvents = <span class="cstat-no" title="statement not covered" >e.data;</span>
+<span class="cstat-no" title="statement not covered" >    if (event.type === CANCEL_RESPONSE) {</span>
+<span class="cstat-no" title="statement not covered" >      this.handleCancelledValidations();</span>
+    }
+<span class="cstat-no" title="statement not covered" >    if (event.type === VALIDATE_RESPONSE) {</span>
+<span class="cstat-no" title="statement not covered" >      this.handleCompleteValidation(</span>
+        event.payload.id,
+        event.payload.validationOutputs
+      );
+    }
+  };
+&nbsp;
+  /**
+   * Handle cancelled validations.
+   */
+<span class="cstat-no" title="statement not covered" >  handleCancelledValidations = <span class="fstat-no" title="function not covered" >() </span>=&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    this.emit(ValidationEvents.CANCELLATION_COMPLETE);</span>
+  };
+&nbsp;
+  /**
+   * Handle a completed validation.
+   */
+  private <span class="cstat-no" title="statement not covered" >handleCompleteValidation = <span class="fstat-no" title="function not covered" >(</span></span>
+    id: string,
+    validationOutputs: ValidationOutput[]
+  ) =&gt; {
+    const completeValidation = <span class="cstat-no" title="statement not covered" >this.findRunningValidation(id);</span>
+<span class="cstat-no" title="statement not covered" >    if (!completeValidation) {</span>
+<span class="cstat-no" title="statement not covered" >      return console.warn(</span>
+        `${serviceName} Received validation from worker, but no match in running validations for id ${id}`
+      );
+    }
+<span class="cstat-no" title="statement not covered" >    this.emit(ValidationEvents.VALIDATION_COMPLETE, {</span>
+      id,
+      validationOutputs
+    });
+<span class="cstat-no" title="statement not covered" >    this.removeRunningValidation(completeValidation);</span>
+  };
+}
+&nbsp;
+const validationService = <span class="cstat-no" title="statement not covered" >new ValidationService();</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >export default validationService;</span>
+&nbsp;</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="https://istanbul.js.org/" target="_blank">istanbul</a> at Sun Oct 21 2018 21:14:50 GMT+0100 (British Summer Time)
+</div>
+</div>
+<script src="../../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../../sorter.js"></script>
+</body>
+</html>

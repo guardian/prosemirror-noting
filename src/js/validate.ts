@@ -1,24 +1,6 @@
 import flatMap from "lodash/flatten";
 import { diffValidationInputs } from "./utils/range";
-
-export type ValidationInput = { str: string; from: number; to: number };
-export type ValidationLibrary = {
-  regExp: RegExp;
-  annotation: string;
-  operation: "ANNOTATE" | "REPLACE";
-  type: string;
-}[][];
-export type ValidationOutput = ValidationInput & {
-  annotation: string;
-  type: string;
-};
-
-export const Operations: {
-  [key: string]: "ANNOTATE" | "REPLACE";
-} = {
-  ANNOTATE: "ANNOTATE",
-  REPLACE: "REPLACE"
-};
+import { ValidationInput, ValidationLibrary, ValidationOutput } from "./interfaces/Validation";
 
 /**
  * Get the matches and indexes for a given string and regex.
@@ -76,7 +58,7 @@ export function* applyLibraryToValidationMap(
   let matches: ValidationOutput[] = [];
   for (let i = 0; i < validationLibrary.length; i++) {
     const validationInputs: ValidationInput[] = yield matches;
-    if (!validationInputs.length) {
+    if (!validationInputs || !validationInputs.length) {
       // There aren't any inputs, so we can stop validation.
       break;
     }

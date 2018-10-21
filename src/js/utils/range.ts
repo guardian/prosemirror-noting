@@ -1,6 +1,6 @@
 import flatMap from "lodash/flatten";
 import { Range } from "../index";
-import { ValidationOutput, ValidationInput } from "../validate";
+import { ValidationOutput, ValidationInput } from "../interfaces/Validation";
 
 export const findOverlappingRangeIndex = (range: Range, ranges: Range[]) => {
   return ranges.findIndex(

@@ -1,4 +1,4 @@
-import { ValidationLibrary } from "../../validate";
+import { ValidationLibrary } from "../../interfaces/Validation";
 
 export const validationLibrary: ValidationLibrary = [
   [

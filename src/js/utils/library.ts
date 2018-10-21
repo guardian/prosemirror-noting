@@ -1,7 +1,7 @@
 import chunk from "lodash/chunk";
 import { MarkTypes } from "./prosemirror";
 import { Range } from "..";
-import { ValidationLibrary, Operations } from "../validate";
+import { ValidationLibrary, Operations } from "../interfaces/Validation";
 
 // A temporary validation library
 const withoutIndex = <T>(arr: Array<T>, index: number) =>

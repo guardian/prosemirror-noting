@@ -1,4 +1,8 @@
-import { getExpandedRange, getPositionOfNthWord } from "../utils/string";
+import {
+  getExpandedRange,
+  getPositionOfNthWord,
+  createStringFromValidationInputs
+} from "../utils/string";
 
 describe("expandTextSelection", () => {
   it("should give a range that includes the selection plus x words", () => {
@@ -59,5 +63,13 @@ describe("expandTextSelection", () => {
     str = "example string to s";
     expect(str.slice(getPositionOfNthWord(str, 2, false))).toBe("string to s");
     expect(str.slice(getPositionOfNthWord(str, 1, false))).toBe("to s");
+  });
+  it("should get a single string from a series of validation inputs", () => {
+    expect(
+      createStringFromValidationInputs([
+        { str: "An example", from: 0, to: 10 },
+        { str: "sentence", from: 11, to: 19 }
+      ])
+    ).toEqual("An example sentence");
   });
 });

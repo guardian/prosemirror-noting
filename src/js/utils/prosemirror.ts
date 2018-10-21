@@ -1,5 +1,5 @@
 import { Mark, MarkSpec, Node } from "prosemirror-model";
-import { ValidationInput } from "../validate";
+import { ValidationInput } from "../interfaces/Validation";
 
 /**
  * Get a single string of text, and an array of position mappings,

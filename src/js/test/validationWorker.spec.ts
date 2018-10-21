@@ -1,6 +1,6 @@
 import ValidationWorker from "../ValidationWorker";
 import { validationLibrary } from "./helpers/fixtures";
-import { ValidationInput, ValidationOutput } from "../validate";
+import { ValidationInput, ValidationOutput } from "../interfaces/Validation";
 import {
   VALIDATE_RESPONSE,
   VALIDATE_REQUEST,

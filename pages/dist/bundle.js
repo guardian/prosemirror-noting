@@ -15434,6 +15434,7 @@ const getPositionOfNthWord = (str, noOfWords, forward = true) => {
     return forward ? offset : str.length - offset;
 };
 
+const createStringFromValidationInputs = (inputs) => inputs.reduce((acc, input) => acc + " ".repeat(input.from - acc.length) + input.str, "");
 //# sourceMappingURL=string.js.map
 
 var rngBrowser = createCommonjsModule(function (module) {
@@ -15684,7 +15685,6 @@ function clamp(number, lower, upper) {
 
 var clamp_1 = clamp;
 
-const VALIDATE_REQUEST = "VALIDATE_REQUEST";
 const VALIDATE_RESPONSE = "VALIDATE_RESPONSE";
 const CANCEL_REQUEST = "CANCEL_REQUEST";
 const CANCEL_RESPONSE = "CANCEL_RESPONSE";
@@ -15750,7 +15750,7 @@ class ValidationStateManager extends EventEmitter {
 
 //# sourceMappingURL=ValidationStateManager.js.map
 
-const serviceName = "[validationService]";
+const serviceName = "[validationAPIService]";
 const ValidationEvents = {
     VALIDATION_COMPLETE: "VALIDATION_COMPLETE",
     VALIDATION_ERROR: "VALIDATION_ERROR",
@@ -15791,25 +15791,29 @@ class ValidationService extends ValidationStateManager {
         };
         this.worker.onmessage = this.handleMessage;
     }
-    validate(validationInputs, id) {
-        this.worker.postMessage({
-            type: VALIDATE_REQUEST,
-            payload: {
-                validationInputs,
-                id
-            }
+    validate(inputs, id) {
+        fetch('https://languagetool.org/api/v2/check', {
+            method: 'POST',
+            headers: new Headers({
+                'Content-Type': 'application/json'
+            }),
+            body: JSON.stringify({
+                'data': {
+                    'annotation': [{
+                            'text': createStringFromValidationInputs(inputs)
+                        }]
+                }
+            })
         });
         return new Promise((resolve, reject) => {
             this.addRunningValidation({
                 id,
-                validationInputs
+                validationInputs: inputs
             });
         });
     }
 }
 const validationService = new ValidationService();
-
-//# sourceMappingURL=ValidationService.js.map
 
 const TransactionMetaKeys = {
     VALIDATION_RESPONSE: "VALIDATION_RESPONSE"
@@ -15856,8 +15860,8 @@ const findSingleDecoration = (state, predicate) => {
 };
 const updateView = (plugin) => (view, prevState) => {
     const pluginState = plugin.getState(view.state);
-    const validationId = pluginState.validationId;
-    const prevValidationId = plugin.getState(prevState).validationId;
+    const validationId = pluginState.hoverId;
+    const prevValidationId = plugin.getState(prevState).hoverId;
     if (prevValidationId === validationId) {
         return;
     }
@@ -15939,7 +15943,7 @@ const documentValidatorPlugin = (schema) => {
                     decorations: dist_3$3.create(doc, [])
                 };
             },
-            apply(tr, { decorations, bufferedTrs = [], bufferedRanges = [], lastValidationTime = 0 }) {
+            apply(tr, { decorations, bufferedTrs = [], hoverId, bufferedRanges = [], lastValidationTime = 0 }) {
                 const replaceRanges = getReplaceStepRangesFromTransaction(tr);
                 const isValidating = validationService.getRunningValidations().length;
                 let _bufferedTrs = bufferedTrs;
@@ -15958,10 +15962,12 @@ const documentValidatorPlugin = (schema) => {
                 if (response && response.validationOutputs.length) {
                     _newDecorations = getNewDecorationsForValidationResponse(response, _newDecorations, bufferedTrs, tr);
                 }
+                console.log(hoverId);
                 return {
                     decorations: _newDecorations,
                     isValidating,
-                    bufferedTrs: _bufferedTrs
+                    bufferedTrs: _bufferedTrs,
+                    hoverId: tr.getMeta("hoverId")
                 };
             }
         },
@@ -15975,8 +15981,8 @@ const documentValidatorPlugin = (schema) => {
                     if (target) {
                         const targetAttr = target.getAttribute("data-attr-validation-id");
                         const newValidationId = targetAttr ? targetAttr : undefined;
-                        if (newValidationId !== plugin.getState(view.state).validationId) {
-                            view.dispatch(view.state.tr.setMeta("validationId", newValidationId));
+                        if (newValidationId !== plugin.getState(view.state).hoverId) {
+                            view.dispatch(view.state.tr.setMeta("hoverId", newValidationId));
                         }
                     }
                     return false;
