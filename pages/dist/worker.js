@@ -5,6 +5,8 @@ const VALIDATE_REQUEST = "VALIDATE_REQUEST";
 const VALIDATE_RESPONSE = "VALIDATE_RESPONSE";
 const CANCEL_REQUEST = "CANCEL_REQUEST";
 
+//# sourceMappingURL=WorkerEvents.js.map
+
 class EventEmitter {
     constructor() {
         this.events = {};
@@ -42,6 +44,7 @@ class EventEmitter {
         return remove;
     }
 }
+//# sourceMappingURL=EventEmitter.js.map
 
 class ValidationStateManager extends EventEmitter {
     constructor() {
@@ -61,6 +64,8 @@ class ValidationStateManager extends EventEmitter {
         };
     }
 }
+
+//# sourceMappingURL=ValidationStateManager.js.map
 
 /**
  * Appends the elements of `values` to `array`.
@@ -95,12 +100,10 @@ function createCommonjsModule(fn, module) {
 	return module = { exports: {} }, fn(module, module.exports), module.exports;
 }
 
-/** Detect free variable `global` from Node.js. */
 var freeGlobal = typeof commonjsGlobal == 'object' && commonjsGlobal && commonjsGlobal.Object === Object && commonjsGlobal;
 
 var _freeGlobal = freeGlobal;
 
-/** Detect free variable `self`. */
 var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
 
 /** Used as a reference to the global object. */
@@ -108,12 +111,10 @@ var root = _freeGlobal || freeSelf || Function('return this')();
 
 var _root = root;
 
-/** Built-in value references. */
 var Symbol = _root.Symbol;
 
 var _Symbol = Symbol;
 
-/** Used for built-in method references. */
 var objectProto$1 = Object.prototype;
 
 /** Used to check objects for own properties. */
@@ -181,7 +182,6 @@ function objectToString(value) {
 
 var _objectToString = objectToString;
 
-/** `Object#toString` result references. */
 var nullTag = '[object Null]';
 var undefinedTag = '[object Undefined]';
 
@@ -236,7 +236,6 @@ function isObjectLike(value) {
 
 var isObjectLike_1 = isObjectLike;
 
-/** `Object#toString` result references. */
 var argsTag = '[object Arguments]';
 
 /**
@@ -252,7 +251,6 @@ function baseIsArguments(value) {
 
 var _baseIsArguments = baseIsArguments;
 
-/** Used for built-in method references. */
 var objectProto = Object.prototype;
 
 /** Used to check objects for own properties. */
@@ -313,7 +311,6 @@ var isArray = Array.isArray;
 
 var isArray_1 = isArray;
 
-/** Built-in value references. */
 var spreadableSymbol = _Symbol ? _Symbol.isConcatSpreadable : undefined;
 
 /**
@@ -330,17 +327,6 @@ function isFlattenable(value) {
 
 var _isFlattenable = isFlattenable;
 
-/**
- * The base implementation of `_.flatten` with support for restricting flattening.
- *
- * @private
- * @param {Array} array The array to flatten.
- * @param {number} depth The maximum recursion depth.
- * @param {boolean} [predicate=isFlattenable] The function invoked per iteration.
- * @param {boolean} [isStrict] Restrict to values that pass `predicate` checks.
- * @param {Array} [result=[]] The initial result value.
- * @returns {Array} Returns the new flattened array.
- */
 function baseFlatten(array, depth, predicate, isStrict, result) {
   var index = -1,
       length = array.length;
@@ -366,20 +352,6 @@ function baseFlatten(array, depth, predicate, isStrict, result) {
 
 var _baseFlatten = baseFlatten;
 
-/**
- * Flattens `array` a single level deep.
- *
- * @static
- * @memberOf _
- * @since 0.1.0
- * @category Array
- * @param {Array} array The array to flatten.
- * @returns {Array} Returns the new flattened array.
- * @example
- *
- * _.flatten([1, [2, [3, [4]], 5]]);
- * // => [1, 2, [3, [4]], 5]
- */
 function flatten(array) {
   var length = array == null ? 0 : array.length;
   return length ? _baseFlatten(array, 1) : [];
@@ -451,6 +423,7 @@ const getValRangesFromRange = (range, valRanges) => valRanges.reduce((acc, vi) =
     return acc;
 }, []);
 const diffValidationInputs = (firstValInputs, secondValInputs) => flatten_1(diffRanges(firstValInputs.map(validationInputToRange), secondValInputs.map(validationInputToRange)).map(range => getValRangesFromRange(range, firstValInputs)));
+//# sourceMappingURL=range.js.map
 
 const getMatchIndexes = (str, from, regExp) => {
     const matches = [];
@@ -509,6 +482,7 @@ function* applyLibraryToValidationMap(validationLibrary) {
     }
     return matches;
 }
+//# sourceMappingURL=validate.js.map
 
 class ValidationWorker extends ValidationStateManager {
     constructor(validationLibrary, registerEventHandler, eventEmitter) {
@@ -556,6 +530,8 @@ class ValidationWorker extends ValidationStateManager {
         this.emitEvent ? this.emitEvent(e) : postMessage(e);
     }
 }
+
+//# sourceMappingURL=ValidationWorker.js.map
 
 /**
  * The base implementation of `_.slice` without an iteratee call guard.
@@ -659,7 +635,6 @@ function isObject(value) {
 
 var isObject_1 = isObject;
 
-/** `Object#toString` result references. */
 var asyncTag = '[object AsyncFunction]';
 var funcTag = '[object Function]';
 var genTag = '[object GeneratorFunction]';
@@ -730,31 +705,6 @@ function isLength(value) {
 
 var isLength_1 = isLength;
 
-/**
- * Checks if `value` is array-like. A value is considered array-like if it's
- * not a function and has a `value.length` that's an integer greater than or
- * equal to `0` and less than or equal to `Number.MAX_SAFE_INTEGER`.
- *
- * @static
- * @memberOf _
- * @since 4.0.0
- * @category Lang
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is array-like, else `false`.
- * @example
- *
- * _.isArrayLike([1, 2, 3]);
- * // => true
- *
- * _.isArrayLike(document.body.children);
- * // => true
- *
- * _.isArrayLike('abc');
- * // => true
- *
- * _.isArrayLike(_.noop);
- * // => false
- */
 function isArrayLike(value) {
   return value != null && isLength_1(value.length) && !isFunction_1(value);
 }
@@ -787,16 +737,6 @@ function isIndex(value, length) {
 
 var _isIndex = isIndex;
 
-/**
- * Checks if the given arguments are from an iteratee call.
- *
- * @private
- * @param {*} value The potential iteratee value argument.
- * @param {*} index The potential iteratee index or key argument.
- * @param {*} object The potential iteratee object argument.
- * @returns {boolean} Returns `true` if the arguments are from an iteratee call,
- *  else `false`.
- */
 function isIterateeCall(value, index, object) {
   if (!isObject_1(object)) {
     return false;
@@ -813,7 +753,6 @@ function isIterateeCall(value, index, object) {
 
 var _isIterateeCall = isIterateeCall;
 
-/** `Object#toString` result references. */
 var symbolTag = '[object Symbol]';
 
 /**
@@ -840,7 +779,6 @@ function isSymbol(value) {
 
 var isSymbol_1 = isSymbol;
 
-/** Used as references for various `Number` constants. */
 var NAN = 0 / 0;
 
 /** Used to match leading and trailing whitespace. */
@@ -904,7 +842,6 @@ function toNumber(value) {
 
 var toNumber_1 = toNumber;
 
-/** Used as references for various `Number` constants. */
 var INFINITY = 1 / 0;
 var MAX_INTEGER = 1.7976931348623157e+308;
 
@@ -945,32 +882,6 @@ function toFinite(value) {
 
 var toFinite_1 = toFinite;
 
-/**
- * Converts `value` to an integer.
- *
- * **Note:** This method is loosely based on
- * [`ToInteger`](http://www.ecma-international.org/ecma-262/7.0/#sec-tointeger).
- *
- * @static
- * @memberOf _
- * @since 4.0.0
- * @category Lang
- * @param {*} value The value to convert.
- * @returns {number} Returns the converted integer.
- * @example
- *
- * _.toInteger(3.2);
- * // => 3
- *
- * _.toInteger(Number.MIN_VALUE);
- * // => 0
- *
- * _.toInteger(Infinity);
- * // => 1.7976931348623157e+308
- *
- * _.toInteger('3.2');
- * // => 3
- */
 function toInteger(value) {
   var result = toFinite_1(value),
       remainder = result % 1;
@@ -980,7 +891,6 @@ function toInteger(value) {
 
 var toInteger_1 = toInteger;
 
-/* Built-in method references for those with the same name as other `lodash` methods. */
 var nativeCeil = Math.ceil;
 var nativeMax = Math.max;
 
@@ -4494,7 +4404,7 @@ exports.MarkType = MarkType;
 exports.ContentMatch = ContentMatch;
 exports.DOMParser = DOMParser;
 exports.DOMSerializer = DOMSerializer;
-
+//# sourceMappingURL=index.js.map
 });
 
 unwrapExports(dist);
@@ -4531,10 +4441,15 @@ const validationMarks = Object.keys(MarkTypes).reduce((acc, markName) => {
     return Object.assign({}, acc, { [markName]: createValidationMark(markName) });
 }, {});
 
+
+
+//# sourceMappingURL=prosemirror.js.map
+
 const Operations = {
     ANNOTATE: "ANNOTATE",
     REPLACE: "REPLACE"
 };
+//# sourceMappingURL=Validation.js.map
 
 const withoutIndex = (arr, index) => arr.slice(0, index).concat(arr.slice(index + 1));
 const permutations = seq => seq.reduce((acc, el, index, arr) => {
@@ -4556,7 +4471,9 @@ const validationLibrary = chunk_1(permutations(Array.from("qwer")).map(perm => {
         type: MarkTypes.legal
     };
 }), 500);
+//# sourceMappingURL=library.js.map
 
 const worker = new ValidationWorker(validationLibrary);
+//# sourceMappingURL=worker.js.map
 
 }());

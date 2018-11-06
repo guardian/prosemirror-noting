@@ -10,7 +10,9 @@ import ValidationStateManager, {
   RunningServiceValidation
 } from "./ValidationStateManager";
 import IValidationService from "./interfaces/IValidationService";
-import { createStringFromValidationInputs } from './utils/string';
+import { createStringFromValidationInputs } from "./utils/string";
+import { LTReplacement, LTResponse } from "./interfaces/LanguageTool";
+import flatten from 'lodash/flatten';
 
 const serviceName = "[validationAPIService]";
 
@@ -25,70 +27,61 @@ export const ValidationEvents = {
  * for ranges, which are returned via an event, VALIDATION_COMPLETE.
  *
  */
-class ValidationService extends ValidationStateManager<
-  RunningServiceValidation
-> implements IValidationService {
-  private worker = new Worker("./worker.js");
-
-  constructor() {
-    super();
-    this.worker.onmessage = this.handleMessage;
-  }
-
+class ValidationService extends ValidationStateManager<RunningServiceValidation>
+  implements IValidationService {
   /**
    * Validate a Prosemirror node, restricting checks to ranges if they're supplied.
    */
-  public validate(
+  public async validate(
     inputs: ValidationInput[],
     id: string | number
-  ): Promise<ValidationOutput[]> {
-    fetch('https://languagetool.org/api/v2/check', {
-      method: 'POST',
-      headers: new Headers({
-        'Content-Type': 'application/json'
-      }),
-      body: JSON.stringify({
-        'data': {
-          'annotation': [{
-            'text': createStringFromValidationInputs(inputs)
-          }]
-        }
-      })
-    })
-
-    return new Promise((resolve, reject) => {
-      this.addRunningValidation({
+  ) {
+    const results = await Promise.all(inputs.map(async input => {
+      const body = new URLSearchParams();
+      body.append(
+        "data",
+        JSON.stringify({
+          annotation: [
+            {
+              text: input.str
+            }
+          ]
+        })
+      );
+      body.append("language", "en-US");
+      const validation = {
         id,
         validationInputs: inputs
+      };
+      this.addRunningValidation(validation);
+      const response = await fetch("http://localhost:9001", {
+        method: "POST",
+        headers: new Headers({
+          "Content-Type": "x-www-form-urlencoded"
+        }),
+        body
       });
-    });
+      const validationData: LTResponse = await response.json();
+      const validationOutputs: ValidationOutput[] = validationData.matches.map(
+        match => ({
+          str: match.sentence,
+          from: match.offset,
+          to: match.offset + match.length,
+          annotation: match.message,
+          type: match.rule.description
+        })
+      );
+      this.handleCompleteValidation(id, validationOutputs);
+      return validationOutputs;
+    }));
+    return flatten(results);
   }
 
   /**
    * Cancel all running validations.
    */
   public cancelValidation = () => {
-    // @todo: partially cancel validations
-    this.worker.postMessage({
-      type: CANCEL_REQUEST
-    } as WorkerEvents);
-  };
-
-  /**
-   * Handle a worker message.
-   */
-  private handleMessage = (e: MessageEvent) => {
-    console.log("serviceMessage", e.data);
-    const event: WorkerEvents = e.data;
-    if (event.type === CANCEL_RESPONSE) {
-      this.handleCancelledValidations();
-    }
-    if (event.type === VALIDATE_RESPONSE) {
-      this.handleCompleteValidation(
-        event.payload.id,
-        event.payload.validationOutputs
-      );
-    }
+    this.cancelValidation();
   };
 
   /**
@@ -102,7 +95,7 @@ class ValidationService extends ValidationStateManager<
    * Handle a completed validation.
    */
   private handleCompleteValidation = (
-    id: string,
+    id: string | number,
     validationOutputs: ValidationOutput[]
   ) => {
     const completeValidation = this.findRunningValidation(id);

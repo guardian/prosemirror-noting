@@ -6,7 +6,7 @@ import { ValidationInput } from "../interfaces/Validation";
  * from a Prosemirror document. The mappings can be used to map an
  * index in the text back to a position in the document.
  */
-export const getTextMaps = (doc: Node) =>
+export const getTextMaps = (doc: Node): ValidationInput[] =>
   (doc instanceof Node ? findTextNodes(doc) : [doc]).reduce(
     (
       acc: { positionMap: ValidationInput[]; length: number },

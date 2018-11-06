@@ -1,10 +1,5 @@
-import {
-  applyLibraryToValidationMap,
-  validationRunner,
-} from "../validate";
-import {
-  ValidationLibrary,
-  ValidationInput} from '../interfaces/Validation';
+import { applyLibraryToValidationMap, validationRunner } from "../validate";
+import { ValidationInput } from "../interfaces/Validation";
 import { validationLibrary } from "./helpers/fixtures";
 
 describe("Validation functions", () => {

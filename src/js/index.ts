@@ -1,4 +1,4 @@
-import { Plugin, Transaction, EditorState } from "prosemirror-state";
+import { Plugin, Transaction, EditorState, NodeSelection } from "prosemirror-state";
 import { Node, Schema } from "prosemirror-model";
 import { DecorationSet, Decoration, EditorView } from "prosemirror-view";
 import flatMap from "lodash/flatten";
@@ -10,6 +10,7 @@ import clamp from "lodash/clamp";
 import { ValidationOutput, ValidationResponse } from "./interfaces/Validation";
 import { getTextMaps } from "./utils/prosemirror";
 import validationService, { ValidationEvents } from "./ValidationAPIService";
+import { findParentNode } from 'prosemirror-utils';
 
 const TransactionMetaKeys = {
   VALIDATION_RESPONSE: "VALIDATION_RESPONSE"
@@ -150,14 +151,17 @@ export type Range = { from: number; to: number };
  * Expand a range in a document to encompass the words adjacent to the range.
  */
 const expandRange = (range: Range, doc: Node): Range => {
-  const fromPos = doc.resolve(range.from);
-  const parent = fromPos.node(fromPos.depth);
-  const { diffFrom, diffTo } = getExpandedRange(
-    fromPos.parentOffset,
-    parent.textContent,
+  const $fromPos = doc.resolve(range.from);
+  const parentNode = findParentNode(node => node.isBlock)(new NodeSelection($fromPos));
+  if (!parentNode) {
+    throw new Error(`Parent node not found for position ${$fromPos.start}, ${$fromPos.end}`)
+  }
+  console.log(
+    parentNode.start,
+    parentNode.node.textContent,
     2
   );
-  return { from: range.from + diffFrom, to: range.to + diffTo };
+  return { from: parentNode.start, to: parentNode.start + parentNode.node.textContent.length };
 };
 
 /**
@@ -176,6 +180,7 @@ const revalidationRangefinder = (
       // stale widgets will be left in the document. Buuuut, this is innovation
       // week (tm), so...
       const removalRange = expandRange({ from: range.from, to: range.to }, doc);
+      console.log(removalRange);
       const decorationsToRemove = decorations.find(
         removalRange.from,
         removalRange.to
@@ -189,11 +194,11 @@ const revalidationRangefinder = (
 
       // Expand the ranges. This is an arbitrary expansion of a few words but could,
       // for example, relate to the longest match in the dictionary or similar.
-      const validationRanges = decorationRanges.map(decRange => ({
-        from: decRange.from,
-        to: clamp(decRange.to, doc.content.size)
-      }));
-
+      const validationRanges = [{
+        from: removalRange.from,
+        to: clamp(removalRange.to, doc.content.size)
+      }];
+      console.log('vrs', validationRanges)
       return {
         validationRanges: acc.validationRanges.concat(validationRanges),
         decorations: decorations.remove(decorationsToRemove)
@@ -255,7 +260,7 @@ const documentValidatorPlugin = (schema: Schema) => {
   const plugin: Plugin = new Plugin({
     state: {
       init(_, { doc }) {
-        getValidationRangesForDocument(doc);
+        // getValidationRangesForDocument(doc);
 
         // Hook up our validation events.
         validationService.on(
@@ -330,7 +335,6 @@ const documentValidatorPlugin = (schema: Schema) => {
             tr
           );
         }
-        console.log(hoverId);
         return {
           decorations: _newDecorations,
           isValidating,

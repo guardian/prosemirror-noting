@@ -34,7 +34,7 @@ class ValidationStateManager<
     );
   };
 
-  protected findRunningValidation = (id: string) => {
+  protected findRunningValidation = (id: string | number) => {
     return this.runningValidations.find(_ => _.id === id);
   };
 
