@@ -15449,19 +15449,6 @@ var v4_1 = v4;
  * @param {number} upper The upper bound.
  * @returns {number} Returns the clamped number.
  */
-function baseClamp(number, lower, upper) {
-  if (number === number) {
-    if (upper !== undefined) {
-      number = number <= upper ? number : upper;
-    }
-    if (lower !== undefined) {
-      number = number >= lower ? number : lower;
-    }
-  }
-  return number;
-}
-
-var _baseClamp = baseClamp;
 
 /**
  * Checks if `value` is the
@@ -15488,119 +15475,6 @@ var _baseClamp = baseClamp;
  * _.isObject(null);
  * // => false
  */
-function isObject(value) {
-  var type = typeof value;
-  return value != null && (type == 'object' || type == 'function');
-}
-
-var isObject_1 = isObject;
-
-var symbolTag = '[object Symbol]';
-
-/**
- * Checks if `value` is classified as a `Symbol` primitive or object.
- *
- * @static
- * @memberOf _
- * @since 4.0.0
- * @category Lang
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is a symbol, else `false`.
- * @example
- *
- * _.isSymbol(Symbol.iterator);
- * // => true
- *
- * _.isSymbol('abc');
- * // => false
- */
-function isSymbol(value) {
-  return typeof value == 'symbol' ||
-    (isObjectLike_1(value) && _baseGetTag(value) == symbolTag);
-}
-
-var isSymbol_1 = isSymbol;
-
-var NAN = 0 / 0;
-
-/** Used to match leading and trailing whitespace. */
-var reTrim = /^\s+|\s+$/g;
-
-/** Used to detect bad signed hexadecimal string values. */
-var reIsBadHex = /^[-+]0x[0-9a-f]+$/i;
-
-/** Used to detect binary string values. */
-var reIsBinary = /^0b[01]+$/i;
-
-/** Used to detect octal string values. */
-var reIsOctal = /^0o[0-7]+$/i;
-
-/** Built-in method references without a dependency on `root`. */
-var freeParseInt = parseInt;
-
-/**
- * Converts `value` to a number.
- *
- * @static
- * @memberOf _
- * @since 4.0.0
- * @category Lang
- * @param {*} value The value to process.
- * @returns {number} Returns the number.
- * @example
- *
- * _.toNumber(3.2);
- * // => 3.2
- *
- * _.toNumber(Number.MIN_VALUE);
- * // => 5e-324
- *
- * _.toNumber(Infinity);
- * // => Infinity
- *
- * _.toNumber('3.2');
- * // => 3.2
- */
-function toNumber(value) {
-  if (typeof value == 'number') {
-    return value;
-  }
-  if (isSymbol_1(value)) {
-    return NAN;
-  }
-  if (isObject_1(value)) {
-    var other = typeof value.valueOf == 'function' ? value.valueOf() : value;
-    value = isObject_1(other) ? (other + '') : other;
-  }
-  if (typeof value != 'string') {
-    return value === 0 ? value : +value;
-  }
-  value = value.replace(reTrim, '');
-  var isBinary = reIsBinary.test(value);
-  return (isBinary || reIsOctal.test(value))
-    ? freeParseInt(value.slice(2), isBinary ? 2 : 8)
-    : (reIsBadHex.test(value) ? NAN : +value);
-}
-
-var toNumber_1 = toNumber;
-
-function clamp(number, lower, upper) {
-  if (upper === undefined) {
-    upper = lower;
-    lower = undefined;
-  }
-  if (upper !== undefined) {
-    upper = toNumber_1(upper);
-    upper = upper === upper ? upper : 0;
-  }
-  if (lower !== undefined) {
-    lower = toNumber_1(lower);
-    lower = lower === lower ? lower : 0;
-  }
-  return _baseClamp(toNumber_1(number), lower, upper);
-}
-
-var clamp_1 = clamp;
 
 class EventEmitter {
     constructor() {
@@ -19417,9 +19291,6 @@ const createDecorationForValidationRange = (range) => {
         dist_2$3.widget(range.from, getWidgetNode(range), { validationId })
     ];
 };
-const getValidationRangesForRanges = (ranges, tr) => __awaiter(undefined, void 0, void 0, function* () {
-    return validationService.validate(ranges.map(range => (Object.assign({ str: tr.doc.textBetween(range.from, range.to) }, range))), tr.time);
-});
 const getDecorationsForValidationRanges = (ranges) => flatten_1(ranges.map(createDecorationForValidationRange));
 const findSingleDecoration = (state, predicate) => {
     const decorations = state.decorations.find(undefined, undefined, predicate);
@@ -19450,52 +19321,14 @@ const updateView = (plugin) => (view, prevState) => {
     decoration.type.widget &&
         decoration.type.widget.classList.remove("validation-widget-container--is-hovering");
 };
-const getReplaceStepRangesFromTransaction = (tr) => tr.steps
-    .filter(step => step instanceof dist_16 || step instanceof dist_17)
-    .map((step) => ({
+const getReplaceStepRangesFromTransaction = (tr) => getReplaceTransactions(tr).map((step) => ({
     from: step.from,
     to: step.to
 }));
-const expandRange = (range, doc) => {
-    const $fromPos = doc.resolve(range.from);
-    const parentNode = dist_3$7(node => node.isBlock)(new dist_4($fromPos));
-    if (!parentNode) {
-        throw new Error(`Parent node not found for position ${$fromPos.start}, ${$fromPos.end}`);
-    }
-    console.log(parentNode.start, parentNode.node.textContent, 2);
-    return { from: parentNode.start, to: parentNode.start + parentNode.node.textContent.length };
-};
-const revalidationRangefinder = (ranges, decorations, doc) => {
-    const { decorations: localDecorations, validationRanges } = ranges.reduce((acc, range) => {
-        const removalRange = expandRange({ from: range.from, to: range.to }, doc);
-        console.log(removalRange);
-        const decorationsToRemove = decorations.find(removalRange.from, removalRange.to);
-        const decorationRanges = decorationsToRemove.length
-            ? decorationsToRemove.map(dec => ({
-                from: dec.from,
-                to: dec.to
-            }))
-            : [removalRange];
-        const validationRanges = [{
-                from: removalRange.from,
-                to: clamp_1(removalRange.to, doc.content.size)
-            }];
-        console.log('vrs', validationRanges);
-        return {
-            validationRanges: acc.validationRanges.concat(validationRanges),
-            decorations: decorations.remove(decorationsToRemove)
-        };
-    }, { decorations, validationRanges: [] });
-    return {
-        decorations: localDecorations,
-        rangesToValidate: mergeRanges(validationRanges)
-    };
-};
+const getReplaceTransactions = (tr) => tr.steps.filter(step => step instanceof dist_16 || step instanceof dist_17);
 const getNewDecorationsForValidationResponse = (response, decorationSet, trs, currentTr) => {
-    console.log(trs);
     const initialTransaction = trs.find(tr => tr.time === parseInt(response.id));
     if (!initialTransaction && trs.length > 1) {
-        console.log("No initial transaction found", response.id);
         return decorationSet;
     }
     const decorationsToAdd = getDecorationsForValidationRanges(response.validationOutputs);
@@ -19505,7 +19338,13 @@ const getNewDecorationsForValidationResponse = (response, decorationSet, trs, cu
     }, dist_3$3.create((initialTransaction || currentTr).doc, decorationsToAdd));
     return decorationSet.add(currentTr.doc, existingDecorations);
 };
-const documentValidatorPlugin = (schema) => {
+const getMergedDirtiedRanges = (tr, oldRanges) => mergeRanges(oldRanges
+    .map(range => ({
+    from: tr.mapping.map(range.from),
+    to: tr.mapping.map(range.to)
+}))
+    .concat(getReplaceStepRangesFromTransaction(tr)));
+const documentValidatorPlugin = (schema, throttleInMs = 1500) => {
     let localView = undefined;
     const plugin = new dist_8({
         state: {
@@ -19517,29 +19356,42 @@ const documentValidatorPlugin = (schema) => {
                     decorations: dist_3$3.create(doc, [])
                 };
             },
-            apply(tr, { decorations, bufferedTrs = [], hoverId, bufferedRanges = [], lastValidationTime = 0 }) {
-                const replaceRanges = getReplaceStepRangesFromTransaction(tr);
+            apply(tr, { decorations, dirtiedRanges = [], validationPending = false }) {
                 const isValidating = validationService.getRunningValidations().length;
-                let _bufferedTrs = bufferedTrs;
-                window.bufferedTrs = bufferedTrs;
                 let _newDecorations = decorations.map(tr.mapping, tr.doc);
-                if (replaceRanges.length) {
-                    _bufferedTrs =
-                        bufferedTrs.length > 25
-                            ? bufferedTrs.slice(1).concat(tr)
-                            : bufferedTrs.concat(tr);
-                    const { decorations: prunedDecorations, rangesToValidate } = revalidationRangefinder(replaceRanges, _newDecorations, tr.doc);
-                    _newDecorations = prunedDecorations;
-                    getValidationRangesForRanges(rangesToValidate, tr);
-                }
                 const response = tr.getMeta(TransactionMetaKeys.VALIDATION_RESPONSE);
                 if (response && response.validationOutputs.length) {
-                    _newDecorations = getNewDecorationsForValidationResponse(response, _newDecorations, bufferedTrs, tr);
+                    _newDecorations = getNewDecorationsForValidationResponse(response, _newDecorations, [], tr);
+                }
+                const newDirtiedRanges = getMergedDirtiedRanges(tr, dirtiedRanges);
+                const currentDirtiedRanges = getReplaceStepRangesFromTransaction(tr);
+                const decorationsToAdd = currentDirtiedRanges.map(range => dist_2$3.inline(range.from, range.to + 1, {
+                    class: "validation-dirty-range"
+                }, {
+                    type: "validation-dirty-range"
+                }));
+                _newDecorations = _newDecorations.add(tr.doc, decorationsToAdd);
+                let newValidationPending = false;
+                if (newDirtiedRanges.length && !validationPending) {
+                    setTimeout(() => {
+                        localView &&
+                            localView.dispatch(localView.state.tr.setMeta("validate-ranges", true));
+                    }, throttleInMs);
+                    newValidationPending = true;
+                }
+                let validationSent = false;
+                if (tr.getMeta("validate-ranges")) {
+                    const decsToRemove = _newDecorations.find(undefined, undefined, _ => _.type === "validation-dirty-range");
+                    _newDecorations = _newDecorations.remove(decsToRemove);
+                    validationSent = true;
                 }
                 return {
                     decorations: _newDecorations,
                     isValidating,
-                    bufferedTrs: _bufferedTrs,
+                    dirtiedRanges: validationSent ? [] : newDirtiedRanges,
+                    validationPending: validationSent
+                        ? false
+                        : newValidationPending || validationPending,
                     hoverId: tr.getMeta("hoverId")
                 };
             }
@@ -19572,8 +19424,6 @@ const documentValidatorPlugin = (schema) => {
     return plugin;
 };
 const validateDocument = (state, dispatch) => dispatch && dispatch(state.tr.setMeta("validate-document", true));
-
-//# sourceMappingURL=index.js.map
 
 const spinMe = document.getElementById("spin-me");
 let rotation = 0;

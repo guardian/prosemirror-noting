@@ -1,4 +1,9 @@
-import { Plugin, Transaction, EditorState, NodeSelection } from "prosemirror-state";
+import {
+  Plugin,
+  Transaction,
+  EditorState,
+  NodeSelection
+} from "prosemirror-state";
 import { Node, Schema } from "prosemirror-model";
 import { DecorationSet, Decoration, EditorView } from "prosemirror-view";
 import flatMap from "lodash/flatten";
@@ -10,7 +15,8 @@ import clamp from "lodash/clamp";
 import { ValidationOutput, ValidationResponse } from "./interfaces/Validation";
 import { getTextMaps } from "./utils/prosemirror";
 import validationService, { ValidationEvents } from "./ValidationAPIService";
-import { findParentNode } from 'prosemirror-utils';
+import { findParentNode } from "prosemirror-utils";
+import difference from "lodash/difference";
 
 const TransactionMetaKeys = {
   VALIDATION_RESPONSE: "VALIDATION_RESPONSE"
@@ -136,14 +142,18 @@ const updateView = (plugin: Plugin) => (
  * Get all of the ranges of any replace steps in the given transaction.
  */
 const getReplaceStepRangesFromTransaction = (tr: Transaction) =>
-  tr.steps
-    .filter(
-      step => step instanceof ReplaceStep || step instanceof ReplaceAroundStep
-    )
-    .map((step: ReplaceStep | ReplaceAroundStep) => ({
-      from: step.from,
-      to: step.to
-    }));
+  getReplaceTransactions(tr).map((step: ReplaceStep | ReplaceAroundStep) => ({
+    from: step.from,
+    to: step.to
+  }));
+
+/**
+ * Get all of the ranges of any replace steps in the given transaction.
+ */
+const getReplaceTransactions = (tr: Transaction) =>
+  tr.steps.filter(
+    step => step instanceof ReplaceStep || step instanceof ReplaceAroundStep
+  );
 
 export type Range = { from: number; to: number };
 
@@ -152,16 +162,19 @@ export type Range = { from: number; to: number };
  */
 const expandRange = (range: Range, doc: Node): Range => {
   const $fromPos = doc.resolve(range.from);
-  const parentNode = findParentNode(node => node.isBlock)(new NodeSelection($fromPos));
-  if (!parentNode) {
-    throw new Error(`Parent node not found for position ${$fromPos.start}, ${$fromPos.end}`)
-  }
-  console.log(
-    parentNode.start,
-    parentNode.node.textContent,
-    2
+  const parentNode = findParentNode(node => node.isBlock)(
+    new NodeSelection($fromPos)
   );
-  return { from: parentNode.start, to: parentNode.start + parentNode.node.textContent.length };
+  if (!parentNode) {
+    throw new Error(
+      `Parent node not found for position ${$fromPos.start}, ${$fromPos.end}`
+    );
+  }
+  console.log(parentNode.start, parentNode.node.textContent, 2);
+  return {
+    from: parentNode.start,
+    to: parentNode.start + parentNode.node.textContent.length
+  };
 };
 
 /**
@@ -180,7 +193,6 @@ const revalidationRangefinder = (
       // stale widgets will be left in the document. Buuuut, this is innovation
       // week (tm), so...
       const removalRange = expandRange({ from: range.from, to: range.to }, doc);
-      console.log(removalRange);
       const decorationsToRemove = decorations.find(
         removalRange.from,
         removalRange.to
@@ -194,11 +206,12 @@ const revalidationRangefinder = (
 
       // Expand the ranges. This is an arbitrary expansion of a few words but could,
       // for example, relate to the longest match in the dictionary or similar.
-      const validationRanges = [{
-        from: removalRange.from,
-        to: clamp(removalRange.to, doc.content.size)
-      }];
-      console.log('vrs', validationRanges)
+      const validationRanges = [
+        {
+          from: removalRange.from,
+          to: clamp(removalRange.to, doc.content.size)
+        }
+      ];
       return {
         validationRanges: acc.validationRanges.concat(validationRanges),
         decorations: decorations.remove(decorationsToRemove)
@@ -218,11 +231,8 @@ const getNewDecorationsForValidationResponse = (
   trs: Transaction[],
   currentTr: Transaction
 ) => {
-  console.log(trs);
   const initialTransaction = trs.find(tr => tr.time === parseInt(response.id));
   if (!initialTransaction && trs.length > 1) {
-    console.log("No initial transaction found", response.id);
-
     return decorationSet;
   }
 
@@ -245,17 +255,27 @@ const getNewDecorationsForValidationResponse = (
 
 type PluginState = {
   decorations: DecorationSet;
-  bufferedTrs: Transaction[];
-  bufferedRanges: Range[];
+  dirtiedRanges: Range[];
   lastValidationTime: number;
   hoverId: string;
+  validationPending: boolean;
 };
+
+const getMergedDirtiedRanges = (tr: Transaction, oldRanges: Range[]) =>
+  mergeRanges(
+    oldRanges
+      .map(range => ({
+        from: tr.mapping.map(range.from),
+        to: tr.mapping.map(range.to)
+      }))
+      .concat(getReplaceStepRangesFromTransaction(tr))
+  );
 
 /**
  * The document validator plugin. Listens for validation commands and applies
  * validation decorations to the document.
  */
-const documentValidatorPlugin = (schema: Schema) => {
+const documentValidatorPlugin = (schema: Schema, throttleInMs = 1500) => {
   let localView: undefined | EditorView = undefined;
   const plugin: Plugin = new Plugin({
     state: {
@@ -287,17 +307,24 @@ const documentValidatorPlugin = (schema: Schema) => {
         tr: Transaction,
         {
           decorations,
-          bufferedTrs = [],
-          hoverId,
-          bufferedRanges = [],
-          lastValidationTime = 0
+          dirtiedRanges = [],
+          validationPending = false
         }: PluginState
       ) {
-        const replaceRanges = getReplaceStepRangesFromTransaction(tr);
         const isValidating = validationService.getRunningValidations().length;
-        let _bufferedTrs = bufferedTrs;
-        (window as any).bufferedTrs = bufferedTrs;
         let _newDecorations = decorations.map(tr.mapping, tr.doc);
+        const response: ValidationResponse = tr.getMeta(
+          TransactionMetaKeys.VALIDATION_RESPONSE
+        );
+
+        if (response && response.validationOutputs.length) {
+          _newDecorations = getNewDecorationsForValidationResponse(
+            response,
+            _newDecorations,
+            [],
+            tr
+          );
+        }
 
         // We need to aggregate ranges here, before we submit them to the
         // validation service. Effectively this means batching ranges; once
@@ -310,35 +337,67 @@ const documentValidatorPlugin = (schema: Schema) => {
         // collapse validation ranges
         // submit validations
 
-        if (replaceRanges.length) {
-          _bufferedTrs =
-            bufferedTrs.length > 25
-              ? bufferedTrs.slice(1).concat(tr)
-              : bufferedTrs.concat(tr);
-          const {
-            decorations: prunedDecorations,
-            rangesToValidate
-          } = revalidationRangefinder(replaceRanges, _newDecorations, tr.doc);
-          _newDecorations = prunedDecorations;
-          getValidationRangesForRanges(rangesToValidate, tr);
-        }
-
-        const response: ValidationResponse = tr.getMeta(
-          TransactionMetaKeys.VALIDATION_RESPONSE
+        // Map our dirtied ranges through the current transaction, and append
+        // any new ranges it has dirtied.
+        const newDirtiedRanges = getMergedDirtiedRanges(tr, dirtiedRanges);
+        const currentDirtiedRanges = getReplaceStepRangesFromTransaction(tr);
+        const decorationsToAdd = currentDirtiedRanges.map(range =>
+          Decoration.inline(
+            range.from,
+            range.to + 1,
+            {
+              class: "validation-dirty-range"
+            },
+            {
+              type: "validation-dirty-range"
+            }
+          )
         );
+        _newDecorations = _newDecorations.add(tr.doc, decorationsToAdd);
 
-        if (response && response.validationOutputs.length) {
-          _newDecorations = getNewDecorationsForValidationResponse(
-            response,
-            _newDecorations,
-            bufferedTrs,
-            tr
-          );
+        let newValidationPending = false;
+        if (newDirtiedRanges.length && !validationPending) {
+          setTimeout(() => {
+            localView &&
+              localView.dispatch(
+                localView.state.tr.setMeta("validate-ranges", true)
+              );
+          }, throttleInMs);
+          newValidationPending = true;
         }
+
+        let validationSent = false;
+        if (tr.getMeta("validate-ranges")) {
+          // Ditch any decorations marking dirty positions
+          const decsToRemove = _newDecorations.find(
+            undefined,
+            undefined,
+            _ => _.type === "validation-dirty-range"
+          );
+          _newDecorations = _newDecorations.remove(decsToRemove);
+          validationSent = true;
+        }
+
+        // if (replaceRanges.length) {
+        //   _bufferedTrs =
+        //     bufferedTrs.length > 25
+        //       ? bufferedTrs.slice(1).concat(tr)
+        //       : bufferedTrs.concat(tr);
+        //   const {
+        //     decorations: prunedDecorations,
+        //     rangesToValidate
+        //   } = revalidationRangefinder(replaceRanges, _newDecorations, tr.doc);
+        //   _newDecorations = prunedDecorations;
+        //   getValidationRangesForRanges(rangesToValidate, tr);
+        // }
+
         return {
           decorations: _newDecorations,
           isValidating,
-          bufferedTrs: _bufferedTrs,
+          dirtiedRanges: validationSent ? [] : newDirtiedRanges,
+          validationPending: validationSent
+            ? false
+            : newValidationPending || validationPending,
           hoverId: tr.getMeta("hoverId")
         };
       }
