@@ -24,6 +24,7 @@ const build = builders(noteSchema, {
 });
 
 const { doc, p } = build;
+const t = (content: Node) => doc(content);
 
 const initialState = {
   currentThrottle: 100,
@@ -43,7 +44,9 @@ describe("State management", () => {
   //   describe("validationRequestPending", () => {});
   //   describe("validationRequestStart", () => {});
   //   describe("validationRequestSuccess", () => {});
-  //   describe("validationRequestError", () => {});
+  describe("validationRequestError", () => {
+
+  });
   describe("newHoverIdReceived", () => {
     it("should update the hover id", () => {
       expect(

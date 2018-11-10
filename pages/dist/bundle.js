@@ -19597,26 +19597,6 @@ const validationPluginReducer = (tr, state, action) => {
 const handleNewHoverId = (_, state, action) => {
     return Object.assign({}, state, { hoverId: action.payload.hoverId });
 };
-const handleValidationRequestError = (tr, state, action) => {
-    const decsToRemove = state.decorations.find(undefined, undefined, _ => _.type === DECORATION_INFLIGHT);
-    const dirtiedRanges = mapRangeThroughTransactions([action.payload.validationError.validationInput], parseInt(String(action.payload.validationError.id), 10), state.trHistory);
-    let decorations = state.decorations.remove(decsToRemove);
-    if (dirtiedRanges.length) {
-        decorations = decorations.add(tr.doc, dirtiedRanges.map(range => createDebugDecorationFromRange(range)));
-    }
-    return Object.assign({}, state, { dirtiedRanges: dirtiedRanges.length
-            ? mergeRanges(state.dirtiedRanges.concat(dirtiedRanges))
-            : state.dirtiedRanges, decorations, validationInFlight: undefined, error: action.payload.validationError.message });
-};
-const handleValidationRequestSuccess = (tr, state, action) => {
-    const response = action.payload.response;
-    if (response && response.validationOutputs.length) {
-        const decorations = getNewDecorationsForValidationResponse(response, state.decorations, state.trHistory, tr);
-        const decsToRemove = state.decorations.find(undefined, undefined, _ => _.type === DECORATION_INFLIGHT);
-        return Object.assign({}, state, { validationInFlight: undefined, decorations: decorations.remove(decsToRemove) });
-    }
-    return state;
-};
 const handleValidationRequestPending = (_, state) => {
     return Object.assign({}, state, { validationPending: true });
 };
@@ -19629,8 +19609,26 @@ const handleValidationRequestStart = (tr, state) => {
             id: tr.time
         } });
 };
-
-//# sourceMappingURL=state.js.map
+const handleValidationRequestSuccess = (tr, state, action) => {
+    const response = action.payload.response;
+    if (response && response.validationOutputs.length) {
+        const decorations = getNewDecorationsForValidationResponse(response, state.decorations, state.trHistory, tr);
+        const decsToRemove = state.decorations.find(undefined, undefined, _ => _.type === DECORATION_INFLIGHT);
+        return Object.assign({}, state, { validationInFlight: undefined, decorations: decorations.remove(decsToRemove) });
+    }
+    return state;
+};
+const handleValidationRequestError = (tr, state, action) => {
+    const decsToRemove = state.decorations.find(undefined, undefined, _ => _.type === DECORATION_INFLIGHT);
+    const dirtiedRanges = mapRangeThroughTransactions([action.payload.validationError.validationInput], parseInt(String(action.payload.validationError.id), 10), state.trHistory);
+    let decorations = state.decorations.remove(decsToRemove);
+    if (dirtiedRanges.length) {
+        decorations = decorations.add(tr.doc, dirtiedRanges.map(range => createDebugDecorationFromRange(range)));
+    }
+    return Object.assign({}, state, { dirtiedRanges: dirtiedRanges.length
+            ? mergeRanges(state.dirtiedRanges.concat(dirtiedRanges))
+            : state.dirtiedRanges, decorations, validationInFlight: undefined, error: action.payload.validationError.message });
+};
 
 const updateView = (plugin) => (view, prevState) => {
     const pluginState = plugin.getState(view.state);
@@ -19796,5 +19794,6 @@ editorElement &&
             ]
         })
     }));
+//# sourceMappingURL=index.js.map
 
 }());

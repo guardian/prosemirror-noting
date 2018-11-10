@@ -123,76 +123,6 @@ const handleNewHoverId: ActionHandler<ActionNewHoverIdReceived> = (
   };
 };
 
-/**
- * Handle a validation request error.
- */
-const handleValidationRequestError: ActionHandler<
-  ActionValidationRequestError
-> = (tr, state, action) => {
-  const decsToRemove = state.decorations.find(
-    undefined,
-    undefined,
-    _ => _.type === DECORATION_INFLIGHT
-  );
-  const dirtiedRanges = mapRangeThroughTransactions(
-    [action.payload.validationError.validationInput],
-    parseInt(String(action.payload.validationError.id), 10),
-    state.trHistory
-  );
-  // When we get errors, we map the ranges due to be validated back
-  // through the document and add them to the dirtied ranges to be
-  // validated on the next pass.
-  let decorations = state.decorations.remove(decsToRemove);
-
-  if (dirtiedRanges.length) {
-    decorations = decorations.add(
-      tr.doc,
-      dirtiedRanges.map(range => createDebugDecorationFromRange(range))
-    );
-  }
-
-  return {
-    ...state,
-    dirtiedRanges: dirtiedRanges.length
-      ? mergeRanges(state.dirtiedRanges.concat(dirtiedRanges))
-      : state.dirtiedRanges,
-    decorations,
-    validationInFlight: undefined,
-    error: action.payload.validationError.message
-  };
-};
-
-/**
- * Handle a validation response, decorating the document with
- * any validations we've received.
- */
-const handleValidationRequestSuccess: ActionHandler<
-  ActionValidationResponseReceived
-> = (tr, state, action) => {
-  const response = action.payload.response;
-  if (response && response.validationOutputs.length) {
-    const decorations = getNewDecorationsForValidationResponse(
-      response,
-      state.decorations,
-      state.trHistory,
-      tr
-    );
-    // Ditch any decorations marking inflight validations
-    const decsToRemove = state.decorations.find(
-      undefined,
-      undefined,
-      _ => _.type === DECORATION_INFLIGHT
-    );
-
-    return {
-      ...state,
-      validationInFlight: undefined,
-      decorations: decorations.remove(decsToRemove)
-    };
-  }
-  return state;
-};
-
 const handleValidationRequestPending: ActionHandler<
   ActionValidationRequestPending
 > = (_, state) => {
@@ -235,6 +165,76 @@ const handleValidationRequestStart: ActionHandler<
       validationInputs,
       id: tr.time
     }
+  };
+};
+
+/**
+ * Handle a validation response, decorating the document with
+ * any validations we've received.
+ */
+const handleValidationRequestSuccess: ActionHandler<
+  ActionValidationResponseReceived
+> = (tr, state, action) => {
+  const response = action.payload.response;
+  if (response && response.validationOutputs.length) {
+    const decorations = getNewDecorationsForValidationResponse(
+      response,
+      state.decorations,
+      state.trHistory,
+      tr
+    );
+    // Ditch any decorations marking inflight validations
+    const decsToRemove = state.decorations.find(
+      undefined,
+      undefined,
+      _ => _.type === DECORATION_INFLIGHT
+    );
+
+    return {
+      ...state,
+      validationInFlight: undefined,
+      decorations: decorations.remove(decsToRemove)
+    };
+  }
+  return state;
+};
+
+/**
+ * Handle a validation request error.
+ */
+const handleValidationRequestError: ActionHandler<
+  ActionValidationRequestError
+> = (tr, state, action) => {
+  const decsToRemove = state.decorations.find(
+    undefined,
+    undefined,
+    _ => _.type === DECORATION_INFLIGHT
+  );
+  const dirtiedRanges = mapRangeThroughTransactions(
+    [action.payload.validationError.validationInput],
+    parseInt(String(action.payload.validationError.id), 10),
+    state.trHistory
+  );
+  // When we get errors, we map the ranges due to be validated back
+  // through the document and add them to the dirtied ranges to be
+  // validated on the next pass.
+  let decorations = state.decorations.remove(decsToRemove);
+
+  if (dirtiedRanges.length) {
+    decorations = decorations.add(
+      tr.doc,
+      dirtiedRanges.map(range => createDebugDecorationFromRange(range))
+    );
+  }
+
+  return {
+    ...state,
+    dirtiedRanges: dirtiedRanges.length
+      ? mergeRanges(state.dirtiedRanges.concat(dirtiedRanges))
+      : state.dirtiedRanges,
+    decorations,
+    validationInFlight: undefined,
+    error: action.payload.validationError.message
   };
 };
 
