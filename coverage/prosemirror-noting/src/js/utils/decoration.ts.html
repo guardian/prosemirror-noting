@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for prosemirror-noting/src/js/utils/decoration.ts</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../../../prettify.css" />
+    <link rel="stylesheet" href="../../../../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../../../../index.html">All files</a> / <a href="index.html">prosemirror-noting/src/js/utils</a> decoration.ts
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">30.61% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>15/49</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>0/10</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>0/10</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">31.25% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>15/48</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line low'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141</td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { Decoration, DecorationSet } from "prosemirror-view";
+import {
+  Range,
+  ValidationResponse,
+  ValidationOutput
+} from "../interfaces/Validation";
+import { Transaction } from "prosemirror-state";
+import uuid from "uuid/v4";
+import flatten from "lodash/flatten";
+import { PluginState } from "..";
+import { mapRangeThroughTransactions } from "./range";
+&nbsp;
+// Our decoration types.
+export const DECORATION_VALIDATION = "DECORATION_VALIDATION";
+export const DECORATION_DIRTY = "DECORATION_DIRTY";
+export const DECORATION_INFLIGHT = "DECORATION_INFLIGHT";
+export const DecorationClassMap = {
+  [DECORATION_DIRTY]: "validation-dirty",
+  [DECORATION_INFLIGHT]: "validation-inflight",
+  [DECORATION_VALIDATION]: "validation-decoration"
+};
+&nbsp;
+export const createDebugDecorationFromRange = <span class="fstat-no" title="function not covered" >(r</span>ange: Range, dirty = <span class="branch-0 cbranch-no" title="branch not covered" >true)</span> =&gt; {
+  const type = <span class="cstat-no" title="statement not covered" >dirty ? DECORATION_DIRTY : DECORATION_INFLIGHT;</span>
+<span class="cstat-no" title="statement not covered" >  return Decoration.inline(</span>
+    range.from,
+    range.to + 1,
+    {
+      class: DecorationClassMap[type]
+    },
+    {
+      type
+    } as any
+  );
+};
+&nbsp;
+export const removeValidationDecorationsFromRanges = <span class="fstat-no" title="function not covered" >(</span>
+  decorations: DecorationSet,
+  ranges: Range[],
+  type = <span class="branch-0 cbranch-no" title="branch not covered" >DECORATION_VALIDATION</span>
+) =&gt;
+<span class="cstat-no" title="statement not covered" >  ranges.reduce(<span class="fstat-no" title="function not covered" >(a</span>cc, range) =&gt; {</span>
+    const decorationsToRemove = <span class="cstat-no" title="statement not covered" >decorations.find(</span>
+      range.from,
+      range.to,
+<span class="fstat-no" title="function not covered" >      spec</span> =&gt; <span class="cstat-no" title="statement not covered" >spec.type === type</span>
+    );
+<span class="cstat-no" title="statement not covered" >    return acc.remove(decorationsToRemove);</span>
+  }, decorations);
+&nbsp;
+/**
+ * Given a validation response and the current decoration set,
+ * returns a new decoration set containing the new validations.
+ */
+export const getNewDecorationsForValidationResponse = <span class="fstat-no" title="function not covered" >(</span>
+  response: ValidationResponse,
+  decorationSet: DecorationSet,
+  trs: Transaction[],
+  currentTr: Transaction
+) =&gt; {
+  const initialTransaction = <span class="cstat-no" title="statement not covered" >trs.find(<span class="fstat-no" title="function not covered" >tr</span> =&gt; <span class="cstat-no" title="statement not covered" >tr.time === parseInt(response.id))</span>;</span>
+<span class="cstat-no" title="statement not covered" >  if (!initialTransaction &amp;&amp; trs.length &gt; 1) {</span>
+<span class="cstat-no" title="statement not covered" >    return decorationSet;</span>
+  }
+  const newRanges = <span class="cstat-no" title="statement not covered" >mapRangeThroughTransactions(</span>
+    response.validationOutputs,
+    parseInt(response.id),
+    trs
+  );
+&nbsp;
+  // Remove existing validations for the ranges
+  let newDecorationSet = <span class="cstat-no" title="statement not covered" >removeValidationDecorationsFromRanges(</span>
+    decorationSet,
+    newRanges
+  );
+&nbsp;
+  // There are new validations available; apply them to the document.
+  const decorationsToAdd = <span class="cstat-no" title="statement not covered" >getDecorationsForValidationRanges(newRanges);</span>
+&nbsp;
+  // Finally, we add the existing decorations to this new map.
+<span class="cstat-no" title="statement not covered" >  return newDecorationSet.add(currentTr.doc, decorationsToAdd);</span>
+};
+&nbsp;
+/**
+ * Create a validation decoration for the given range.
+ */
+export const createDecorationForValidationRange = <span class="fstat-no" title="function not covered" >(r</span>ange: ValidationOutput) =&gt; {
+  const decorationId = <span class="cstat-no" title="statement not covered" >uuid();</span>
+<span class="cstat-no" title="statement not covered" >  return [</span>
+    Decoration.inline(
+      range.from,
+      range.to,
+      {
+        class: DecorationClassMap[DECORATION_VALIDATION],
+        "data-attr-validation-id": decorationId
+      } as any,
+      {
+        type: DECORATION_VALIDATION
+      } as any
+    ),
+    Decoration.widget(range.from, getWidgetNode(range), { decorationId } as any)
+  ];
+};
+&nbsp;
+export const getDecorationsForValidationRanges = <span class="fstat-no" title="function not covered" >(r</span>anges: ValidationOutput[]) =&gt;
+<span class="cstat-no" title="statement not covered" >  flatten(ranges.map(createDecorationForValidationRange));</span>
+&nbsp;
+export const findSingleDecoration = <span class="fstat-no" title="function not covered" >(</span>
+  state: PluginState,
+  predicate: (spec: any) =&gt; boolean
+): Decoration | undefined =&gt; {
+  const decorations = <span class="cstat-no" title="statement not covered" >state.decorations.find(undefined, undefined, predicate);</span>
+<span class="cstat-no" title="statement not covered" >  if (!decorations[0]) {</span>
+<span class="cstat-no" title="statement not covered" >    return undefined;</span>
+  }
+<span class="cstat-no" title="statement not covered" >  return decorations[0];</span>
+};
+&nbsp;
+/**
+ * Get a widget DOM node given a validation range.
+ */
+export const getWidgetNode = <span class="fstat-no" title="function not covered" >(r</span>ange: ValidationOutput) =&gt; {
+  const widget = <span class="cstat-no" title="statement not covered" >document.createElement("span");</span>
+<span class="cstat-no" title="statement not covered" >  widget.className = "validation-widget-container";</span>
+&nbsp;
+  const contentNode = <span class="cstat-no" title="statement not covered" >document.createElement("span");</span>
+<span class="cstat-no" title="statement not covered" >  contentNode.className = "validation-widget";</span>
+<span class="cstat-no" title="statement not covered" >  widget.appendChild(contentNode);</span>
+&nbsp;
+  const labelNode = <span class="cstat-no" title="statement not covered" >document.createElement("span");</span>
+  const labelTextNode = <span class="cstat-no" title="statement not covered" >document.createTextNode(range.type);</span>
+<span class="cstat-no" title="statement not covered" >  labelNode.appendChild(labelTextNode);</span>
+<span class="cstat-no" title="statement not covered" >  labelNode.className = "validation-widget-label";</span>
+<span class="cstat-no" title="statement not covered" >  contentNode.appendChild(labelNode);</span>
+&nbsp;
+  const textNode = <span class="cstat-no" title="statement not covered" >document.createTextNode(range.annotation);</span>
+<span class="cstat-no" title="statement not covered" >  contentNode.appendChild(textNode);</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  return widget;</span>
+};
+&nbsp;</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="https://istanbul.js.org/" target="_blank">istanbul</a> at Sat Nov 10 2018 23:43:16 GMT+0000 (GMT)
+</div>
+</div>
+<script src="../../../../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../../../../sorter.js"></script>
+</body>
+</html>

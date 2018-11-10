@@ -38,6 +38,11 @@
   background-color: #ffff00;
 }
 
-.validation-dirty-range {
-  background-color: teal;
+.validation-dirty,
+.validation-dirty.validation-inflight {
+  background-color: rgba(0,128,128,0.40);
+}
+
+.validation-inflight {
+  background-color: rgba(0,128,128,0.20);
 }

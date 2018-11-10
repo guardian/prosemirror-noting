@@ -22,22 +22,22 @@
       <div class='fl pad1y space-right2'>
         <span class="strong">0% </span>
         <span class="quiet">Statements</span>
-        <span class='fraction'>0/38</span>
+        <span class='fraction'>0/45</span>
       </div>
       <div class='fl pad1y space-right2'>
         <span class="strong">0% </span>
         <span class="quiet">Branches</span>
-        <span class='fraction'>0/20</span>
+        <span class='fraction'>0/22</span>
       </div>
       <div class='fl pad1y space-right2'>
         <span class="strong">0% </span>
         <span class="quiet">Functions</span>
-        <span class='fraction'>0/12</span>
+        <span class='fraction'>0/16</span>
       </div>
       <div class='fl pad1y space-right2'>
         <span class="strong">0% </span>
         <span class="quiet">Lines</span>
-        <span class='fraction'>0/35</span>
+        <span class='fraction'>0/41</span>
       </div>
     </div>
   </div>
@@ -172,8 +172,28 @@
 127
 128
 129
-130</td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148</td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -301,15 +321,33 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >import { Mark, MarkSpec, Node } from "prosemirror-model";</span>
 import { ValidationInput } from "../interfaces/Validation";
+import { Transaction } from "prosemirror-state";
+<span class="cstat-no" title="statement not covered" >import { ReplaceStep, ReplaceAroundStep } from "prosemirror-transform";</span>
 &nbsp;
 /**
  * Get a single string of text, and an array of position mappings,
  * from a Prosemirror document. The mappings can be used to map an
  * index in the text back to a position in the document.
  */
-export const <span class="cstat-no" title="statement not covered" >getTextMaps = <span class="fstat-no" title="function not covered" >(d</span>oc: Node) =&gt;</span>
+export const <span class="cstat-no" title="statement not covered" >getTextMaps = <span class="fstat-no" title="function not covered" >(d</span>oc: Node): ValidationInput[] =&gt;</span>
 <span class="cstat-no" title="statement not covered" >  (doc instanceof Node ? findTextNodes(doc) : [doc]).reduce(</span>
 <span class="fstat-no" title="function not covered" >    (</span>
       acc: { positionMap: ValidationInput[]; length: number },
@@ -430,13 +468,29 @@ export const <span class="cstat-no" title="statement not covered" >findTextNodes
 ): { node: Node; parent: Node; pos: number }[] =&gt; {
 <span class="cstat-no" title="statement not covered" >  return findChildren(node, <span class="fstat-no" title="function not covered" >child</span> =&gt; <span class="cstat-no" title="statement not covered" >child.isText,</span> descend);</span>
 };
-&nbsp;</pre></td></tr>
+&nbsp;
+/**
+ * Get all of the ranges of any replace steps in the given transaction.
+ */
+export const <span class="cstat-no" title="statement not covered" >getReplaceStepRangesFromTransaction = <span class="fstat-no" title="function not covered" >(t</span>r: Transaction) =&gt;</span>
+<span class="cstat-no" title="statement not covered" >  getReplaceTransactions(tr).map(<span class="fstat-no" title="function not covered" >(s</span>tep: ReplaceStep | ReplaceAroundStep) =&gt; (<span class="cstat-no" title="statement not covered" >{</span></span>
+    from: (step as any).from,
+    to: (step as any).to
+  }));
+&nbsp;
+/**
+ * Get all of the ranges of any replace steps in the given transaction.
+ */
+export const <span class="cstat-no" title="statement not covered" >getReplaceTransactions = <span class="fstat-no" title="function not covered" >(t</span>r: Transaction) =&gt;</span>
+<span class="cstat-no" title="statement not covered" >  tr.steps.filter(</span>
+<span class="fstat-no" title="function not covered" >    step</span> =&gt; <span class="cstat-no" title="statement not covered" >step instanceof ReplaceStep || step instanceof ReplaceAroundStep</span>
+  );</pre></td></tr>
 </table></pre>
 <div class='push'></div><!-- for sticky footer -->
 </div><!-- /wrapper -->
 <div class='footer quiet pad2 space-top1 center small'>
   Code coverage
-  generated by <a href="https://istanbul.js.org/" target="_blank">istanbul</a> at Sun Oct 21 2018 21:14:50 GMT+0100 (British Summer Time)
+  generated by <a href="https://istanbul.js.org/" target="_blank">istanbul</a> at Sat Nov 10 2018 23:40:05 GMT+0000 (GMT)
 </div>
 </div>
 <script src="../../../prettify.js"></script>

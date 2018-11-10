@@ -1,0 +1,965 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for prosemirror-noting/src/js/index.ts</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../../prettify.css" />
+    <link rel="stylesheet" href="../../../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../../../index.html">All files</a> / <a href="index.html">prosemirror-noting/src/js</a> index.ts
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>0/80</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>0/38</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>0/15</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>0/77</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line low'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+201
+202
+203
+204
+205
+206
+207
+208
+209
+210
+211
+212
+213
+214
+215
+216
+217
+218
+219
+220
+221
+222
+223
+224
+225
+226
+227
+228
+229
+230
+231
+232
+233
+234
+235
+236
+237
+238
+239
+240
+241
+242
+243
+244
+245
+246
+247
+248
+249
+250
+251
+252
+253
+254
+255
+256
+257
+258
+259
+260
+261
+262
+263
+264
+265
+266
+267
+268
+269
+270
+271
+272
+273
+274
+275
+276
+277
+278
+279
+280
+281
+282
+283
+284
+285
+286
+287
+288
+289
+290
+291
+292
+293
+294
+295
+296
+297
+298
+299
+300
+301</td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >import { Plugin, Transaction, EditorState } from "prosemirror-state";</span>
+import { Schema } from "prosemirror-model";
+<span class="cstat-no" title="statement not covered" >import { DecorationSet, EditorView } from "prosemirror-view";</span>
+<span class="cstat-no" title="statement not covered" >import { mergeRanges } from "./utils/range";</span>
+import {
+  ValidationResponse,
+  ValidationInput,
+  ValidationError,
+  Range
+} from "./interfaces/Validation";
+<span class="cstat-no" title="statement not covered" >import ValidationService, { ValidationEvents } from "./ValidationAPIService";</span>
+<span class="cstat-no" title="statement not covered" >import {</span>
+  VALIDATION_PLUGIN_ACTION,
+  validationRequestStart,
+  validationRequestSuccess,
+  validationRequestError,
+  validationPluginReducer,
+  Action,
+  validationRequestPending,
+  newHoverIdReceived
+} from "./state";
+<span class="cstat-no" title="statement not covered" >import {</span>
+  findSingleDecoration,
+  createDebugDecorationFromRange,
+  removeValidationDecorationsFromRanges
+} from "./utils/decoration";
+<span class="cstat-no" title="statement not covered" >import { getReplaceStepRangesFromTransaction } from "./utils/prosemirror";</span>
+&nbsp;
+/**
+ * Create a function responsible for updating the view. We update the view
+ * when we need to update our decorations with hover information.
+ */
+const updateView = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(p</span>lugin: Plugin) =&gt; <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(</span></span></span>
+  view: EditorView,
+  prevState: EditorState
+) =&gt; {
+  const pluginState: PluginState = <span class="cstat-no" title="statement not covered" >plugin.getState(view.state);</span>
+  const decorationId = <span class="cstat-no" title="statement not covered" >pluginState.hoverId;</span>
+  const prevDecorationId = <span class="cstat-no" title="statement not covered" >plugin.getState(prevState).hoverId;</span>
+<span class="cstat-no" title="statement not covered" >  if (prevDecorationId === decorationId) {</span>
+<span class="cstat-no" title="statement not covered" >    return;</span>
+  }
+<span class="cstat-no" title="statement not covered" >  if (!prevDecorationId &amp;&amp; decorationId) {</span>
+    const decoration = <span class="cstat-no" title="statement not covered" >findSingleDecoration(</span>
+      pluginState,
+<span class="fstat-no" title="function not covered" >      spec</span> =&gt; <span class="cstat-no" title="statement not covered" >spec.decorationId === decorationId</span>
+    );
+<span class="cstat-no" title="statement not covered" >    if (!decoration) {</span>
+<span class="cstat-no" title="statement not covered" >      return;</span>
+    }
+    (<span class="cstat-no" title="statement not covered" >decoration as any).type.widget.classList.add(</span>
+      "validation-widget-container--is-hovering"
+    );
+<span class="cstat-no" title="statement not covered" >    return;</span>
+  }
+  const decoration = <span class="cstat-no" title="statement not covered" >findSingleDecoration(</span>
+    pluginState,
+<span class="fstat-no" title="function not covered" >    spec</span> =&gt; <span class="cstat-no" title="statement not covered" >spec.decorationId === prevDecorationId</span>
+  );
+<span class="cstat-no" title="statement not covered" >  if (!decoration) {</span>
+<span class="cstat-no" title="statement not covered" >    return;</span>
+  }
+  // @todo - revisit typing, as PM doesn't expose the 'type' property
+  // but we need access to the appropriate DOM node here
+  (<span class="cstat-no" title="statement not covered" >decoration as any).type.widget &amp;&amp;</span>
+    (decoration as any).type.widget.classList.remove(
+      "validation-widget-container--is-hovering"
+    );
+};
+&nbsp;
+type PluginState = {
+  initialThrottle: number;
+  currentThrottle: number;
+  maxThrottle: number;
+  decorations: DecorationSet;
+  dirtiedRanges: Range[];
+  lastValidationTime: number;
+  hoverId: string | undefined;
+  trHistory: Transaction[];
+  validationPending: boolean;
+  validationInFlight:
+    | {
+        validationInputs: ValidationInput[];
+        id: number;
+      }
+    | undefined;
+  error: string | undefined;
+};
+&nbsp;
+const getMergedDirtiedRanges = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(t</span>r: Transaction, oldRanges: Range[]) =&gt;</span>
+<span class="cstat-no" title="statement not covered" >  mergeRanges(</span>
+    oldRanges
+      .map(<span class="fstat-no" title="function not covered" >range</span> =&gt; (<span class="cstat-no" title="statement not covered" >{</span>
+        from: tr.mapping.map(range.from),
+        to: tr.mapping.map(range.to)
+      }))
+      .concat(getReplaceStepRangesFromTransaction(tr))
+  );
+&nbsp;
+/**
+ * The document validator plugin. Listens for validation commands and applies
+ * validation decorations to the document.
+ */
+const documentValidatorPlugin = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(</span></span>
+  schema: Schema,
+  {
+    apiUrl,
+    throttleInMs = <span class="branch-0 cbranch-no" title="branch not covered" >2000,</span>
+    maxThrottle = <span class="branch-0 cbranch-no" title="branch not covered" >8000</span>
+  }: {
+    apiUrl: string;
+    throttleInMs?: number;
+    maxThrottle?: number;
+  }
+) =&gt; {
+  let localView: EditorView;
+  const validationService = <span class="cstat-no" title="statement not covered" >new ValidationService(apiUrl);</span>
+<span class="cstat-no" title="statement not covered" >  validationService.on(ValidationEvents.VALIDATION_SUCCESS, console.log);</span>
+  const scheduleValidation = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >() </span>=&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    setTimeout(<span class="fstat-no" title="function not covered" >() </span>=&gt; {</span>
+      const pluginState: PluginState = <span class="cstat-no" title="statement not covered" >plugin.getState(localView.state);</span>
+      // If there's already a validation in flight, defer validation
+      // for another throttle tick
+<span class="cstat-no" title="statement not covered" >      if (pluginState.validationInFlight) {</span>
+<span class="cstat-no" title="statement not covered" >        return scheduleValidation();</span>
+      }
+<span class="cstat-no" title="statement not covered" >      localView.dispatch(</span>
+        localView.state.tr.setMeta(
+          VALIDATION_PLUGIN_ACTION,
+          validationRequestStart()
+        )
+      );
+    }, plugin.getState(localView.state).currentThrottle);
+  };
+  const plugin: Plugin = <span class="cstat-no" title="statement not covered" >new Plugin({</span>
+    state: {
+      init(_, { doc }): PluginState {
+        // getValidationRangesForDocument(doc);
+&nbsp;
+        // Hook up our validation events.
+<span class="cstat-no" title="statement not covered" >        validationService.on(</span>
+          ValidationEvents.VALIDATION_SUCCESS,
+<span class="fstat-no" title="function not covered" >          (v</span>alidationResponse: ValidationResponse) =&gt;
+<span class="cstat-no" title="statement not covered" >            console.log(</span>
+              ValidationEvents.VALIDATION_SUCCESS,
+              validationResponse
+            ) ||
+            localView.dispatch(
+              localView.state.tr.setMeta(
+                VALIDATION_PLUGIN_ACTION,
+                validationRequestSuccess(validationResponse)
+              )
+            )
+        );
+<span class="cstat-no" title="statement not covered" >        validationService.on(</span>
+          ValidationEvents.VALIDATION_ERROR,
+<span class="fstat-no" title="function not covered" >          (v</span>alidationError: ValidationError) =&gt;
+<span class="cstat-no" title="statement not covered" >            console.log(ValidationEvents.VALIDATION_ERROR, validationError) ||</span>
+            localView.dispatch(
+              localView.state.tr.setMeta(
+                VALIDATION_PLUGIN_ACTION,
+                validationRequestError(validationError)
+              )
+            )
+        );
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        return {</span>
+          currentThrottle: throttleInMs,
+          initialThrottle: throttleInMs,
+          maxThrottle,
+          decorations: DecorationSet.create(doc, []),
+          dirtiedRanges: [],
+          lastValidationTime: 0,
+          hoverId: undefined,
+          trHistory: [],
+          validationInFlight: undefined,
+          validationPending: false,
+          error: undefined
+        };
+      },
+      apply(tr: Transaction, state: PluginState): PluginState {
+        // Apply our reducer.
+        const action: Action | undefined = <span class="cstat-no" title="statement not covered" >tr.getMeta(VALIDATION_PLUGIN_ACTION);</span>
+        const <span class="cstat-no" title="statement not covered" >{ decorations, dirtiedRanges, trHistory<span class="cstat-no" title="statement not covered" >, <span class="cstat-no" title="statement not covered" >...rest } = action</span></span></span>
+          ? validationPluginReducer(tr, state, action)
+          : state;
+&nbsp;
+        // Map our dirtied ranges through the current transaction, and append
+        // any new ranges it has dirtied.
+        let _decorations = <span class="cstat-no" title="statement not covered" >decorations.map(tr.mapping, tr.doc);</span>
+        let _trHistory = <span class="cstat-no" title="statement not covered" >trHistory;</span>
+        const newDirtiedRanges = <span class="cstat-no" title="statement not covered" >getMergedDirtiedRanges(tr, dirtiedRanges);</span>
+        const currentDirtiedRanges = <span class="cstat-no" title="statement not covered" >getReplaceStepRangesFromTransaction(tr);</span>
+<span class="cstat-no" title="statement not covered" >        _decorations = _decorations.add(</span>
+          tr.doc,
+          currentDirtiedRanges.map(<span class="fstat-no" title="function not covered" >range</span> =&gt;
+<span class="cstat-no" title="statement not covered" >            createDebugDecorationFromRange(range)</span>
+          )
+        );
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        if (currentDirtiedRanges.length) {</span>
+          // Remove any validations touched by the dirtied ranges from the doc
+<span class="cstat-no" title="statement not covered" >          _decorations = removeValidationDecorationsFromRanges(</span>
+            _decorations,
+            newDirtiedRanges
+          );
+        }
+&nbsp;
+        // Keep the transaction history up to date
+<span class="cstat-no" title="statement not covered" >        _trHistory =</span>
+          _trHistory.length &gt; 25
+            ? _trHistory.slice(1).concat(tr)
+            : _trHistory.concat(tr);
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        return {</span>
+          ...rest,
+          decorations: _decorations,
+          dirtiedRanges: newDirtiedRanges,
+          trHistory: _trHistory
+        };
+      }
+    },
+    /**
+     * We use appendTransaction to handle side effects and dispatch actions
+     * in response to state transitions.
+     */
+    appendTransaction(trs: Transaction[], oldState, newState) {
+      const oldPluginState: PluginState = <span class="cstat-no" title="statement not covered" >plugin.getState(oldState);</span>
+      const newPluginState: PluginState = <span class="cstat-no" title="statement not covered" >plugin.getState(newState);</span>
+<span class="cstat-no" title="statement not covered" >      if (</span>
+        newPluginState.dirtiedRanges.length &amp;&amp;
+        !newPluginState.validationPending
+      ) {
+        // Issue a delayed request to the validation service,
+        // and mark the state as pending validation
+<span class="cstat-no" title="statement not covered" >        scheduleValidation();</span>
+<span class="cstat-no" title="statement not covered" >        return newState.tr.setMeta(</span>
+          VALIDATION_PLUGIN_ACTION,
+          validationRequestPending()
+        );
+      }
+      // If we have a new validation, send it to the validation service.
+<span class="cstat-no" title="statement not covered" >      if (</span>
+        !oldPluginState.validationInFlight &amp;&amp;
+        newPluginState.validationInFlight
+      ) {
+<span class="cstat-no" title="statement not covered" >        validationService.validate(</span>
+          newPluginState.validationInFlight.validationInputs,
+          trs[trs.length - 1].time
+        );
+      }
+    },
+    props: {
+      decorations: <span class="fstat-no" title="function not covered" >state</span> =&gt; {
+<span class="cstat-no" title="statement not covered" >        return plugin.getState(state).decorations;</span>
+      },
+      handleDOMEvents: {
+        mouseover: <span class="fstat-no" title="function not covered" >(v</span>iew: EditorView, e: Event) =&gt; {
+          const target = <span class="cstat-no" title="statement not covered" >e.target;</span>
+<span class="cstat-no" title="statement not covered" >          if (target) {</span>
+            const targetAttr = (<span class="cstat-no" title="statement not covered" >target as HTMLElement).getAttribute(</span>
+              "data-attr-validation-id"
+            );
+            const newValidationId = <span class="cstat-no" title="statement not covered" >targetAttr ? targetAttr : undefined;</span>
+<span class="cstat-no" title="statement not covered" >            if (newValidationId !== plugin.getState(view.state).hoverId) {</span>
+<span class="cstat-no" title="statement not covered" >              view.dispatch(</span>
+                view.state.tr.setMeta(
+                  VALIDATION_PLUGIN_ACTION,
+                  newHoverIdReceived(newValidationId)
+                )
+              );
+            }
+          }
+<span class="cstat-no" title="statement not covered" >          return false;</span>
+        }
+      }
+    },
+    view(view: EditorView) {
+<span class="cstat-no" title="statement not covered" >      localView = view;</span>
+<span class="cstat-no" title="statement not covered" >      return {</span>
+        update: updateView(plugin)
+      };
+    }
+  });
+<span class="cstat-no" title="statement not covered" >  return plugin;</span>
+};
+&nbsp;
+/**
+ * The 'validate document' Prosemirror command.
+ */
+const validateDocument = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(</span></span>
+  state: EditorState,
+  dispatch: (tr: Transaction) =&gt; void
+) =&gt;
+<span class="cstat-no" title="statement not covered" >  dispatch(</span>
+    state.tr.setMeta(VALIDATION_PLUGIN_ACTION, validationRequestStart())
+  );
+&nbsp;
+<span class="cstat-no" title="statement not covered" >export default documentValidatorPlugin;</span>
+export { <span class="cstat-no" title="statement not covered" >validateDocument,</span> PluginState };
+&nbsp;</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="https://istanbul.js.org/" target="_blank">istanbul</a> at Sat Nov 10 2018 23:43:16 GMT+0000 (GMT)
+</div>
+</div>
+<script src="../../../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../../../sorter.js"></script>
+</body>
+</html>

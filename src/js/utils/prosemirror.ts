@@ -1,5 +1,7 @@
 import { Mark, MarkSpec, Node } from "prosemirror-model";
 import { ValidationInput } from "../interfaces/Validation";
+import { Transaction } from "prosemirror-state";
+import { ReplaceStep, ReplaceAroundStep } from "prosemirror-transform";
 
 /**
  * Get a single string of text, and an array of position mappings,
@@ -127,3 +129,20 @@ export const findTextNodes = (
 ): { node: Node; parent: Node; pos: number }[] => {
   return findChildren(node, child => child.isText, descend);
 };
+
+/**
+ * Get all of the ranges of any replace steps in the given transaction.
+ */
+export const getReplaceStepRangesFromTransaction = (tr: Transaction) =>
+  getReplaceTransactions(tr).map((step: ReplaceStep | ReplaceAroundStep) => ({
+    from: (step as any).from,
+    to: (step as any).to
+  }));
+
+/**
+ * Get all of the ranges of any replace steps in the given transaction.
+ */
+export const getReplaceTransactions = (tr: Transaction) =>
+  tr.steps.filter(
+    step => step instanceof ReplaceStep || step instanceof ReplaceAroundStep
+  );

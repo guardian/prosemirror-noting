@@ -3535,7 +3535,7 @@ prosemirror-tables@^0.7.8:
     prosemirror-transform "^1.0.0"
     prosemirror-view "^1.0.0"
 
-prosemirror-test-builder@^1.0.0:
+prosemirror-test-builder@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/prosemirror-test-builder/-/prosemirror-test-builder-1.0.1.tgz#24bc75234999b27a5347a59f0bb52dc85278ba87"
   dependencies:

@@ -1,5 +1,5 @@
 import { ValidationOutput, ValidationInput } from "./interfaces/Validation";
-import { Range } from ".";
+import { Range } from "./interfaces/Validation";
 import { EventEmitter } from "./EventEmitter";
 
 export type RunningServiceValidation = {

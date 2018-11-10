@@ -1,6 +1,6 @@
 import { EditorState } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
-import { Schema, DOMParser } from "prosemirror-model";
+import { Schema, DOMParser, NodeSpec } from "prosemirror-model";
 import { marks, schema } from "prosemirror-schema-basic";
 import { addListNodes } from "prosemirror-schema-list";
 import { history } from "prosemirror-history";
@@ -27,7 +27,7 @@ const commenceTheSpinning = () => {
 commenceTheSpinning();
 
 const mySchema = new Schema({
-  nodes: addListNodes(schema.spec.nodes, "paragraph block*", "block"),
+  nodes: addListNodes(schema.spec.nodes as any, "paragraph block*", "block"),
   marks: {
     ...marks,
     ...validationMarks
@@ -41,7 +41,7 @@ const historyPlugin = history();
 const editorElement = document.querySelector("#editor");
 
 editorElement &&
-  (window.editor = new EditorView(editorElement, {
+  ((window as any).editor = new EditorView(editorElement, {
     state: EditorState.create({
       doc,
       plugins: [
@@ -54,7 +54,9 @@ editorElement &&
           F6: validateDocument
         }),
         historyPlugin,
-        createDocumentValidatorPlugin(mySchema)
+        createDocumentValidatorPlugin(mySchema, {
+          apiUrl: "http://localhost:9001"
+        })
       ]
     })
   }));

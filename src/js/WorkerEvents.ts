@@ -1,4 +1,4 @@
-import { Range } from ".";
+import { Range } from "./interfaces/Validation";
 import { ValidationOutput, ValidationInput } from "./interfaces/Validation";
 
 export type WorkerEventTypes = "VALIDATE" | "CANCEl";

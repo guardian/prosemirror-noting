@@ -15012,6 +15012,11 @@ const validationMarks = Object.keys(MarkTypes).reduce((acc, markName) => {
 
 
 
+const getReplaceStepRangesFromTransaction = (tr) => getReplaceTransactions(tr).map((step) => ({
+    from: step.from,
+    to: step.to
+}));
+const getReplaceTransactions = (tr) => tr.steps.filter(step => step instanceof dist_16 || step instanceof dist_17);
 //# sourceMappingURL=prosemirror.js.map
 
 /*! *****************************************************************************
@@ -15034,7 +15039,15 @@ and limitations under the License.
 
 
 
-
+function __rest(s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) if (e.indexOf(p[i]) < 0)
+            t[p[i]] = s[p[i]];
+    return t;
+}
 
 
 
@@ -15330,281 +15343,6 @@ function flatten$1(array) {
 }
 
 var flatten_1 = flatten$1;
-
-const findOverlappingRangeIndex = (range, ranges) => {
-    return ranges.findIndex(localRange => (localRange.from <= range.from && localRange.to >= range.from) ||
-        (localRange.to >= range.to && localRange.from <= range.to) ||
-        (localRange.from >= range.from && localRange.to <= range.to));
-};
-const mergeRange = (range1, range2) => ({
-    from: range1.from < range2.from ? range1.from : range2.from,
-    to: range1.to > range2.to ? range1.to : range2.to
-});
-const mergeRanges = (ranges) => ranges.reduce((acc, range) => {
-    const index = findOverlappingRangeIndex(range, acc);
-    if (index === -1) {
-        return acc.concat(range);
-    }
-    const newRange = acc.slice();
-    newRange.splice(index, 1, mergeRange(range, acc[index]));
-    return newRange;
-}, []);
-
-
-
-//# sourceMappingURL=range.js.map
-
-var rngBrowser = createCommonjsModule(function (module) {
-// Unique ID creation requires a high quality random # generator.  In the
-// browser this is a little complicated due to unknown quality of Math.random()
-// and inconsistent support for the `crypto` API.  We do the best we can via
-// feature-detection
-
-// getRandomValues needs to be invoked in a context where "this" is a Crypto implementation.
-var getRandomValues = (typeof(crypto) != 'undefined' && crypto.getRandomValues.bind(crypto)) ||
-                      (typeof(msCrypto) != 'undefined' && msCrypto.getRandomValues.bind(msCrypto));
-if (getRandomValues) {
-  // WHATWG crypto RNG - http://wiki.whatwg.org/wiki/Crypto
-  var rnds8 = new Uint8Array(16); // eslint-disable-line no-undef
-
-  module.exports = function whatwgRNG() {
-    getRandomValues(rnds8);
-    return rnds8;
-  };
-} else {
-  // Math.random()-based (RNG)
-  //
-  // If all else fails, use Math.random().  It's fast, but is of unspecified
-  // quality.
-  var rnds = new Array(16);
-
-  module.exports = function mathRNG() {
-    for (var i = 0, r; i < 16; i++) {
-      if ((i & 0x03) === 0) r = Math.random() * 0x100000000;
-      rnds[i] = r >>> ((i & 0x03) << 3) & 0xff;
-    }
-
-    return rnds;
-  };
-}
-});
-
-/**
- * Convert array of 16 byte values to UUID string format of the form:
- * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
- */
-var byteToHex = [];
-for (var i$1 = 0; i$1 < 256; ++i$1) {
-  byteToHex[i$1] = (i$1 + 0x100).toString(16).substr(1);
-}
-
-function bytesToUuid(buf, offset) {
-  var i = offset || 0;
-  var bth = byteToHex;
-  return bth[buf[i++]] + bth[buf[i++]] +
-          bth[buf[i++]] + bth[buf[i++]] + '-' +
-          bth[buf[i++]] + bth[buf[i++]] + '-' +
-          bth[buf[i++]] + bth[buf[i++]] + '-' +
-          bth[buf[i++]] + bth[buf[i++]] + '-' +
-          bth[buf[i++]] + bth[buf[i++]] +
-          bth[buf[i++]] + bth[buf[i++]] +
-          bth[buf[i++]] + bth[buf[i++]];
-}
-
-var bytesToUuid_1 = bytesToUuid;
-
-function v4(options, buf, offset) {
-  var i = buf && offset || 0;
-
-  if (typeof(options) == 'string') {
-    buf = options === 'binary' ? new Array(16) : null;
-    options = null;
-  }
-  options = options || {};
-
-  var rnds = options.random || (options.rng || rngBrowser)();
-
-  // Per 4.4, set bits for version and `clock_seq_hi_and_reserved`
-  rnds[6] = (rnds[6] & 0x0f) | 0x40;
-  rnds[8] = (rnds[8] & 0x3f) | 0x80;
-
-  // Copy bytes to buffer, if provided
-  if (buf) {
-    for (var ii = 0; ii < 16; ++ii) {
-      buf[i + ii] = rnds[ii];
-    }
-  }
-
-  return buf || bytesToUuid_1(rnds);
-}
-
-var v4_1 = v4;
-
-/**
- * The base implementation of `_.clamp` which doesn't coerce arguments.
- *
- * @private
- * @param {number} number The number to clamp.
- * @param {number} [lower] The lower bound.
- * @param {number} upper The upper bound.
- * @returns {number} Returns the clamped number.
- */
-
-/**
- * Checks if `value` is the
- * [language type](http://www.ecma-international.org/ecma-262/7.0/#sec-ecmascript-language-types)
- * of `Object`. (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
- *
- * @static
- * @memberOf _
- * @since 0.1.0
- * @category Lang
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is an object, else `false`.
- * @example
- *
- * _.isObject({});
- * // => true
- *
- * _.isObject([1, 2, 3]);
- * // => true
- *
- * _.isObject(_.noop);
- * // => true
- *
- * _.isObject(null);
- * // => false
- */
-
-class EventEmitter {
-    constructor() {
-        this.events = {};
-    }
-    on(event, listener) {
-        if (typeof this.events[event] !== "object") {
-            this.events[event] = [];
-        }
-        this.events[event].push(listener);
-        return () => this.removeListener(event, listener);
-    }
-    removeListener(event, listener) {
-        if (typeof this.events[event] !== "object") {
-            return;
-        }
-        const idx = this.events[event].indexOf(listener);
-        if (idx > -1) {
-            this.events[event].splice(idx, 1);
-        }
-    }
-    removeAllListeners() {
-        Object.keys(this.events).forEach((event) => this.events[event].splice(0, this.events[event].length));
-    }
-    emit(event, ...args) {
-        if (typeof this.events[event] !== "object") {
-            return;
-        }
-        [...this.events[event]].forEach(listener => listener.apply(this, args));
-    }
-    once(event, listener) {
-        const remove = this.on(event, (...args) => {
-            remove();
-            listener.apply(this, args);
-        });
-        return remove;
-    }
-}
-//# sourceMappingURL=EventEmitter.js.map
-
-class ValidationStateManager extends EventEmitter {
-    constructor() {
-        super(...arguments);
-        this.runningValidations = [];
-        this.addRunningValidation = (rv) => {
-            this.runningValidations.push(rv);
-        };
-        this.removeRunningValidation = (validation) => {
-            this.runningValidations.splice(this.runningValidations.indexOf(validation), 1);
-        };
-        this.findRunningValidation = (id) => {
-            return this.runningValidations.find(_ => _.id === id);
-        };
-        this.getRunningValidations = (ranges) => {
-            return this.runningValidations;
-        };
-    }
-}
-
-//# sourceMappingURL=ValidationStateManager.js.map
-
-const serviceName = "[validationAPIService]";
-const ValidationEvents = {
-    VALIDATION_COMPLETE: "VALIDATION_COMPLETE",
-    VALIDATION_ERROR: "VALIDATION_ERROR",
-    CANCELLATION_COMPLETE: "CANCELLATION_COMPLETE"
-};
-class ValidationService extends ValidationStateManager {
-    constructor() {
-        super(...arguments);
-        this.cancelValidation = () => {
-            this.cancelValidation();
-        };
-        this.handleCancelledValidations = () => {
-            this.emit(ValidationEvents.CANCELLATION_COMPLETE);
-        };
-        this.handleCompleteValidation = (id, validationOutputs) => {
-            const completeValidation = this.findRunningValidation(id);
-            if (!completeValidation) {
-                return console.warn(`${serviceName} Received validation from worker, but no match in running validations for id ${id}`);
-            }
-            this.emit(ValidationEvents.VALIDATION_COMPLETE, {
-                id,
-                validationOutputs
-            });
-            this.removeRunningValidation(completeValidation);
-        };
-    }
-    validate(inputs, id) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const results = yield Promise.all(inputs.map((input) => __awaiter(this, void 0, void 0, function* () {
-                const body = new URLSearchParams();
-                body.append("data", JSON.stringify({
-                    annotation: [
-                        {
-                            text: input.str
-                        }
-                    ]
-                }));
-                body.append("language", "en-US");
-                const validation = {
-                    id,
-                    validationInputs: inputs
-                };
-                this.addRunningValidation(validation);
-                const response = yield fetch("http://localhost:9001", {
-                    method: "POST",
-                    headers: new Headers({
-                        "Content-Type": "x-www-form-urlencoded"
-                    }),
-                    body
-                });
-                const validationData = yield response.json();
-                const validationOutputs = validationData.matches.map(match => ({
-                    str: match.sentence,
-                    from: match.offset,
-                    to: match.offset + match.length,
-                    annotation: match.message,
-                    type: match.rule.description
-                }));
-                this.handleCompleteValidation(id, validationOutputs);
-                return validationOutputs;
-            })));
-            return flatten_1(results);
-        });
-    }
-}
-const validationService = new ValidationService();
-
-//# sourceMappingURL=ValidationAPIService.js.map
 
 var dist$11 = createCommonjsModule(function (module, exports) {
 Object.defineProperty(exports, '__esModule', { value: true });
@@ -19263,8 +19001,541 @@ var dist_57 = dist$10.setParentNodeMarkup;
 var dist_58 = dist$10.selectParentNodeOfType;
 var dist_59 = dist$10.removeNodeBefore;
 
-const TransactionMetaKeys = {
-    VALIDATION_RESPONSE: "VALIDATION_RESPONSE"
+/**
+ * The base implementation of `_.clamp` which doesn't coerce arguments.
+ *
+ * @private
+ * @param {number} number The number to clamp.
+ * @param {number} [lower] The lower bound.
+ * @param {number} upper The upper bound.
+ * @returns {number} Returns the clamped number.
+ */
+function baseClamp(number, lower, upper) {
+  if (number === number) {
+    if (upper !== undefined) {
+      number = number <= upper ? number : upper;
+    }
+    if (lower !== undefined) {
+      number = number >= lower ? number : lower;
+    }
+  }
+  return number;
+}
+
+var _baseClamp = baseClamp;
+
+/**
+ * Checks if `value` is the
+ * [language type](http://www.ecma-international.org/ecma-262/7.0/#sec-ecmascript-language-types)
+ * of `Object`. (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an object, else `false`.
+ * @example
+ *
+ * _.isObject({});
+ * // => true
+ *
+ * _.isObject([1, 2, 3]);
+ * // => true
+ *
+ * _.isObject(_.noop);
+ * // => true
+ *
+ * _.isObject(null);
+ * // => false
+ */
+function isObject(value) {
+  var type = typeof value;
+  return value != null && (type == 'object' || type == 'function');
+}
+
+var isObject_1 = isObject;
+
+var symbolTag = '[object Symbol]';
+
+/**
+ * Checks if `value` is classified as a `Symbol` primitive or object.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a symbol, else `false`.
+ * @example
+ *
+ * _.isSymbol(Symbol.iterator);
+ * // => true
+ *
+ * _.isSymbol('abc');
+ * // => false
+ */
+function isSymbol(value) {
+  return typeof value == 'symbol' ||
+    (isObjectLike_1(value) && _baseGetTag(value) == symbolTag);
+}
+
+var isSymbol_1 = isSymbol;
+
+var NAN = 0 / 0;
+
+/** Used to match leading and trailing whitespace. */
+var reTrim = /^\s+|\s+$/g;
+
+/** Used to detect bad signed hexadecimal string values. */
+var reIsBadHex = /^[-+]0x[0-9a-f]+$/i;
+
+/** Used to detect binary string values. */
+var reIsBinary = /^0b[01]+$/i;
+
+/** Used to detect octal string values. */
+var reIsOctal = /^0o[0-7]+$/i;
+
+/** Built-in method references without a dependency on `root`. */
+var freeParseInt = parseInt;
+
+/**
+ * Converts `value` to a number.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to process.
+ * @returns {number} Returns the number.
+ * @example
+ *
+ * _.toNumber(3.2);
+ * // => 3.2
+ *
+ * _.toNumber(Number.MIN_VALUE);
+ * // => 5e-324
+ *
+ * _.toNumber(Infinity);
+ * // => Infinity
+ *
+ * _.toNumber('3.2');
+ * // => 3.2
+ */
+function toNumber(value) {
+  if (typeof value == 'number') {
+    return value;
+  }
+  if (isSymbol_1(value)) {
+    return NAN;
+  }
+  if (isObject_1(value)) {
+    var other = typeof value.valueOf == 'function' ? value.valueOf() : value;
+    value = isObject_1(other) ? (other + '') : other;
+  }
+  if (typeof value != 'string') {
+    return value === 0 ? value : +value;
+  }
+  value = value.replace(reTrim, '');
+  var isBinary = reIsBinary.test(value);
+  return (isBinary || reIsOctal.test(value))
+    ? freeParseInt(value.slice(2), isBinary ? 2 : 8)
+    : (reIsBadHex.test(value) ? NAN : +value);
+}
+
+var toNumber_1 = toNumber;
+
+function clamp(number, lower, upper) {
+  if (upper === undefined) {
+    upper = lower;
+    lower = undefined;
+  }
+  if (upper !== undefined) {
+    upper = toNumber_1(upper);
+    upper = upper === upper ? upper : 0;
+  }
+  if (lower !== undefined) {
+    lower = toNumber_1(lower);
+    lower = lower === lower ? lower : 0;
+  }
+  return _baseClamp(toNumber_1(number), lower, upper);
+}
+
+var clamp_1 = clamp;
+
+/**
+ * Creates an array with all falsey values removed. The values `false`, `null`,
+ * `0`, `""`, `undefined`, and `NaN` are falsey.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Array
+ * @param {Array} array The array to compact.
+ * @returns {Array} Returns the new array of filtered values.
+ * @example
+ *
+ * _.compact([0, 1, false, 2, '', 3]);
+ * // => [1, 2, 3]
+ */
+function compact(array) {
+  var index = -1,
+      length = array == null ? 0 : array.length,
+      resIndex = 0,
+      result = [];
+
+  while (++index < length) {
+    var value = array[index];
+    if (value) {
+      result[resIndex++] = value;
+    }
+  }
+  return result;
+}
+
+var compact_1 = compact;
+
+const findOverlappingRangeIndex = (range, ranges) => {
+    return ranges.findIndex(localRange => (localRange.from <= range.from && localRange.to >= range.from) ||
+        (localRange.to >= range.to && localRange.from <= range.to) ||
+        (localRange.from >= range.from && localRange.to <= range.to));
+};
+const mergeRange = (range1, range2) => ({
+    from: range1.from < range2.from ? range1.from : range2.from,
+    to: range1.to > range2.to ? range1.to : range2.to
+});
+const mergeRanges = (ranges) => ranges.reduce((acc, range) => {
+    const index$$1 = findOverlappingRangeIndex(range, acc);
+    if (index$$1 === -1) {
+        return acc.concat(range);
+    }
+    const newRange = acc.slice();
+    newRange.splice(index$$1, 1, mergeRange(range, acc[index$$1]));
+    return newRange;
+}, []);
+
+
+
+const expandRange = (range, doc) => {
+    const $fromPos = doc.resolve(range.from);
+    const $toPos = doc.resolve(range.to);
+    const parentNode = dist_3$7(node => node.isBlock)(new dist_1($fromPos, $toPos));
+    if (!parentNode) {
+        throw new Error(`Parent node not found for position ${$fromPos.start}, ${$fromPos.end}`);
+    }
+    return {
+        from: parentNode.start,
+        to: parentNode.start + parentNode.node.textContent.length
+    };
+};
+const getRangesOfParentBlockNodes = (ranges, doc) => {
+    const validationRanges = ranges.reduce((acc, range) => {
+        const expandedRange = expandRange({ from: range.from, to: range.to }, doc);
+        const validationRanges = [
+            {
+                from: expandedRange.from,
+                to: clamp_1(expandedRange.to, doc.content.size)
+            }
+        ];
+        return acc.concat(validationRanges);
+    }, ranges);
+    return mergeRanges(validationRanges);
+};
+const mapRangeThroughTransactions = (ranges, time, trs) => compact_1(ranges.map(range => {
+    const initialTransactionIndex = trs.findIndex(tr => tr.time === time);
+    if (trs.length === 1) {
+        return range;
+    }
+    if (initialTransactionIndex === -1) {
+        return undefined;
+    }
+    return Object.assign(range, Object.assign({}, trs.slice(initialTransactionIndex).reduce((acc, tr) => ({
+        from: tr.mapping.map(acc.from),
+        to: tr.mapping.map(acc.to)
+    }), range)));
+}));
+//# sourceMappingURL=range.js.map
+
+class EventEmitter {
+    constructor() {
+        this.events = {};
+    }
+    on(event, listener) {
+        if (typeof this.events[event] !== "object") {
+            this.events[event] = [];
+        }
+        this.events[event].push(listener);
+        return () => this.removeListener(event, listener);
+    }
+    removeListener(event, listener) {
+        if (typeof this.events[event] !== "object") {
+            return;
+        }
+        const idx = this.events[event].indexOf(listener);
+        if (idx > -1) {
+            this.events[event].splice(idx, 1);
+        }
+    }
+    removeAllListeners() {
+        Object.keys(this.events).forEach((event) => this.events[event].splice(0, this.events[event].length));
+    }
+    emit(event, ...args) {
+        if (typeof this.events[event] !== "object") {
+            return;
+        }
+        [...this.events[event]].forEach(listener => listener.apply(this, args));
+    }
+    once(event, listener) {
+        const remove = this.on(event, (...args) => {
+            remove();
+            listener.apply(this, args);
+        });
+        return remove;
+    }
+}
+//# sourceMappingURL=EventEmitter.js.map
+
+class ValidationStateManager extends EventEmitter {
+    constructor() {
+        super(...arguments);
+        this.runningValidations = [];
+        this.addRunningValidation = (rv) => {
+            this.runningValidations.push(rv);
+        };
+        this.removeRunningValidation = (validation) => {
+            this.runningValidations.splice(this.runningValidations.indexOf(validation), 1);
+        };
+        this.findRunningValidation = (id) => {
+            return this.runningValidations.find(_ => _.id === id);
+        };
+        this.getRunningValidations = (ranges) => {
+            return this.runningValidations;
+        };
+    }
+}
+
+//# sourceMappingURL=ValidationStateManager.js.map
+
+const serviceName = "[validationAPIService]";
+const ValidationEvents = {
+    VALIDATION_SUCCESS: "VALIDATION_SUCCESS",
+    VALIDATION_ERROR: "VALIDATION_ERROR"
+};
+class ValidationService extends ValidationStateManager {
+    constructor(apiUrl) {
+        super();
+        this.apiUrl = apiUrl;
+        this.cancelValidation = () => {
+            this.cancelValidation();
+        };
+        this.handleError = (validationInput, id, message) => {
+            this.emit(ValidationEvents.VALIDATION_ERROR, {
+                validationInput,
+                id,
+                message
+            });
+        };
+        this.handleCompleteValidation = (id, validationOutputs) => {
+            const completeValidation = this.findRunningValidation(id);
+            if (!completeValidation) {
+                return console.warn(`${serviceName} Received validation from worker, but no match in running validations for id ${id}`);
+            }
+            this.emit(ValidationEvents.VALIDATION_SUCCESS, {
+                id,
+                validationOutputs
+            });
+            this.removeRunningValidation(completeValidation);
+        };
+    }
+    validate(inputs, id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const results = yield Promise.all(inputs.map((input) => __awaiter(this, void 0, void 0, function* () {
+                const body = new URLSearchParams();
+                body.append("data", JSON.stringify({
+                    annotation: [
+                        {
+                            text: input.str
+                        }
+                    ]
+                }));
+                body.append("language", "en-US");
+                const validation = {
+                    id,
+                    validationInputs: inputs
+                };
+                this.addRunningValidation(validation);
+                try {
+                    const response = yield fetch(this.apiUrl, {
+                        method: "POST",
+                        headers: new Headers({
+                            "Content-Type": "x-www-form-urlencoded"
+                        }),
+                        body
+                    });
+                    const validationData = yield response.json();
+                    const validationOutputs = validationData.matches.map(match => ({
+                        str: match.sentence,
+                        from: match.offset,
+                        to: match.offset + match.length,
+                        annotation: match.message,
+                        type: match.rule.description
+                    }));
+                    this.handleCompleteValidation(id, validationOutputs);
+                    return validationOutputs;
+                }
+                catch (e) {
+                    this.handleError(input, id, e.message);
+                    return [
+                        {
+                            validationInput: input,
+                            id,
+                            message: e.message
+                        }
+                    ];
+                }
+            })));
+            return flatten_1(results);
+        });
+    }
+}
+
+//# sourceMappingURL=ValidationAPIService.js.map
+
+var rngBrowser = createCommonjsModule(function (module) {
+// Unique ID creation requires a high quality random # generator.  In the
+// browser this is a little complicated due to unknown quality of Math.random()
+// and inconsistent support for the `crypto` API.  We do the best we can via
+// feature-detection
+
+// getRandomValues needs to be invoked in a context where "this" is a Crypto implementation.
+var getRandomValues = (typeof(crypto) != 'undefined' && crypto.getRandomValues.bind(crypto)) ||
+                      (typeof(msCrypto) != 'undefined' && msCrypto.getRandomValues.bind(msCrypto));
+if (getRandomValues) {
+  // WHATWG crypto RNG - http://wiki.whatwg.org/wiki/Crypto
+  var rnds8 = new Uint8Array(16); // eslint-disable-line no-undef
+
+  module.exports = function whatwgRNG() {
+    getRandomValues(rnds8);
+    return rnds8;
+  };
+} else {
+  // Math.random()-based (RNG)
+  //
+  // If all else fails, use Math.random().  It's fast, but is of unspecified
+  // quality.
+  var rnds = new Array(16);
+
+  module.exports = function mathRNG() {
+    for (var i = 0, r; i < 16; i++) {
+      if ((i & 0x03) === 0) r = Math.random() * 0x100000000;
+      rnds[i] = r >>> ((i & 0x03) << 3) & 0xff;
+    }
+
+    return rnds;
+  };
+}
+});
+
+/**
+ * Convert array of 16 byte values to UUID string format of the form:
+ * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+ */
+var byteToHex = [];
+for (var i$1 = 0; i$1 < 256; ++i$1) {
+  byteToHex[i$1] = (i$1 + 0x100).toString(16).substr(1);
+}
+
+function bytesToUuid(buf, offset) {
+  var i = offset || 0;
+  var bth = byteToHex;
+  return bth[buf[i++]] + bth[buf[i++]] +
+          bth[buf[i++]] + bth[buf[i++]] + '-' +
+          bth[buf[i++]] + bth[buf[i++]] + '-' +
+          bth[buf[i++]] + bth[buf[i++]] + '-' +
+          bth[buf[i++]] + bth[buf[i++]] + '-' +
+          bth[buf[i++]] + bth[buf[i++]] +
+          bth[buf[i++]] + bth[buf[i++]] +
+          bth[buf[i++]] + bth[buf[i++]];
+}
+
+var bytesToUuid_1 = bytesToUuid;
+
+function v4(options, buf, offset) {
+  var i = buf && offset || 0;
+
+  if (typeof(options) == 'string') {
+    buf = options === 'binary' ? new Array(16) : null;
+    options = null;
+  }
+  options = options || {};
+
+  var rnds = options.random || (options.rng || rngBrowser)();
+
+  // Per 4.4, set bits for version and `clock_seq_hi_and_reserved`
+  rnds[6] = (rnds[6] & 0x0f) | 0x40;
+  rnds[8] = (rnds[8] & 0x3f) | 0x80;
+
+  // Copy bytes to buffer, if provided
+  if (buf) {
+    for (var ii = 0; ii < 16; ++ii) {
+      buf[i + ii] = rnds[ii];
+    }
+  }
+
+  return buf || bytesToUuid_1(rnds);
+}
+
+var v4_1 = v4;
+
+const DECORATION_VALIDATION = "DECORATION_VALIDATION";
+const DECORATION_DIRTY = "DECORATION_DIRTY";
+const DECORATION_INFLIGHT = "DECORATION_INFLIGHT";
+const DecorationClassMap = {
+    [DECORATION_DIRTY]: "validation-dirty",
+    [DECORATION_INFLIGHT]: "validation-inflight",
+    [DECORATION_VALIDATION]: "validation-decoration"
+};
+const createDebugDecorationFromRange = (range, dirty = true) => {
+    const type = dirty ? DECORATION_DIRTY : DECORATION_INFLIGHT;
+    return dist_2$3.inline(range.from, range.to + 1, {
+        class: DecorationClassMap[type]
+    }, {
+        type
+    });
+};
+const removeValidationDecorationsFromRanges = (decorations, ranges, type = DECORATION_VALIDATION) => ranges.reduce((acc, range) => {
+    const decorationsToRemove = decorations.find(range.from, range.to, spec => spec.type === type);
+    return acc.remove(decorationsToRemove);
+}, decorations);
+const getNewDecorationsForValidationResponse = (response, decorationSet, trs, currentTr) => {
+    const initialTransaction = trs.find(tr => tr.time === parseInt(response.id));
+    if (!initialTransaction && trs.length > 1) {
+        return decorationSet;
+    }
+    const newRanges = mapRangeThroughTransactions(response.validationOutputs, parseInt(response.id), trs);
+    let newDecorationSet = removeValidationDecorationsFromRanges(decorationSet, newRanges);
+    const decorationsToAdd = getDecorationsForValidationRanges(newRanges);
+    return newDecorationSet.add(currentTr.doc, decorationsToAdd);
+};
+const createDecorationForValidationRange = (range) => {
+    const decorationId = v4_1();
+    return [
+        dist_2$3.inline(range.from, range.to, {
+            class: DecorationClassMap[DECORATION_VALIDATION],
+            "data-attr-validation-id": decorationId
+        }, {
+            type: DECORATION_VALIDATION
+        }),
+        dist_2$3.widget(range.from, getWidgetNode(range), { decorationId })
+    ];
+};
+const getDecorationsForValidationRanges = (ranges) => flatten_1(ranges.map(createDecorationForValidationRange));
+const findSingleDecoration = (state, predicate) => {
+    const decorations = state.decorations.find(undefined, undefined, predicate);
+    if (!decorations[0]) {
+        return undefined;
+    }
+    return decorations[0];
 };
 const getWidgetNode = (range) => {
     const widget = document.createElement("span");
@@ -19281,62 +19552,107 @@ const getWidgetNode = (range) => {
     contentNode.appendChild(textNode);
     return widget;
 };
-const createDecorationForValidationRange = (range) => {
-    const validationId = v4_1();
-    return [
-        dist_2$3.inline(range.from, range.to, {
-            class: "validation-decoration",
-            "data-attr-validation-id": validationId
-        }),
-        dist_2$3.widget(range.from, getWidgetNode(range), { validationId })
-    ];
-};
-const getDecorationsForValidationRanges = (ranges) => flatten_1(ranges.map(createDecorationForValidationRange));
-const findSingleDecoration = (state, predicate) => {
-    const decorations = state.decorations.find(undefined, undefined, predicate);
-    if (!decorations[0]) {
-        return undefined;
+//# sourceMappingURL=decoration.js.map
+
+const VALIDATION_PLUGIN_ACTION = "VALIDATION_PLUGIN_ACTION";
+const VALIDATION_REQUEST_PENDING = "VALIDATION_REQUEST_PENDING";
+const VALIDATION_REQUEST_START = "VAlIDATION_REQUEST_START";
+const VALIDATION_REQUEST_SUCCESS = "VALIDATION_REQUEST_SUCCESS";
+const VALIDATION_REQUEST_ERROR = "VALIDATION_REQUEST_ERROR";
+const NEW_HOVER_ID = "NEW_HOVER_ID";
+const validationRequestPending = () => ({
+    type: VALIDATION_REQUEST_PENDING
+});
+const validationRequestStart = () => ({
+    type: VALIDATION_REQUEST_START
+});
+const validationRequestSuccess = (response) => ({
+    type: VALIDATION_REQUEST_SUCCESS,
+    payload: { response }
+});
+const validationRequestError = (validationError) => ({
+    type: VALIDATION_REQUEST_ERROR,
+    payload: { validationError }
+});
+const newHoverIdReceived = (hoverId) => ({
+    type: NEW_HOVER_ID,
+    payload: { hoverId }
+});
+const validationPluginReducer = (tr, state, action) => {
+    switch (action.type) {
+        case NEW_HOVER_ID:
+            return handleNewHoverId(tr, state, action);
+        case VALIDATION_REQUEST_PENDING:
+            return handleValidationRequestPending(tr, state, action);
+        case VALIDATION_REQUEST_START:
+            return handleValidationRequestStart(tr, state, action);
+        case VALIDATION_REQUEST_SUCCESS:
+            return handleValidationRequestSuccess(tr, state, action);
+        case VALIDATION_REQUEST_ERROR:
+            return handleValidationRequestError(tr, state, action);
+        default:
+            return state;
     }
-    return decorations[0];
 };
+const handleNewHoverId = (_, state, action) => {
+    return Object.assign({}, state, { hoverId: action.payload.hoverId });
+};
+const handleValidationRequestError = (tr, state, action) => {
+    const decsToRemove = state.decorations.find(undefined, undefined, _ => _.type === DECORATION_INFLIGHT);
+    const dirtiedRanges = mapRangeThroughTransactions([action.payload.validationError.validationInput], parseInt(String(action.payload.validationError.id), 10), state.trHistory);
+    let decorations = state.decorations.remove(decsToRemove);
+    if (dirtiedRanges.length) {
+        decorations = decorations.add(tr.doc, dirtiedRanges.map(range => createDebugDecorationFromRange(range)));
+    }
+    return Object.assign({}, state, { dirtiedRanges: dirtiedRanges.length
+            ? mergeRanges(state.dirtiedRanges.concat(dirtiedRanges))
+            : state.dirtiedRanges, decorations, validationInFlight: undefined, error: action.payload.validationError.message });
+};
+const handleValidationRequestSuccess = (tr, state, action) => {
+    const response = action.payload.response;
+    if (response && response.validationOutputs.length) {
+        const decorations = getNewDecorationsForValidationResponse(response, state.decorations, state.trHistory, tr);
+        const decsToRemove = state.decorations.find(undefined, undefined, _ => _.type === DECORATION_INFLIGHT);
+        return Object.assign({}, state, { validationInFlight: undefined, decorations: decorations.remove(decsToRemove) });
+    }
+    return state;
+};
+const handleValidationRequestPending = (_, state) => {
+    return Object.assign({}, state, { validationPending: true });
+};
+const handleValidationRequestStart = (tr, state) => {
+    const expandedRanges = getRangesOfParentBlockNodes(state.dirtiedRanges, tr.doc);
+    const validationInputs = expandedRanges.map(range => (Object.assign({ str: tr.doc.textBetween(range.from, range.to) }, range)));
+    const decorations = removeValidationDecorationsFromRanges(state.decorations, expandedRanges, DECORATION_DIRTY).add(tr.doc, expandedRanges.map(range => createDebugDecorationFromRange(range, false)));
+    return Object.assign({}, state, { decorations, dirtiedRanges: [], validationPending: false, validationInFlight: {
+            validationInputs,
+            id: tr.time
+        } });
+};
+
+//# sourceMappingURL=state.js.map
+
 const updateView = (plugin) => (view, prevState) => {
     const pluginState = plugin.getState(view.state);
-    const validationId = pluginState.hoverId;
-    const prevValidationId = plugin.getState(prevState).hoverId;
-    if (prevValidationId === validationId) {
+    const decorationId = pluginState.hoverId;
+    const prevDecorationId = plugin.getState(prevState).hoverId;
+    if (prevDecorationId === decorationId) {
         return;
     }
-    if (!prevValidationId && validationId) {
-        const decoration = findSingleDecoration(pluginState, spec => spec.validationId === validationId);
+    if (!prevDecorationId && decorationId) {
+        const decoration = findSingleDecoration(pluginState, spec => spec.decorationId === decorationId);
         if (!decoration) {
             return;
         }
         decoration.type.widget.classList.add("validation-widget-container--is-hovering");
         return;
     }
-    const decoration = findSingleDecoration(pluginState, spec => spec.validationId === prevValidationId);
+    const decoration = findSingleDecoration(pluginState, spec => spec.decorationId === prevDecorationId);
     if (!decoration) {
         return;
     }
     decoration.type.widget &&
         decoration.type.widget.classList.remove("validation-widget-container--is-hovering");
-};
-const getReplaceStepRangesFromTransaction = (tr) => getReplaceTransactions(tr).map((step) => ({
-    from: step.from,
-    to: step.to
-}));
-const getReplaceTransactions = (tr) => tr.steps.filter(step => step instanceof dist_16 || step instanceof dist_17);
-const getNewDecorationsForValidationResponse = (response, decorationSet, trs, currentTr) => {
-    const initialTransaction = trs.find(tr => tr.time === parseInt(response.id));
-    if (!initialTransaction && trs.length > 1) {
-        return decorationSet;
-    }
-    const decorationsToAdd = getDecorationsForValidationRanges(response.validationOutputs);
-    const existingDecorations = decorationSet.find();
-    decorationSet = trs.reduce((acc, tr) => {
-        return tr.time >= parseInt(response.id) ? acc.map(tr.mapping, tr.doc) : acc;
-    }, dist_3$3.create((initialTransaction || currentTr).doc, decorationsToAdd));
-    return decorationSet.add(currentTr.doc, existingDecorations);
 };
 const getMergedDirtiedRanges = (tr, oldRanges) => mergeRanges(oldRanges
     .map(range => ({
@@ -19344,56 +19660,71 @@ const getMergedDirtiedRanges = (tr, oldRanges) => mergeRanges(oldRanges
     to: tr.mapping.map(range.to)
 }))
     .concat(getReplaceStepRangesFromTransaction(tr)));
-const documentValidatorPlugin = (schema, throttleInMs = 1500) => {
-    let localView = undefined;
+const documentValidatorPlugin = (schema, { apiUrl, throttleInMs = 2000, maxThrottle = 8000 }) => {
+    let localView;
+    const validationService = new ValidationService(apiUrl);
+    validationService.on(ValidationEvents.VALIDATION_SUCCESS, console.log);
+    const scheduleValidation = () => {
+        setTimeout(() => {
+            const pluginState = plugin.getState(localView.state);
+            if (pluginState.validationInFlight) {
+                return scheduleValidation();
+            }
+            localView.dispatch(localView.state.tr.setMeta(VALIDATION_PLUGIN_ACTION, validationRequestStart()));
+        }, plugin.getState(localView.state).currentThrottle);
+    };
     const plugin = new dist_8({
         state: {
             init(_, { doc }) {
-                validationService.on(ValidationEvents.VALIDATION_COMPLETE, (validationResponse) => console.log(TransactionMetaKeys.VALIDATION_RESPONSE, validationResponse) ||
-                    (localView &&
-                        localView.dispatch(localView.state.tr.setMeta(TransactionMetaKeys.VALIDATION_RESPONSE, validationResponse))));
+                validationService.on(ValidationEvents.VALIDATION_SUCCESS, (validationResponse) => console.log(ValidationEvents.VALIDATION_SUCCESS, validationResponse) ||
+                    localView.dispatch(localView.state.tr.setMeta(VALIDATION_PLUGIN_ACTION, validationRequestSuccess(validationResponse))));
+                validationService.on(ValidationEvents.VALIDATION_ERROR, (validationError) => console.log(ValidationEvents.VALIDATION_ERROR, validationError) ||
+                    localView.dispatch(localView.state.tr.setMeta(VALIDATION_PLUGIN_ACTION, validationRequestError(validationError))));
                 return {
-                    decorations: dist_3$3.create(doc, [])
+                    currentThrottle: throttleInMs,
+                    initialThrottle: throttleInMs,
+                    maxThrottle,
+                    decorations: dist_3$3.create(doc, []),
+                    dirtiedRanges: [],
+                    lastValidationTime: 0,
+                    hoverId: undefined,
+                    trHistory: [],
+                    validationInFlight: undefined,
+                    validationPending: false,
+                    error: undefined
                 };
             },
-            apply(tr, { decorations, dirtiedRanges = [], validationPending = false }) {
-                const isValidating = validationService.getRunningValidations().length;
-                let _newDecorations = decorations.map(tr.mapping, tr.doc);
-                const response = tr.getMeta(TransactionMetaKeys.VALIDATION_RESPONSE);
-                if (response && response.validationOutputs.length) {
-                    _newDecorations = getNewDecorationsForValidationResponse(response, _newDecorations, [], tr);
-                }
+            apply(tr, state) {
+                const action = tr.getMeta(VALIDATION_PLUGIN_ACTION);
+                const _a = action
+                    ? validationPluginReducer(tr, state, action)
+                    : state, { decorations, dirtiedRanges, trHistory } = _a, rest = __rest(_a, ["decorations", "dirtiedRanges", "trHistory"]);
+                let _decorations = decorations.map(tr.mapping, tr.doc);
+                let _trHistory = trHistory;
                 const newDirtiedRanges = getMergedDirtiedRanges(tr, dirtiedRanges);
                 const currentDirtiedRanges = getReplaceStepRangesFromTransaction(tr);
-                const decorationsToAdd = currentDirtiedRanges.map(range => dist_2$3.inline(range.from, range.to + 1, {
-                    class: "validation-dirty-range"
-                }, {
-                    type: "validation-dirty-range"
-                }));
-                _newDecorations = _newDecorations.add(tr.doc, decorationsToAdd);
-                let newValidationPending = false;
-                if (newDirtiedRanges.length && !validationPending) {
-                    setTimeout(() => {
-                        localView &&
-                            localView.dispatch(localView.state.tr.setMeta("validate-ranges", true));
-                    }, throttleInMs);
-                    newValidationPending = true;
+                _decorations = _decorations.add(tr.doc, currentDirtiedRanges.map(range => createDebugDecorationFromRange(range)));
+                if (currentDirtiedRanges.length) {
+                    _decorations = removeValidationDecorationsFromRanges(_decorations, newDirtiedRanges);
                 }
-                let validationSent = false;
-                if (tr.getMeta("validate-ranges")) {
-                    const decsToRemove = _newDecorations.find(undefined, undefined, _ => _.type === "validation-dirty-range");
-                    _newDecorations = _newDecorations.remove(decsToRemove);
-                    validationSent = true;
-                }
-                return {
-                    decorations: _newDecorations,
-                    isValidating,
-                    dirtiedRanges: validationSent ? [] : newDirtiedRanges,
-                    validationPending: validationSent
-                        ? false
-                        : newValidationPending || validationPending,
-                    hoverId: tr.getMeta("hoverId")
-                };
+                _trHistory =
+                    _trHistory.length > 25
+                        ? _trHistory.slice(1).concat(tr)
+                        : _trHistory.concat(tr);
+                return Object.assign({}, rest, { decorations: _decorations, dirtiedRanges: newDirtiedRanges, trHistory: _trHistory });
+            }
+        },
+        appendTransaction(trs, oldState, newState) {
+            const oldPluginState = plugin.getState(oldState);
+            const newPluginState = plugin.getState(newState);
+            if (newPluginState.dirtiedRanges.length &&
+                !newPluginState.validationPending) {
+                scheduleValidation();
+                return newState.tr.setMeta(VALIDATION_PLUGIN_ACTION, validationRequestPending());
+            }
+            if (!oldPluginState.validationInFlight &&
+                newPluginState.validationInFlight) {
+                validationService.validate(newPluginState.validationInFlight.validationInputs, trs[trs.length - 1].time);
             }
         },
         props: {
@@ -19407,7 +19738,7 @@ const documentValidatorPlugin = (schema, throttleInMs = 1500) => {
                         const targetAttr = target.getAttribute("data-attr-validation-id");
                         const newValidationId = targetAttr ? targetAttr : undefined;
                         if (newValidationId !== plugin.getState(view.state).hoverId) {
-                            view.dispatch(view.state.tr.setMeta("hoverId", newValidationId));
+                            view.dispatch(view.state.tr.setMeta(VALIDATION_PLUGIN_ACTION, newHoverIdReceived(newValidationId)));
                         }
                     }
                     return false;
@@ -19423,7 +19754,9 @@ const documentValidatorPlugin = (schema, throttleInMs = 1500) => {
     });
     return plugin;
 };
-const validateDocument = (state, dispatch) => dispatch && dispatch(state.tr.setMeta("validate-document", true));
+const validateDocument = (state, dispatch) => dispatch(state.tr.setMeta(VALIDATION_PLUGIN_ACTION, validationRequestStart()));
+
+//# sourceMappingURL=index.js.map
 
 const spinMe = document.getElementById("spin-me");
 let rotation = 0;
@@ -19457,10 +19790,11 @@ editorElement &&
                     F6: validateDocument
                 }),
                 historyPlugin,
-                documentValidatorPlugin(mySchema)
+                documentValidatorPlugin(mySchema, {
+                    apiUrl: "http://localhost:9001"
+                })
             ]
         })
     }));
-//# sourceMappingURL=index.js.map
 
 }());

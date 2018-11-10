@@ -37,7 +37,7 @@
     "prosemirror-menu": "^1.0.1",
     "prosemirror-model": "^1.0.1",
     "prosemirror-schema-basic": "^1.0.0",
-    "prosemirror-test-builder": "^1.0.0",
+    "prosemirror-test-builder": "^1.0.1",
     "rollup": "^0.52.3",
     "rollup-plugin-babel": "^4.0.0-beta.4",
     "rollup-plugin-commonjs": "^8.2.6",

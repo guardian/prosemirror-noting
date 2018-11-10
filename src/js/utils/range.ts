@@ -1,6 +1,11 @@
 import flatMap from "lodash/flatten";
-import { Range } from "../index";
+import { Range } from "../interfaces/Validation";
 import { ValidationOutput, ValidationInput } from "../interfaces/Validation";
+import { Node } from "prosemirror-model";
+import { findParentNode } from "prosemirror-utils";
+import { Selection, Transaction } from "prosemirror-state";
+import clamp from "lodash/clamp";
+import compact from "lodash/compact";
 
 export const findOverlappingRangeIndex = (range: Range, ranges: Range[]) => {
   return ranges.findIndex(
@@ -19,7 +24,7 @@ export const mergeRange = (range1: Range, range2: Range): Range => ({
   to: range1.to > range2.to ? range1.to : range2.to
 });
 
-export const mergeRanges = (ranges: Range[]) =>
+export const mergeRanges = (ranges: Range[]): Range[] =>
   ranges.reduce(
     (acc, range) => {
       const index = findOverlappingRangeIndex(range, acc);
@@ -129,3 +134,68 @@ export const diffValidationInputs = <
       secondValInputs.map(validationInputToRange)
     ).map(range => getValRangesFromRange(range, firstValInputs))
   );
+
+/**
+ * Expand a range in a document to encompass the words adjacent to the range.
+ */
+export const expandRange = (range: Range, doc: Node): Range => {
+  const $fromPos = doc.resolve(range.from);
+  const $toPos = doc.resolve(range.to);
+  const parentNode = findParentNode(node => node.isBlock)(
+    new Selection($fromPos, $toPos)
+  );
+  if (!parentNode) {
+    throw new Error(
+      `Parent node not found for position ${$fromPos.start}, ${$fromPos.end}`
+    );
+  }
+  return {
+    from: parentNode.start,
+    to: parentNode.start + parentNode.node.textContent.length
+  };
+};
+
+/**
+ * Expand the given ranges to include their parent block nodes.
+ */
+export const getRangesOfParentBlockNodes = (ranges: Range[], doc: Node) => {
+  const validationRanges = ranges.reduce((acc, range: Range) => {
+    const expandedRange = expandRange({ from: range.from, to: range.to }, doc);
+    const validationRanges = [
+      {
+        from: expandedRange.from,
+        to: clamp(expandedRange.to, doc.content.size)
+      }
+    ];
+    return acc.concat(validationRanges);
+  }, ranges);
+  return mergeRanges(validationRanges);
+};
+
+export const mapRangeThroughTransactions = <T extends Range>(
+  ranges: T[],
+  time: number,
+  trs: Transaction[]
+): T[] =>
+  compact(ranges.map(range => {
+    const initialTransactionIndex = trs.findIndex(tr => tr.time === time);
+    // If we only have a single transaction in the history, we're dealing with
+    // an unaltered document, and so there's no mapping to do.
+    if (trs.length === 1) {
+      return range;
+    }
+
+    if (initialTransactionIndex === -1) {
+      return undefined;
+    }
+
+    return Object.assign(range, {
+      ...trs.slice(initialTransactionIndex).reduce(
+        (acc, tr) => ({
+          from: tr.mapping.map(acc.from),
+          to: tr.mapping.map(acc.to)
+        }),
+        range
+      )
+    });
+  }));

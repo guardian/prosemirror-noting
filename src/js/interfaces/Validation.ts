@@ -1,8 +1,16 @@
+export type Range = { from: number; to: number };
+
 export type ValidationInput = { str: string; from: number; to: number };
 
 export type ValidationOutput = ValidationInput & {
   annotation: string;
   type: string;
+};
+
+export type ValidationError = {
+  validationInput: ValidationInput;
+  id: string | number;
+  message: string;
 };
 
 export type ValidationResponse = {
