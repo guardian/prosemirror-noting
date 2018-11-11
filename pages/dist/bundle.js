@@ -19630,6 +19630,8 @@ const handleValidationRequestError = (tr, state, action) => {
             : state.dirtiedRanges, decorations, validationInFlight: undefined, error: action.payload.validationError.message });
 };
 
+//# sourceMappingURL=state.js.map
+
 const updateView = (plugin) => (view, prevState) => {
     const pluginState = plugin.getState(view.state);
     const decorationId = pluginState.hoverId;
