@@ -141,10 +141,6 @@ const documentValidatorPlugin = (
         validationService.on(
           ValidationEvents.VALIDATION_SUCCESS,
           (validationResponse: ValidationResponse) =>
-            console.log(
-              ValidationEvents.VALIDATION_SUCCESS,
-              validationResponse
-            ) ||
             localView.dispatch(
               localView.state.tr.setMeta(
                 VALIDATION_PLUGIN_ACTION,
@@ -155,7 +151,6 @@ const documentValidatorPlugin = (
         validationService.on(
           ValidationEvents.VALIDATION_ERROR,
           (validationError: ValidationError) =>
-            console.log(ValidationEvents.VALIDATION_ERROR, validationError) ||
             localView.dispatch(
               localView.state.tr.setMeta(
                 VALIDATION_PLUGIN_ACTION,

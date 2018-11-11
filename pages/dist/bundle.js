@@ -15064,286 +15064,6 @@ function __awaiter(thisArg, _arguments, P, generator) {
     });
 }
 
-/**
- * Appends the elements of `values` to `array`.
- *
- * @private
- * @param {Array} array The array to modify.
- * @param {Array} values The values to append.
- * @returns {Array} Returns `array`.
- */
-function arrayPush(array, values) {
-  var index = -1,
-      length = values.length,
-      offset = array.length;
-
-  while (++index < length) {
-    array[offset + index] = values[index];
-  }
-  return array;
-}
-
-var _arrayPush = arrayPush;
-
-var freeGlobal = typeof commonjsGlobal == 'object' && commonjsGlobal && commonjsGlobal.Object === Object && commonjsGlobal;
-
-var _freeGlobal = freeGlobal;
-
-var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
-
-/** Used as a reference to the global object. */
-var root = _freeGlobal || freeSelf || Function('return this')();
-
-var _root = root;
-
-var Symbol$1 = _root.Symbol;
-
-var _Symbol = Symbol$1;
-
-var objectProto$1 = Object.prototype;
-
-/** Used to check objects for own properties. */
-var hasOwnProperty$1 = objectProto$1.hasOwnProperty;
-
-/**
- * Used to resolve the
- * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
- * of values.
- */
-var nativeObjectToString = objectProto$1.toString;
-
-/** Built-in value references. */
-var symToStringTag$1 = _Symbol ? _Symbol.toStringTag : undefined;
-
-/**
- * A specialized version of `baseGetTag` which ignores `Symbol.toStringTag` values.
- *
- * @private
- * @param {*} value The value to query.
- * @returns {string} Returns the raw `toStringTag`.
- */
-function getRawTag(value) {
-  var isOwn = hasOwnProperty$1.call(value, symToStringTag$1),
-      tag = value[symToStringTag$1];
-
-  try {
-    value[symToStringTag$1] = undefined;
-    var unmasked = true;
-  } catch (e) {}
-
-  var result = nativeObjectToString.call(value);
-  if (unmasked) {
-    if (isOwn) {
-      value[symToStringTag$1] = tag;
-    } else {
-      delete value[symToStringTag$1];
-    }
-  }
-  return result;
-}
-
-var _getRawTag = getRawTag;
-
-/** Used for built-in method references. */
-var objectProto$2 = Object.prototype;
-
-/**
- * Used to resolve the
- * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
- * of values.
- */
-var nativeObjectToString$1 = objectProto$2.toString;
-
-/**
- * Converts `value` to a string using `Object.prototype.toString`.
- *
- * @private
- * @param {*} value The value to convert.
- * @returns {string} Returns the converted string.
- */
-function objectToString(value) {
-  return nativeObjectToString$1.call(value);
-}
-
-var _objectToString = objectToString;
-
-var nullTag = '[object Null]';
-var undefinedTag = '[object Undefined]';
-
-/** Built-in value references. */
-var symToStringTag = _Symbol ? _Symbol.toStringTag : undefined;
-
-/**
- * The base implementation of `getTag` without fallbacks for buggy environments.
- *
- * @private
- * @param {*} value The value to query.
- * @returns {string} Returns the `toStringTag`.
- */
-function baseGetTag(value) {
-  if (value == null) {
-    return value === undefined ? undefinedTag : nullTag;
-  }
-  return (symToStringTag && symToStringTag in Object(value))
-    ? _getRawTag(value)
-    : _objectToString(value);
-}
-
-var _baseGetTag = baseGetTag;
-
-/**
- * Checks if `value` is object-like. A value is object-like if it's not `null`
- * and has a `typeof` result of "object".
- *
- * @static
- * @memberOf _
- * @since 4.0.0
- * @category Lang
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
- * @example
- *
- * _.isObjectLike({});
- * // => true
- *
- * _.isObjectLike([1, 2, 3]);
- * // => true
- *
- * _.isObjectLike(_.noop);
- * // => false
- *
- * _.isObjectLike(null);
- * // => false
- */
-function isObjectLike(value) {
-  return value != null && typeof value == 'object';
-}
-
-var isObjectLike_1 = isObjectLike;
-
-var argsTag = '[object Arguments]';
-
-/**
- * The base implementation of `_.isArguments`.
- *
- * @private
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is an `arguments` object,
- */
-function baseIsArguments(value) {
-  return isObjectLike_1(value) && _baseGetTag(value) == argsTag;
-}
-
-var _baseIsArguments = baseIsArguments;
-
-var objectProto = Object.prototype;
-
-/** Used to check objects for own properties. */
-var hasOwnProperty = objectProto.hasOwnProperty;
-
-/** Built-in value references. */
-var propertyIsEnumerable = objectProto.propertyIsEnumerable;
-
-/**
- * Checks if `value` is likely an `arguments` object.
- *
- * @static
- * @memberOf _
- * @since 0.1.0
- * @category Lang
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is an `arguments` object,
- *  else `false`.
- * @example
- *
- * _.isArguments(function() { return arguments; }());
- * // => true
- *
- * _.isArguments([1, 2, 3]);
- * // => false
- */
-var isArguments = _baseIsArguments(function() { return arguments; }()) ? _baseIsArguments : function(value) {
-  return isObjectLike_1(value) && hasOwnProperty.call(value, 'callee') &&
-    !propertyIsEnumerable.call(value, 'callee');
-};
-
-var isArguments_1 = isArguments;
-
-/**
- * Checks if `value` is classified as an `Array` object.
- *
- * @static
- * @memberOf _
- * @since 0.1.0
- * @category Lang
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is an array, else `false`.
- * @example
- *
- * _.isArray([1, 2, 3]);
- * // => true
- *
- * _.isArray(document.body.children);
- * // => false
- *
- * _.isArray('abc');
- * // => false
- *
- * _.isArray(_.noop);
- * // => false
- */
-var isArray = Array.isArray;
-
-var isArray_1 = isArray;
-
-var spreadableSymbol = _Symbol ? _Symbol.isConcatSpreadable : undefined;
-
-/**
- * Checks if `value` is a flattenable `arguments` object or array.
- *
- * @private
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is flattenable, else `false`.
- */
-function isFlattenable(value) {
-  return isArray_1(value) || isArguments_1(value) ||
-    !!(spreadableSymbol && value && value[spreadableSymbol]);
-}
-
-var _isFlattenable = isFlattenable;
-
-function baseFlatten(array, depth, predicate, isStrict, result) {
-  var index = -1,
-      length = array.length;
-
-  predicate || (predicate = _isFlattenable);
-  result || (result = []);
-
-  while (++index < length) {
-    var value = array[index];
-    if (depth > 0 && predicate(value)) {
-      if (depth > 1) {
-        // Recursively flatten arrays (susceptible to call stack limits).
-        baseFlatten(value, depth - 1, predicate, isStrict, result);
-      } else {
-        _arrayPush(result, value);
-      }
-    } else if (!isStrict) {
-      result[result.length] = value;
-    }
-  }
-  return result;
-}
-
-var _baseFlatten = baseFlatten;
-
-function flatten$1(array) {
-  var length = array == null ? 0 : array.length;
-  return length ? _baseFlatten(array, 1) : [];
-}
-
-var flatten_1 = flatten$1;
-
 var dist$11 = createCommonjsModule(function (module, exports) {
 Object.defineProperty(exports, '__esModule', { value: true });
 
@@ -19056,6 +18776,142 @@ function isObject(value) {
 
 var isObject_1 = isObject;
 
+var freeGlobal = typeof commonjsGlobal == 'object' && commonjsGlobal && commonjsGlobal.Object === Object && commonjsGlobal;
+
+var _freeGlobal = freeGlobal;
+
+var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
+
+/** Used as a reference to the global object. */
+var root = _freeGlobal || freeSelf || Function('return this')();
+
+var _root = root;
+
+var Symbol$1 = _root.Symbol;
+
+var _Symbol = Symbol$1;
+
+var objectProto = Object.prototype;
+
+/** Used to check objects for own properties. */
+var hasOwnProperty = objectProto.hasOwnProperty;
+
+/**
+ * Used to resolve the
+ * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
+ * of values.
+ */
+var nativeObjectToString = objectProto.toString;
+
+/** Built-in value references. */
+var symToStringTag$1 = _Symbol ? _Symbol.toStringTag : undefined;
+
+/**
+ * A specialized version of `baseGetTag` which ignores `Symbol.toStringTag` values.
+ *
+ * @private
+ * @param {*} value The value to query.
+ * @returns {string} Returns the raw `toStringTag`.
+ */
+function getRawTag(value) {
+  var isOwn = hasOwnProperty.call(value, symToStringTag$1),
+      tag = value[symToStringTag$1];
+
+  try {
+    value[symToStringTag$1] = undefined;
+    var unmasked = true;
+  } catch (e) {}
+
+  var result = nativeObjectToString.call(value);
+  if (unmasked) {
+    if (isOwn) {
+      value[symToStringTag$1] = tag;
+    } else {
+      delete value[symToStringTag$1];
+    }
+  }
+  return result;
+}
+
+var _getRawTag = getRawTag;
+
+/** Used for built-in method references. */
+var objectProto$1 = Object.prototype;
+
+/**
+ * Used to resolve the
+ * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
+ * of values.
+ */
+var nativeObjectToString$1 = objectProto$1.toString;
+
+/**
+ * Converts `value` to a string using `Object.prototype.toString`.
+ *
+ * @private
+ * @param {*} value The value to convert.
+ * @returns {string} Returns the converted string.
+ */
+function objectToString(value) {
+  return nativeObjectToString$1.call(value);
+}
+
+var _objectToString = objectToString;
+
+var nullTag = '[object Null]';
+var undefinedTag = '[object Undefined]';
+
+/** Built-in value references. */
+var symToStringTag = _Symbol ? _Symbol.toStringTag : undefined;
+
+/**
+ * The base implementation of `getTag` without fallbacks for buggy environments.
+ *
+ * @private
+ * @param {*} value The value to query.
+ * @returns {string} Returns the `toStringTag`.
+ */
+function baseGetTag(value) {
+  if (value == null) {
+    return value === undefined ? undefinedTag : nullTag;
+  }
+  return (symToStringTag && symToStringTag in Object(value))
+    ? _getRawTag(value)
+    : _objectToString(value);
+}
+
+var _baseGetTag = baseGetTag;
+
+/**
+ * Checks if `value` is object-like. A value is object-like if it's not `null`
+ * and has a `typeof` result of "object".
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
+ * @example
+ *
+ * _.isObjectLike({});
+ * // => true
+ *
+ * _.isObjectLike([1, 2, 3]);
+ * // => true
+ *
+ * _.isObjectLike(_.noop);
+ * // => false
+ *
+ * _.isObjectLike(null);
+ * // => false
+ */
+function isObjectLike(value) {
+  return value != null && typeof value == 'object';
+}
+
+var isObjectLike_1 = isObjectLike;
+
 var symbolTag = '[object Symbol]';
 
 /**
@@ -19214,8 +19070,10 @@ const mergeRanges = (ranges) => ranges.reduce((acc, range) => {
     return newRange;
 }, []);
 
-
-
+const validationInputToRange = (input) => ({
+    from: input.from,
+    to: input.to
+});
 const expandRange = (range, doc) => {
     const $fromPos = doc.resolve(range.from);
     const $toPos = doc.resolve(range.to);
@@ -19254,7 +19112,6 @@ const mapRangeThroughTransactions = (ranges, time, trs) => compact_1(ranges.map(
         to: tr.mapping.map(acc.to)
     }), range)));
 }));
-//# sourceMappingURL=range.js.map
 
 class EventEmitter {
     constructor() {
@@ -19315,6 +19172,150 @@ class ValidationStateManager extends EventEmitter {
 }
 
 //# sourceMappingURL=ValidationStateManager.js.map
+
+/**
+ * Appends the elements of `values` to `array`.
+ *
+ * @private
+ * @param {Array} array The array to modify.
+ * @param {Array} values The values to append.
+ * @returns {Array} Returns `array`.
+ */
+function arrayPush(array, values) {
+  var index = -1,
+      length = values.length,
+      offset = array.length;
+
+  while (++index < length) {
+    array[offset + index] = values[index];
+  }
+  return array;
+}
+
+var _arrayPush = arrayPush;
+
+var argsTag = '[object Arguments]';
+
+/**
+ * The base implementation of `_.isArguments`.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an `arguments` object,
+ */
+function baseIsArguments(value) {
+  return isObjectLike_1(value) && _baseGetTag(value) == argsTag;
+}
+
+var _baseIsArguments = baseIsArguments;
+
+var objectProto$2 = Object.prototype;
+
+/** Used to check objects for own properties. */
+var hasOwnProperty$1 = objectProto$2.hasOwnProperty;
+
+/** Built-in value references. */
+var propertyIsEnumerable = objectProto$2.propertyIsEnumerable;
+
+/**
+ * Checks if `value` is likely an `arguments` object.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an `arguments` object,
+ *  else `false`.
+ * @example
+ *
+ * _.isArguments(function() { return arguments; }());
+ * // => true
+ *
+ * _.isArguments([1, 2, 3]);
+ * // => false
+ */
+var isArguments = _baseIsArguments(function() { return arguments; }()) ? _baseIsArguments : function(value) {
+  return isObjectLike_1(value) && hasOwnProperty$1.call(value, 'callee') &&
+    !propertyIsEnumerable.call(value, 'callee');
+};
+
+var isArguments_1 = isArguments;
+
+/**
+ * Checks if `value` is classified as an `Array` object.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an array, else `false`.
+ * @example
+ *
+ * _.isArray([1, 2, 3]);
+ * // => true
+ *
+ * _.isArray(document.body.children);
+ * // => false
+ *
+ * _.isArray('abc');
+ * // => false
+ *
+ * _.isArray(_.noop);
+ * // => false
+ */
+var isArray = Array.isArray;
+
+var isArray_1 = isArray;
+
+var spreadableSymbol = _Symbol ? _Symbol.isConcatSpreadable : undefined;
+
+/**
+ * Checks if `value` is a flattenable `arguments` object or array.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is flattenable, else `false`.
+ */
+function isFlattenable(value) {
+  return isArray_1(value) || isArguments_1(value) ||
+    !!(spreadableSymbol && value && value[spreadableSymbol]);
+}
+
+var _isFlattenable = isFlattenable;
+
+function baseFlatten(array, depth, predicate, isStrict, result) {
+  var index = -1,
+      length = array.length;
+
+  predicate || (predicate = _isFlattenable);
+  result || (result = []);
+
+  while (++index < length) {
+    var value = array[index];
+    if (depth > 0 && predicate(value)) {
+      if (depth > 1) {
+        // Recursively flatten arrays (susceptible to call stack limits).
+        baseFlatten(value, depth - 1, predicate, isStrict, result);
+      } else {
+        _arrayPush(result, value);
+      }
+    } else if (!isStrict) {
+      result[result.length] = value;
+    }
+  }
+  return result;
+}
+
+var _baseFlatten = baseFlatten;
+
+function flatten$1(array) {
+  var length = array == null ? 0 : array.length;
+  return length ? _baseFlatten(array, 1) : [];
+}
+
+var flatten_1 = flatten$1;
 
 const serviceName = "[validationAPIService]";
 const ValidationEvents = {
@@ -19620,7 +19621,7 @@ const handleValidationRequestSuccess = (tr, state, action) => {
 };
 const handleValidationRequestError = (tr, state, action) => {
     const decsToRemove = state.decorations.find(undefined, undefined, _ => _.type === DECORATION_INFLIGHT);
-    const dirtiedRanges = mapRangeThroughTransactions([action.payload.validationError.validationInput], parseInt(String(action.payload.validationError.id), 10), state.trHistory);
+    const dirtiedRanges = mapRangeThroughTransactions([validationInputToRange(action.payload.validationError.validationInput)], parseInt(String(action.payload.validationError.id), 10), state.trHistory);
     let decorations = state.decorations.remove(decsToRemove);
     if (dirtiedRanges.length) {
         decorations = decorations.add(tr.doc, dirtiedRanges.map(range => createDebugDecorationFromRange(range)));
@@ -19676,10 +19677,8 @@ const documentValidatorPlugin = (schema, { apiUrl, throttleInMs = 2000, maxThrot
     const plugin = new dist_8({
         state: {
             init(_, { doc }) {
-                validationService.on(ValidationEvents.VALIDATION_SUCCESS, (validationResponse) => console.log(ValidationEvents.VALIDATION_SUCCESS, validationResponse) ||
-                    localView.dispatch(localView.state.tr.setMeta(VALIDATION_PLUGIN_ACTION, validationRequestSuccess(validationResponse))));
-                validationService.on(ValidationEvents.VALIDATION_ERROR, (validationError) => console.log(ValidationEvents.VALIDATION_ERROR, validationError) ||
-                    localView.dispatch(localView.state.tr.setMeta(VALIDATION_PLUGIN_ACTION, validationRequestError(validationError))));
+                validationService.on(ValidationEvents.VALIDATION_SUCCESS, (validationResponse) => localView.dispatch(localView.state.tr.setMeta(VALIDATION_PLUGIN_ACTION, validationRequestSuccess(validationResponse))));
+                validationService.on(ValidationEvents.VALIDATION_ERROR, (validationError) => localView.dispatch(localView.state.tr.setMeta(VALIDATION_PLUGIN_ACTION, validationRequestError(validationError))));
                 return {
                     currentThrottle: throttleInMs,
                     initialThrottle: throttleInMs,
@@ -19755,8 +19754,6 @@ const documentValidatorPlugin = (schema, { apiUrl, throttleInMs = 2000, maxThrot
     return plugin;
 };
 const validateDocument = (state, dispatch) => dispatch(state.tr.setMeta(VALIDATION_PLUGIN_ACTION, validationRequestStart()));
-
-//# sourceMappingURL=index.js.map
 
 const spinMe = document.getElementById("spin-me");
 let rotation = 0;

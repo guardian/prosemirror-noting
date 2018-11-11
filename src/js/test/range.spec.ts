@@ -1,8 +1,7 @@
 import {
   mergeRanges,
   findOverlappingRangeIndex,
-  diffRanges,
-  diffValidationInputs
+  diffRanges
 } from "../utils/range";
 
 describe("Range utils", () => {
@@ -172,110 +171,6 @@ describe("Range utils", () => {
         {
           from: 18,
           to: 20
-        }
-      ]);
-    });
-  });
-  describe("diffValidationInputs", () => {
-    it("should remove the second validation inputs from the first where they overlap", () => {
-      expect(
-        diffValidationInputs(
-          [
-            {
-              str: "example",
-              from: 5,
-              to: 12
-            }
-          ],
-          [
-            {
-              str: "example",
-              from: 7,
-              to: 14
-            }
-          ]
-        )
-      ).toEqual([
-        {
-          str: "ex",
-          from: 5,
-          to: 7
-        }
-      ]);
-      expect(
-        diffValidationInputs(
-          [
-            {
-              str: "examplestringoverlaps",
-              from: 5,
-              to: 26
-            }
-          ],
-          [
-            {
-              str: "string",
-              from: 12,
-              to: 19
-            }
-          ]
-        )
-      ).toEqual([
-        {
-          str: "example",
-          from: 5,
-          to: 12
-        },
-        {
-          str: "overlaps",
-          from: 19,
-          to: 26
-        }
-      ]);
-      expect(
-        diffValidationInputs(
-          [
-            {
-              str: "example",
-              from: 5,
-              to: 12
-            }
-          ],
-          [
-            {
-              str: "example",
-              from: 5,
-              to: 12
-            }
-          ]
-        )
-      ).toEqual([]);
-      expect(
-        diffValidationInputs(
-          [
-            {
-              str: "example string with match",
-              from: 10,
-              to: 35
-            },
-            {
-              str: "example string with match also",
-              from: 40,
-              to: 70
-            }
-          ],
-          [
-            {
-              str: "example string with no match",
-              from: 10,
-              to: 38
-            }
-          ]
-        )
-      ).toEqual([
-        {
-          str: "example string with match also",
-          from: 40,
-          to: 70
         }
       ]);
     });

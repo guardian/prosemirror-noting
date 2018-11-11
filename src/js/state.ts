@@ -8,7 +8,8 @@ import {
 import {
   mapRangeThroughTransactions,
   mergeRanges,
-  getRangesOfParentBlockNodes
+  getRangesOfParentBlockNodes,
+  validationInputToRange
 } from "./utils/range";
 import {
   DECORATION_INFLIGHT,
@@ -211,7 +212,7 @@ const handleValidationRequestError: ActionHandler<
     _ => _.type === DECORATION_INFLIGHT
   );
   const dirtiedRanges = mapRangeThroughTransactions(
-    [action.payload.validationError.validationInput],
+    [validationInputToRange(action.payload.validationError.validationInput)],
     parseInt(String(action.payload.validationError.id), 10),
     state.trHistory
   );

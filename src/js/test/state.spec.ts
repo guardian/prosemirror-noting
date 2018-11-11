@@ -16,6 +16,8 @@ import {
   DECORATION_INFLIGHT
 } from "../utils/decoration";
 
+jest.mock("uuid/v4", () => () => "uuid");
+
 const noteSchema = new Schema({
   nodes,
   marks
@@ -34,18 +36,18 @@ const initialTr = new Transaction(initialDocToValidate);
 initialTr.doc = initialDocToValidate;
 initialTr.time = 0;
 const initialState = {
-	currentThrottle: 100,
-	initialThrottle: 100,
-	maxThrottle: 1000,
-	decorations: DecorationSet.create(doc, []),
-	dirtiedRanges: [],
-	lastValidationTime: 0,
-	hoverId: undefined,
-	trHistory: [initialTr],
-	validationInFlight: undefined,
-	validationPending: false,
-	error: undefined
-  };
+  currentThrottle: 100,
+  initialThrottle: 100,
+  maxThrottle: 1000,
+  decorations: DecorationSet.create(doc, []),
+  dirtiedRanges: [],
+  lastValidationTime: 0,
+  hoverId: undefined,
+  trHistory: [initialTr],
+  validationInFlight: undefined,
+  validationPending: false,
+  error: undefined
+};
 
 describe("State management", () => {
   describe("validationRequestPending", () => {
@@ -150,28 +152,73 @@ describe("State management", () => {
     });
     it("should create decorations for the incoming validations", () => {
       const docToValidate = doc(p("Example text to validate"));
-	  const tr = new Transaction(docToValidate);
-	  tr.doc = docToValidate;
+      const tr = new Transaction(docToValidate);
+      tr.doc = docToValidate;
       tr.time = 1337;
       expect(
         validationPluginReducer(
           tr,
           initialState,
           validationRequestSuccess({
-            validationOutputs: [{
-				str: "Example text to validate",
-				from: 5,
-				to: 10,
-				annotation: "Summat ain't right",
-				type: "EXAMPLE_TYPE"
-			}],
+            validationOutputs: [
+              {
+                str: "Example text to validate",
+                from: 5,
+                to: 10,
+                annotation: "Summat ain't right",
+                type: "EXAMPLE_TYPE"
+              }
+            ],
             id: "1337"
           })
         )
-      ).toEqual(initialState);
+      ).toMatchSnapshot();
     });
   });
-  describe("validationRequestError", () => {});
+  describe("validationRequestError", () => {
+    it("Should re-add the in-flight validation ranges as dirty ranges, and remove the inflight validation", () => {
+      expect(
+        validationPluginReducer(
+          initialTr,
+          {
+            ...initialState,
+            validationInFlight: {
+              validationInputs: [
+                {
+                  str: "Example text to validate",
+                  from: 1,
+                  to: 25
+                }
+              ],
+              id: 1337
+            }
+          },
+          validationRequestError({
+            validationInput: {
+              str: "Example text to validate",
+              from: 1,
+              to: 25
+            },
+            id: 1337,
+            message: "429: Too many requests"
+          })
+        )
+      ).toEqual({
+        ...initialState,
+        dirtiedRanges: [
+          {
+            from: 1,
+            to: 25
+          }
+        ],
+        decorations: new DecorationSet().add(initialDocToValidate, [
+          createDebugDecorationFromRange({ from: 1, to: 25 })
+        ]),
+        error: "429: Too many requests",
+        validationInFlight: undefined
+      });
+    });
+  });
   describe("newHoverIdReceived", () => {
     it("should update the hover id", () => {
       expect(

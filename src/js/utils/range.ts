@@ -83,9 +83,9 @@ export const diffRanges = (
   );
 };
 
-export const validationInputToRange = (vi: ValidationInput) => ({
-  from: vi.from,
-  to: vi.from + vi.str.length
+export const validationInputToRange = (input: ValidationInput): Range => ({
+  from: input.from,
+  to: input.to
 });
 
 const getValRangesFromRange = <T extends ValidationInput | ValidationOutput>(
@@ -113,26 +113,6 @@ const getValRangesFromRange = <T extends ValidationInput | ValidationOutput>(
       return acc;
     },
     [] as T[]
-  );
-
-/**
- * Remove the second validation inputs from the first,
- * producing a new array of validation inputs.
- *
- * This function works on the assumption that all ranges
- * in each set of validation inputs are merged.
- */
-export const diffValidationInputs = <
-  T extends ValidationInput | ValidationOutput
->(
-  firstValInputs: T[],
-  secondValInputs: (ValidationInput | ValidationOutput)[]
-): T[] =>
-  flatMap(
-    diffRanges(
-      firstValInputs.map(validationInputToRange),
-      secondValInputs.map(validationInputToRange)
-    ).map(range => getValRangesFromRange(range, firstValInputs))
   );
 
 /**
@@ -177,25 +157,27 @@ export const mapRangeThroughTransactions = <T extends Range>(
   time: number,
   trs: Transaction[]
 ): T[] =>
-  compact(ranges.map(range => {
-    const initialTransactionIndex = trs.findIndex(tr => tr.time === time);
-    // If we only have a single transaction in the history, we're dealing with
-    // an unaltered document, and so there's no mapping to do.
-    if (trs.length === 1) {
-      return range;
-    }
+  compact(
+    ranges.map(range => {
+      const initialTransactionIndex = trs.findIndex(tr => tr.time === time);
+      // If we only have a single transaction in the history, we're dealing with
+      // an unaltered document, and so there's no mapping to do.
+      if (trs.length === 1) {
+        return range;
+      }
 
-    if (initialTransactionIndex === -1) {
-      return undefined;
-    }
+      if (initialTransactionIndex === -1) {
+        return undefined;
+      }
 
-    return Object.assign(range, {
-      ...trs.slice(initialTransactionIndex).reduce(
-        (acc, tr) => ({
-          from: tr.mapping.map(acc.from),
-          to: tr.mapping.map(acc.to)
-        }),
-        range
-      )
-    });
-  }));
+      return Object.assign(range, {
+        ...trs.slice(initialTransactionIndex).reduce(
+          (acc, tr) => ({
+            from: tr.mapping.map(acc.from),
+            to: tr.mapping.map(acc.to)
+          }),
+          range
+        )
+      });
+    })
+  );
