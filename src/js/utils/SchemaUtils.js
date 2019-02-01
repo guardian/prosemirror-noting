@@ -12,7 +12,10 @@ const noteToAttrs = (id, meta, attrGenerator = () => {}) => {
   }
 
   return Object.assign(
-    {},
+    {
+      "data-note-id": id,
+      class: classes.join(" ")
+    },
     generatedMeta,
     Object.keys(meta)
       .filter(key => meta[key] !== false) // remove specials
@@ -22,11 +25,7 @@ const noteToAttrs = (id, meta, attrGenerator = () => {}) => {
             [`data-${hyphenatePascal(key)}`]: meta[key]
           }),
         {}
-      ),
-    {
-      class: classes.join(" "),
-      "data-note-id": id
-    }
+      )
   );
 };
 
