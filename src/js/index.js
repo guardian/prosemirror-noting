@@ -1,4 +1,4 @@
-import { Plugin } from "prosemirror-state";
+import { Plugin, PluginKey } from "prosemirror-state";
 import { Slice } from "prosemirror-model";
 import NoteTracker from "./NoteTracker";
 import NoteTransaction from "./NoteTransaction";
@@ -132,6 +132,7 @@ const buildNoter = (
 
   return {
     plugin: new Plugin({
+      key: new PluginKey(`prosemirror-noting-${noOfNoterPlugins}`),
       props: {
         decorations: noteDecorator,
         handleClick: handleClick && clickHandler(noteTracker, handleClick),
@@ -146,7 +147,9 @@ const buildNoter = (
     setNoteMeta: setNoteMeta(key),
     collapseAllNotes: collapseAllNotes(key),
     showAllNotes: showAllNotes(key),
-    toggleAllNotes: toggleAllNotes(key)
+    toggleAllNotes: toggleAllNotes(key),
+    addNote: (start, end, id) =>
+      noteTracker.addNote(start, end, undefined, id, true)
   };
 };
 
