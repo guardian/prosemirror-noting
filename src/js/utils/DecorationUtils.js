@@ -29,14 +29,19 @@ const createNoteWrapper = (
   const sideToRender = cursorAtWidgetAndInsideNote
     ? side - Math.sign(side) / 2
     : 0 - side;
+  const sideAdjustedForPluginPriority =
+    sideToRender + (pluginPriority / Number.MAX_SAFE_INTEGER) * Math.sign(side);
+
+  // A unique key for the widget -- a composite of id and side.
+  const key = `${id}-${side}-${sideAdjustedForPluginPriority}-${pluginPriority}`;
+
   return Decoration.widget(notePos, dom, {
     // MAX_SAFE_INTEGER is here to order note decorations consistently across
     // plugins without imposing a (realistic) limit on the number of noting
     // plugins that can run concurrently.
-    side:
-      sideToRender +
-      (pluginPriority / Number.MAX_SAFE_INTEGER) * Math.sign(side),
-    marks: []
+    key,
+    side: sideAdjustedForPluginPriority,
+    marks: [],
   });
 };
 
