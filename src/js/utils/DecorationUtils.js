@@ -32,8 +32,8 @@ const createNoteWrapper = (
   const sideAdjustedForPluginPriority =
     sideToRender + (pluginPriority / Number.MAX_SAFE_INTEGER) * Math.sign(side);
 
-  // A unique key for the widget -- a composite of id and side.
-  const key = `${id}-${side}-${sideAdjustedForPluginPriority}-${pluginPriority}`;
+  // A unique key for the widget.
+  const key = `${id}-${side}-${pluginPriority}`;
 
   return Decoration.widget(notePos, dom, {
     // MAX_SAFE_INTEGER is here to order note decorations consistently across
