@@ -41,7 +41,7 @@
     "rollup-plugin-commonjs": "^8.2.6",
     "rollup-plugin-eslint": "^4.0.0",
     "rollup-plugin-node-resolve": "^3.0.0",
-    "rollup-plugin-scss": "^0.4.0"
+    "rollup-plugin-scss": "^2.4.0"
   },
   "dependencies": {
     "prosemirror-state": "^1.0.0",
