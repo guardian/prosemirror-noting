@@ -92,8 +92,8 @@ class SharedNoteStateTracker {
    */
   notesAt(pos, bias = 0) {
     return this.noteTrackers
-      .map((noteTracker) => noteTracker.noteAt(pos, bias))
-      .filter((noteOption) => !!noteOption);
+      .map(noteTracker => noteTracker.noteAt(pos, bias))
+      .filter(noteOption => !!noteOption);
   }
 }
 

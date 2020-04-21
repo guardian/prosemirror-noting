@@ -115,7 +115,7 @@ export const charsAdded = (oldState, state) =>
 /*
  * This takes a doc node and a marktype and hunts for them (assuming the have an id
  * on their attrs) and merges their start and ends (for use with the note tracker)
- * 
+ *
  * Unlike sanitizeNode, this will not look for contiguosness when finding the
  * notes as this helper assumes that the consuming code is not interested in
  * sanitizing the code. This should not pose any problems as long as notes
