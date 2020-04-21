@@ -34,8 +34,9 @@ const createNoteWrapper = (
     // plugins without imposing a (realistic) limit on the number of noting
     // plugins that can run concurrently.
     side:
-      sideToRender + pluginPriority / Number.MAX_SAFE_INTEGER * Math.sign(side),
-    marks: []
+      sideToRender +
+      (pluginPriority / Number.MAX_SAFE_INTEGER) * Math.sign(side),
+    marks: [],
   });
 };
 
@@ -49,7 +50,7 @@ const placeholderDecos = (noteTransaction, state) => {
   return state.selection.$cursor && type
     ? [
         noteWrapper("NONE", state.selection.$cursor.pos, -1),
-        noteWrapper("NONE", state.selection.$cursor.pos, 1)
+        noteWrapper("NONE", state.selection.$cursor.pos, 1),
       ]
     : [];
 };
@@ -59,7 +60,7 @@ export const createDecorateNotes = (
   noteTracker,
   modifyNoteDecoration,
   pluginPriority
-) => state => {
+) => (state) => {
   return DecorationSet.create(state.doc, [
     ...noteTracker.notes.reduce((out, { id, start, end, meta }) => {
       const noteWrapper = createNoteWrapper(
@@ -71,6 +72,6 @@ export const createDecorateNotes = (
       );
       return [...out, noteWrapper(id, start, -1), noteWrapper(id, end, 1)];
     }, []),
-    ...placeholderDecos(noteTransaction, state)
+    ...placeholderDecos(noteTransaction, state),
   ]);
 };
