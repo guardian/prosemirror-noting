@@ -5,13 +5,13 @@ import v4 from "uuid/v4";
 // Runs through a Fragment's nodes and runs `updater` on them,
 // which is expected to return a node - either the same one or a modified one -
 // which is then added in place of the old node
-const updateFragmentNodes = updater => prevFrag => {
+const updateFragmentNodes = (updater) => (prevFrag) => {
   let frag = Fragment.empty;
 
-  const appendNodeToFragment = node =>
+  const appendNodeToFragment = (node) =>
     (frag = frag.append(Fragment.from(node)));
 
-  prevFrag.forEach(node =>
+  prevFrag.forEach((node) =>
     appendNodeToFragment(
       node.copy(updateFragmentNodes(updater)(updater(node).content))
     )
@@ -42,7 +42,7 @@ const sanitizeFragmentInner = (frag, markType, createId = v4) => {
   // the current id of the node according to the input document
   let currentNoteId = null;
 
-  const setNewId = prevId => {
+  const setNewId = (prevId) => {
     const newId = !idMap[prevId] ? prevId : createId();
     idMap[prevId] = newId;
     currentNoteId = prevId;
@@ -53,7 +53,7 @@ const sanitizeFragmentInner = (frag, markType, createId = v4) => {
   // seen before in a previous non-contiguous note range, if it's been seen
   // before then a new id will be generated and used for this id while the range
   // is contiguous
-  const getAdjustNoteId = id => {
+  const getAdjustNoteId = (id) => {
     if (id === currentNoteId) {
       return idMap[id];
     }
@@ -64,11 +64,11 @@ const sanitizeFragmentInner = (frag, markType, createId = v4) => {
     currentNoteId = null;
   };
 
-  return updateFragmentNodes(node => {
+  return updateFragmentNodes((node) => {
     const noteMark = markType.isInSet(node.marks);
     if (noteMark) {
       return updateNodeMarkAttrs(node, noteMark, {
-        id: getAdjustNoteId(noteMark.attrs.id)
+        id: getAdjustNoteId(noteMark.attrs.id),
       });
     }
 
@@ -82,7 +82,7 @@ const sanitizeFragmentInner = (frag, markType, createId = v4) => {
   })(frag);
 };
 
-const wrap = value => (Array.isArray(value) ? value : [value]);
+const wrap = (value) => (Array.isArray(value) ? value : [value]);
 
 // markTypes can either be a MarkType or MarkType[]
 export const sanitizeFragment = (frag, markTypes, createId) =>
@@ -102,7 +102,7 @@ export const getInsertedRanges = ({ mapping }) => {
     stepMap.forEach((oldStart, oldEnd, newStart, newEnd) => {
       ranges.push([
         mapping.slice(i + 1).map(newStart),
-        mapping.slice(i + 1).map(newEnd)
+        mapping.slice(i + 1).map(newEnd),
       ]);
     });
   });
@@ -115,7 +115,7 @@ export const charsAdded = (oldState, state) =>
 /*
  * This takes a doc node and a marktype and hunts for them (assuming the have an id
  * on their attrs) and merges their start and ends (for use with the note tracker)
- * 
+ *
  * Unlike sanitizeNode, this will not look for contiguosness when finding the
  * notes as this helper assumes that the consuming code is not interested in
  * sanitizing the code. This should not pose any problems as long as notes
@@ -141,7 +141,7 @@ export const notesFromDoc = (doc, markType, min = false, max = false) => {
         meta, // this should be the same across all notes so just set it here
         nodes: [],
         start: Infinity,
-        end: -Infinity
+        end: -Infinity,
       };
 
       notes[id] = Object.assign({}, notes[id], {
@@ -151,12 +151,12 @@ export const notesFromDoc = (doc, markType, min = false, max = false) => {
           ...notes[id].nodes,
           {
             start,
-            end
-          }
-        ]
+            end,
+          },
+        ],
       });
     }
   });
 
-  return Object.keys(notes).map(id => notes[id]);
+  return Object.keys(notes).map((id) => notes[id]);
 };

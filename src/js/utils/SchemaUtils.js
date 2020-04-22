@@ -1,7 +1,7 @@
 import { hyphenatePascal } from "./StringUtils";
 
 // Coerce trues
-const attToVal = att => (att === "true" ? true : att);
+const attToVal = (att) => (att === "true" ? true : att);
 
 const noteToAttrs = (id, meta, attrGenerator = () => {}) => {
   const classes = ["note"]; // allow classes to be added by all
@@ -15,17 +15,17 @@ const noteToAttrs = (id, meta, attrGenerator = () => {}) => {
     {},
     generatedMeta,
     Object.keys(meta)
-      .filter(key => meta[key] !== false) // remove specials
+      .filter((key) => meta[key] !== false) // remove specials
       .reduce(
         (out, key) =>
           Object.assign({}, out, {
-            [`data-${hyphenatePascal(key)}`]: meta[key]
+            [`data-${hyphenatePascal(key)}`]: meta[key],
           }),
         {}
       ),
     {
       class: classes.join(" "),
-      "data-note-id": id
+      "data-note-id": id,
     }
   );
 };
@@ -33,22 +33,22 @@ const noteToAttrs = (id, meta, attrGenerator = () => {}) => {
 const datasetToAttrs = (dataset, defaults = {}) => ({
   id: dataset.noteId || false,
   meta: Object.keys(dataset)
-    .filter(key => key !== "noteId" && dataset[key] !== "false") // remove special or falses
+    .filter((key) => key !== "noteId" && dataset[key] !== "false") // remove special or falses
     .reduce(
       (out, key) =>
         Object.assign({}, out, {
-          [key]: attToVal(dataset[key]) || defaults[key]
+          [key]: attToVal(dataset[key]) || defaults[key],
         }),
       {}
-    )
+    ),
 });
 
-const filterTagTypeMap = tagTypeMap =>
+const filterTagTypeMap = (tagTypeMap) =>
   typeof tagTypeMap === "string" ? { note: tagTypeMap } : tagTypeMap;
 
 export const createNoteMark = (_typeTagMap, attrGenerator = () => {}) => {
   const typeTagMap = filterTagTypeMap(_typeTagMap);
-  const values = Object.keys(typeTagMap).map(key => typeTagMap[key]);
+  const values = Object.keys(typeTagMap).map((key) => typeTagMap[key]);
   if (values.length !== new Set(values).size) {
     throw new Error(
       "[prosemirror-noting]: type tags: element types must be unique"
@@ -58,26 +58,26 @@ export const createNoteMark = (_typeTagMap, attrGenerator = () => {}) => {
     attrs: {
       id: {},
       meta: {
-        default: {}
-      }
+        default: {},
+      },
     },
     inclusive: false,
     // Create a rule for every type
-    parseDOM: Object.keys(typeTagMap).map(type => ({
+    parseDOM: Object.keys(typeTagMap).map((type) => ({
       tag: typeTagMap[type],
       getAttrs: ({ dataset }) => {
         const attrs = datasetToAttrs(dataset);
         return Object.assign({}, attrs, {
           meta: Object.assign({}, attrs.meta, {
-            type
-          })
+            type,
+          }),
         });
-      }
+      },
     })),
     // Spit out the node based on the type
     toDOM: ({ attrs: { id, meta } }) => [
       typeTagMap[meta.type],
-      noteToAttrs(id, meta, attrGenerator)
-    ]
+      noteToAttrs(id, meta, attrGenerator),
+    ],
   };
 };
