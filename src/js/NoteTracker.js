@@ -3,14 +3,14 @@ import uuid from "uuid/v1";
 import { cloneDeep } from "./utils/helpers";
 import { getInsertedRanges } from "./utils/StateUtils";
 
-const ensureType = meta => {
+const ensureType = (meta) => {
   if (!meta) {
     return {
-      type: "note"
+      type: "note",
     };
   } else if (!meta.type) {
     return Object.assign({}, meta, {
-      type: "note"
+      type: "note",
     });
   }
   return meta;
@@ -23,7 +23,7 @@ export default class NoteTracker {
         "[prosemirror-noting]: NoteTracker must be passed an instance of SharedNoteStateTracker on construction"
       );
     }
-    this.notes = notes.filter(note => !note.isEmpty);
+    this.notes = notes.filter((note) => !note.isEmpty);
     this.onNoteCreate = onNoteCreate;
     this.sharedNoteStateTracker = sharedNoteStateTracker;
     sharedNoteStateTracker.addNoteTracker(this);
@@ -83,7 +83,7 @@ export default class NoteTracker {
                 arr.length === 1 ? note.id : nextId++,
                 arr.length === 1 ? note.meta : cloneDeep(note.meta)
               )
-          )
+          ),
       ],
       []
     );
@@ -91,8 +91,8 @@ export default class NoteTracker {
 
   mapPositions(startFunc, endFunc = startFunc) {
     this.notes = this.notes
-      .map(note => note.mapPositions(startFunc, endFunc))
-      .filter(note => !note.isEmpty);
+      .map((note) => note.mapPositions(startFunc, endFunc))
+      .filter((note) => !note.isEmpty);
   }
 
   /**
@@ -117,7 +117,7 @@ export default class NoteTracker {
     range.sort();
     const [from, to] = range;
     return (
-      this.notes.find(note => note.coversRange(from, to, bias !== 0)) || false
+      this.notes.find((note) => note.coversRange(from, to, bias !== 0)) || false
     );
   }
 
@@ -136,7 +136,8 @@ export default class NoteTracker {
 
   notesTouchingRange(from, to, type) {
     return this.notes.filter(
-      note => (!type || note.meta.type === type) && note.touchesRange(from, to)
+      (note) =>
+        (!type || note.meta.type === type) && note.touchesRange(from, to)
     );
   }
 
@@ -151,7 +152,7 @@ export default class NoteTracker {
 
     return {
       from: min,
-      to: max
+      to: max,
     };
   }
 

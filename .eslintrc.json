@@ -1,14 +1,19 @@
 {
-  "env": {
-    "browser": true,
-    "es6": true
-  },
-  "extends": ["prettier"],
-  "plugins": ["prettier"],
-  "rules": {
-    "prettier/prettier": ["error"]
-  },
-  "parserOptions": {
-    "sourceType": "module"
-  }
+    "env": {
+        "browser": true,
+        "es6": true
+    },
+    "root": true,
+    "parser": "@typescript-eslint/parser",
+    "plugins": [
+      "@typescript-eslint"
+    ],
+    "extends": [
+      "eslint:recommended","plugin:prettier/recommended",
+      "plugin:@typescript-eslint/eslint-recommended",
+      "plugin:@typescript-eslint/recommended"
+    ],
+    "parserOptions": {
+        "sourceType": "module"
+    }
 }
