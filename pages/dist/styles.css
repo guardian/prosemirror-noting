@@ -25,6 +25,47 @@
   background-color: #F8FBFD;
   padding-right: 8px; }
 
+.ProseMirror {
+  position: relative; }
+
+.ProseMirror {
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  -webkit-font-variant-ligatures: none;
+  font-variant-ligatures: none; }
+
+.ProseMirror pre {
+  white-space: pre-wrap; }
+
+.ProseMirror li {
+  position: relative; }
+
+.ProseMirror-hideselection *::selection {
+  background: transparent; }
+
+.ProseMirror-hideselection *::-moz-selection {
+  background: transparent; }
+
+.ProseMirror-hideselection {
+  caret-color: transparent; }
+
+.ProseMirror-selectednode {
+  outline: 2px solid #8cf; }
+
+/* Make sure li selections wrap around markers */
+li.ProseMirror-selectednode {
+  outline: none; }
+
+li.ProseMirror-selectednode:after {
+  content: "";
+  position: absolute;
+  left: -32px;
+  right: -2px;
+  top: -2px;
+  bottom: -2px;
+  border: 2px solid #8cf;
+  pointer-events: none; }
+
 .ProseMirror-textblock-dropdown {
   min-width: 3em; }
 
@@ -156,47 +197,6 @@
 
 .ProseMirror-icon span {
   vertical-align: text-top; }
-
-.ProseMirror {
-  position: relative; }
-
-.ProseMirror {
-  word-wrap: break-word;
-  white-space: pre-wrap;
-  -webkit-font-variant-ligatures: none;
-  font-variant-ligatures: none; }
-
-.ProseMirror pre {
-  white-space: pre-wrap; }
-
-.ProseMirror li {
-  position: relative; }
-
-.ProseMirror-hideselection *::selection {
-  background: transparent; }
-
-.ProseMirror-hideselection *::-moz-selection {
-  background: transparent; }
-
-.ProseMirror-hideselection {
-  caret-color: transparent; }
-
-.ProseMirror-selectednode {
-  outline: 2px solid #8cf; }
-
-/* Make sure li selections wrap around markers */
-li.ProseMirror-selectednode {
-  outline: none; }
-
-li.ProseMirror-selectednode:after {
-  content: "";
-  position: absolute;
-  left: -32px;
-  right: -2px;
-  top: -2px;
-  bottom: -2px;
-  border: 2px solid #8cf;
-  pointer-events: none; }
 
 /* Add space around the hr to make clicking it easier */
 .ProseMirror-example-setup-style hr {
