@@ -1,6 +1,6 @@
-import resolve from "rollup-plugin-node-resolve";
-import commonjs from "rollup-plugin-commonjs";
-import eslint from "rollup-plugin-eslint";
+import resolve from "@rollup/plugin-node-resolve";
+import commonjs from "@rollup/plugin-commonjs";
+import { eslint } from "rollup-plugin-eslint";
 import scss from "rollup-plugin-scss";
 import babel from "rollup-plugin-babel";
 
