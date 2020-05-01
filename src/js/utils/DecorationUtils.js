@@ -7,20 +7,19 @@ const createNoteWrapper = (
   pluginPriority = 1,
   modifyNoteDecoration = () => {}
 ) => (id, notePos, side) => {
-  const dom = document.createElement("span");
+  const toDOM = () => {
+    const element = document.createElement("span");
+    element.classList.add(
+      `note-${id}`,
+      `note-wrapper--${side < 0 ? "start" : "end"}`,
+      `note-wrapper--${meta.type}`
+    );
+    // This allows the user to mutate the DOM node we've just created. Consumer beware!
+    modifyNoteDecoration(element, meta, side);
+    element.dataset.toggleNoteId = id;
+    return element;
+  };
 
-  // fixes a firefox bug that makes the decos appear selected
-  const content = document.createElement("span");
-  dom.appendChild(content);
-
-  dom.classList.add(
-    `note-${id}`,
-    `note-wrapper--${side < 0 ? "start" : "end"}`,
-    `note-wrapper--${meta.type}`
-  );
-  // This allows the user to mutate the DOM node we've just created. Consumer beware!
-  modifyNoteDecoration(dom, meta, side);
-  dom.dataset.toggleNoteId = id;
   const cursorAtWidgetAndInsideNote = inside && cursorPos === notePos;
   // If we have a cursor at the note widget position and we're inside a note,
   // we need to ensure that other widgets don't alter its render order, so
@@ -32,16 +31,17 @@ const createNoteWrapper = (
   const sideAdjustedForPluginPriority =
     sideToRender + (pluginPriority / Number.MAX_SAFE_INTEGER) * Math.sign(side);
 
-  // A unique key for the widget.
-  const key = `${id}-${side}-${pluginPriority}`;
-
-  return Decoration.widget(notePos, dom, {
+  // A unique key for the widget. It must change to force a render
+  // every time we'd like the cursor behaviour to change.
+  const key = `${id}-${sideAdjustedForPluginPriority}`;
+  console.log(key);
+  return Decoration.widget(notePos, toDOM, {
     // MAX_SAFE_INTEGER is here to order note decorations consistently across
     // plugins without imposing a (realistic) limit on the number of noting
     // plugins that can run concurrently.
     key,
     side: sideAdjustedForPluginPriority,
-    marks: [],
+    marks: []
   });
 };
 
