@@ -15,8 +15,8 @@ export default class Note {
   }
 
   /*
-   * Writes
-   */
+    * Writes
+    */
 
   mapPositions(startFunc, endFunc = startFunc) {
     return new Note(
@@ -32,8 +32,8 @@ export default class Note {
   }
 
   /*
-   * Reads
-   */
+    * Reads
+    */
 
   rangesAround(from, to) {
     const { start, end } = this;

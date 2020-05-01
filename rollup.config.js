@@ -9,18 +9,17 @@ export default [
     input: "src/js/index.js",
     output: {
       file: "dist/noting.js",
-      format: "cjs",
+      format: "cjs"
     },
     plugins: [
       scss({
-        output: "dist/noting.css",
+        output: "dist/noting.css"
       }),
       eslint({
-        exclude: ["node_modules/**"],
-        config: ".eslintrc.json",
+        exclude: ["node_modules/**"]
       }),
-      babel(),
-    ],
+      babel()
+    ]
   },
   {
     // Github pages
@@ -28,18 +27,17 @@ export default [
     output: {
       file: "pages/dist/bundle.js",
       format: "iife",
-      name: "Pages",
+      name: "Pages"
     },
     plugins: [
       scss({
-        output: "pages/dist/styles.css",
+        output: "pages/dist/styles.css"
       }),
       eslint({
-        exclude: ["node_modules/**"],
-        config: ".eslintrc.json",
+        exclude: ["node_modules/**"]
       }),
       resolve({ browser: true }),
-      commonjs(),
-    ],
-  },
+      commonjs()
+    ]
+  }
 ];

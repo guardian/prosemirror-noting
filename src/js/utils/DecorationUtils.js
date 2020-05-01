@@ -34,7 +34,7 @@ const createNoteWrapper = (
   // A unique key for the widget. It must change to force a render
   // every time we'd like the cursor behaviour to change.
   const key = `${id}-${sideAdjustedForPluginPriority}`;
-  console.log(key);
+
   return Decoration.widget(notePos, toDOM, {
     // MAX_SAFE_INTEGER is here to order note decorations consistently across
     // plugins without imposing a (realistic) limit on the number of noting

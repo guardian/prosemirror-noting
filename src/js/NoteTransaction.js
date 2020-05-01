@@ -80,9 +80,7 @@ export default class NoteTransaction {
 
   init(tr, oldState) {
     const { noteTracker, currentNoteID } = this;
-    const {
-      selection: { $cursor: $oldCursor }
-    } = oldState;
+    const { selection: { $cursor: $oldCursor } } = oldState;
     const { $cursor } = tr.selection;
 
     /**
@@ -178,12 +176,12 @@ export default class NoteTransaction {
   }
 
   /*
-   * If we are pressing the menu button then if we have a cursor
-   * and are in a note then remove that note otherwise set a placeholder
-   * to start a note.
-   *
-   * If we have a selection decide whether to grow the note or slice it
-   */
+     * If we are pressing the menu button then if we have a cursor
+     * and are in a note then remove that note otherwise set a placeholder
+     * to start a note.
+     *
+     * If we have a selection decide whether to grow the note or slice it
+     */
   handleToggle(type, cursorToEnd, oldState) {
     const { noteTracker, tr, markType } = this;
     const { $cursor, from, to } = tr.selection;
@@ -240,13 +238,13 @@ export default class NoteTransaction {
   }
 
   /*
-   * If we are pasting or undoing gather the extent of the new content
-   * find any notes overlapping this range, and from this get the max
-   * range to edit.
-   *
-   * Then rebuild this range my removing all the notes and adding them
-   * back in
-   */
+     * If we are pasting or undoing gather the extent of the new content
+     * find any notes overlapping this range, and from this get the max
+     * range to edit.
+     *
+     * Then rebuild this range my removing all the notes and adding them
+     * back in
+     */
   handleChange(undo, oldState) {
     const { noteTracker, tr, markType } = this;
     const rebuildRange = undo
@@ -276,10 +274,10 @@ export default class NoteTransaction {
   }
 
   /*
-   * Otherwise if we just have a cursor and this is a normal typing
-   * type update then check whether we need to add a note from a
-   * placeholder
-   */
+     * Otherwise if we just have a cursor and this is a normal typing
+     * type update then check whether we need to add a note from a
+     * placeholder
+     */
   handleInput(oldState) {
     const { tr } = this;
     const { $cursor } = tr.selection;
