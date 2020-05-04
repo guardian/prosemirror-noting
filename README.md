@@ -72,6 +72,11 @@ Toggle note works in the following way:
   - Inside a note - will remove the note
   - Outside a note - will start a note
 
+### toggleAllNotes(type: string): CommandFunction
+Returns a command used for toggling all notes.
+
+- `type` - this will use the type to decide which note type to toggle if there are more than one.
+
 ### setNoteMeta(id: string, meta: object): CommandFunction
 Returns a command to set the meta for a note id
 
