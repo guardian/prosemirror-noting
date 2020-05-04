@@ -5,11 +5,8 @@
 .ProseMirror {
   word-wrap: break-word;
   white-space: pre-wrap;
-  white-space: break-spaces;
   -webkit-font-variant-ligatures: none;
-  font-variant-ligatures: none;
-  font-feature-settings: "liga" 0;
-  /* the above doesn't seem to work in Edge */ }
+  font-variant-ligatures: none; }
 
 .ProseMirror pre {
   white-space: pre-wrap; }
@@ -125,6 +122,10 @@ li.ProseMirror-selectednode:after {
   min-width: 4em;
   left: 100%;
   top: -3px; }
+
+.ProseMirror-menu-active {
+  background: #eee;
+  border-radius: 4px; }
 
 .ProseMirror-menu-active {
   background: #eee;
