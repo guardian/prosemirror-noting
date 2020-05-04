@@ -150,4 +150,4 @@ const buildNoter = (
   };
 };
 
-export { createNoteMark, buildNoter, toggleNote, sanitizeNode };
+export { createNoteMark, buildNoter, toggleNote, toggleAllNotes, sanitizeNode };
