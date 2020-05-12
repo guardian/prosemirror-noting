@@ -1,7 +1,9 @@
 import { hyphenatePascal } from "./StringUtils";
+import { MarkSpec } from "prosemirror-model";
 
 // Coerce trues
-const attToVal = (att) => (att === "true" ? true : att);
+const attToVal = (att: string | boolean): string | boolean =>
+  att === "true" ? true : att;
 
 const noteToAttrs = (id, meta, attrGenerator = () => {}) => {
   const classes = ["note"]; // allow classes to be added by all
@@ -43,10 +45,17 @@ const datasetToAttrs = (dataset, defaults = {}) => ({
     ),
 });
 
-const filterTagTypeMap = (tagTypeMap) =>
+type TagTypeMap = {
+  note: string;
+};
+
+const filterTagTypeMap = (tagTypeMap: TagTypeMap | string): TagTypeMap =>
   typeof tagTypeMap === "string" ? { note: tagTypeMap } : tagTypeMap;
 
-export const createNoteMark = (_typeTagMap, attrGenerator = () => {}) => {
+export const createNoteMark = (
+  _typeTagMap: TagTypeMap | string,
+  attrGenerator = () => {}
+): MarkSpec => {
   const typeTagMap = filterTagTypeMap(_typeTagMap);
   const values = Object.keys(typeTagMap).map((key) => typeTagMap[key]);
   if (values.length !== new Set(values).size) {
