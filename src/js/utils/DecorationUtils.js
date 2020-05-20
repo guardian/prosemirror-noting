@@ -7,19 +7,6 @@ const createNoteWrapper = (
   pluginPriority = 1,
   modifyNoteDecoration = () => {}
 ) => (id, notePos, side) => {
-  const toDOM = () => {
-    const element = document.createElement("span");
-    element.classList.add(
-      `note-${id}`,
-      `note-wrapper--${side < 0 ? "start" : "end"}`,
-      `note-wrapper--${meta.type}`
-    );
-    // This allows the user to mutate the DOM node we've just created. Consumer beware!
-    modifyNoteDecoration(element, meta, side);
-    element.dataset.toggleNoteId = id;
-    return element;
-  };
-
   const cursorAtWidgetAndInsideNote = inside && cursorPos === notePos;
   // If we have a cursor at the note widget position and we're inside a note,
   // we need to ensure that other widgets don't alter its render order, so
@@ -35,7 +22,29 @@ const createNoteWrapper = (
   // every time we'd like the cursor behaviour to change.
   const key = `${id}-${sideAdjustedForPluginPriority}`;
 
-  return Decoration.widget(notePos, toDOM, {
+  const toDom = () => {
+    const element = document.createElement("span");
+    element.classList.add(
+      `note-${id}`,
+      `note-wrapper--${side < 0 ? "start" : "end"}`,
+      `note-wrapper--${meta.type}`,
+      // We apply this class to allow us to style the widget decoration
+      // relative to the position of the caret. Conditionally applying
+      // padding to the left or right of the widget allows us to ensure
+      // that the caret, which is actually placed in the center of the
+      // span in the space character, appears to the left or right of the
+      // widget.
+      `note-wrapper--${sideToRender >= 0 ? "left" : "right"}`
+    );
+    element.innerText = " ";
+
+    // This allows the user to mutate the DOM node we've just created. Consumer beware!
+    modifyNoteDecoration(element, meta, side);
+    element.dataset.toggleNoteId = id;
+    return element;
+  };
+
+  return Decoration.widget(notePos, toDom, {
     // MAX_SAFE_INTEGER is here to order note decorations consistently across
     // plugins without imposing a (realistic) limit on the number of noting
     // plugins that can run concurrently.

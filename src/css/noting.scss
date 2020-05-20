@@ -13,11 +13,20 @@
     }
 }
 
+.note-wrapper--left {
+  padding-right: 8px;
+}
+
+.note-wrapper--right {
+  padding-left: 8px;
+}
+
 .note-wrapper--start,
 .note-wrapper--end {
     cursor: pointer;
     display: inline;
-    padding: 2px;
+    padding-top: 2px;
+    padding-bottom: 2px;
     vertical-align: top;
 }
 
@@ -27,7 +36,6 @@
         url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' viewBox='0 0 2 1' version='1.1'><line x1='0' y1='0' x2='2' y2='0' stroke='%232983b6' stroke-dasharray='1'/></svg>") bottom / 2px repeat-x,
         url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' viewBox='0 0 8 22' version='1.1'><path d='M 0 0 L 6 0 L 0 6 L 0 0 L 2 0 L 2 22 L 0 22' fill='%232983b6' stroke='none'/></svg>") top left / contain no-repeat;
     background-color: #F8FBFD;
-    padding-left: 8px;
 }
 
 .note-wrapper--end {
@@ -36,5 +44,4 @@
         url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' viewBox='0 0 2 1' version='1.1'><line x1='0' y1='0' x2='2' y2='0' stroke='%232983b6' stroke-dasharray='1'/></svg>") bottom / 2px repeat-x,
         url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' viewBox='0 0 8 22' version='1.1'><path d='M 8 22 L 2 22 L 8 14 L 8 22 L 6 22 L 6 0 L 8 0' fill='%232983b6' stroke='none'/></svg>") top right / contain no-repeat;
     background-color: #F8FBFD;
-    padding-right: 8px;
 }
