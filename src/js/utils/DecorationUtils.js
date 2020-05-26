@@ -15,6 +15,10 @@ const createNoteWrapper = (
   const sideToRender = cursorAtWidgetAndInsideNote
     ? side - Math.sign(side) / 2
     : 0 - side;
+
+  // To make the order of widgets from different noting plugins stable as the caret
+  // moves, we adjust the side properties by a constant derived from the plugin priority
+  // (which is effectively an id).
   const sideAdjustedForPluginPriority =
     sideToRender + (pluginPriority / Number.MAX_SAFE_INTEGER) * Math.sign(side);
 
@@ -45,9 +49,6 @@ const createNoteWrapper = (
   };
 
   return Decoration.widget(notePos, toDom, {
-    // MAX_SAFE_INTEGER is here to order note decorations consistently across
-    // plugins without imposing a (realistic) limit on the number of noting
-    // plugins that can run concurrently.
     key,
     side: sideAdjustedForPluginPriority,
     marks: []
