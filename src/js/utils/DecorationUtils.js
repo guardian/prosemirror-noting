@@ -24,6 +24,7 @@ const createNoteWrapper = (
   const sideAdjustedForPluginPriority =
     sideToRender + (pluginPriority / Number.MAX_SAFE_INTEGER) * Math.sign(side);
 
+  // If the meta has changed, a unique key will be set to force a rerender.
   const maybeMetaKey = meta[MetaIdKey] ? `-${meta[MetaIdKey]}` : "";
 
   // A unique key for the widget. It must change to force a render
