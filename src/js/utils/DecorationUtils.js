@@ -1,5 +1,7 @@
 import { DecorationSet, Decoration } from "prosemirror-view";
 
+export const MetaIdKey = Symbol("meta-id-key");
+
 const createNoteWrapper = (
   meta,
   cursorPos,
@@ -22,9 +24,12 @@ const createNoteWrapper = (
   const sideAdjustedForPluginPriority =
     sideToRender + (pluginPriority / Number.MAX_SAFE_INTEGER) * Math.sign(side);
 
+  // If the meta has changed, a unique key will be set to force a rerender.
+  const maybeMetaKey = meta[MetaIdKey] ? `-${meta[MetaIdKey]}` : "";
+
   // A unique key for the widget. It must change to force a render
   // every time we'd like the cursor behaviour to change.
-  const key = `${id}-${sideAdjustedForPluginPriority}`;
+  const key = `${id}-${sideAdjustedForPluginPriority}${maybeMetaKey}`;
 
   const toDom = () => {
     const element = document.createElement("span");

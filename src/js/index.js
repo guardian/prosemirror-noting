@@ -2,7 +2,7 @@ import { Plugin, PluginKey } from "prosemirror-state";
 import { Slice } from "prosemirror-model";
 import NoteTracker from "./NoteTracker";
 import NoteTransaction from "./NoteTransaction";
-import { createDecorateNotes } from "./utils/DecorationUtils";
+import { createDecorateNotes, MetaIdKey } from "./utils/DecorationUtils";
 import clickHandler from "./clickHandler";
 import {
   notesFromDoc,
@@ -11,6 +11,7 @@ import {
 } from "./utils/StateUtils";
 import { createNoteMark } from "./utils/SchemaUtils";
 import SharedNoteStateTracker from "./SharedNoteStateTracker";
+import uuid from "uuid/v4";
 
 const toggleNote = key => (type, cursorToEnd = false) => (state, dispatch) =>
   dispatch
@@ -33,7 +34,10 @@ const setNotesMeta = key => (specs = []) => (state, dispatch) =>
       )
     : true;
 
-const setNoteMeta = key => (id, meta) => setNotesMeta(key)([{ id, meta }]);
+const setNoteMeta = key => (id, meta) =>
+  setNotesMeta(key)([
+    { id, meta: Object.assign({}, meta, { [MetaIdKey]: uuid() }) }
+  ]);
 
 const collapseAllNotes = key => () => (state, dispatch) => {
   // @TODO: This is searching the entire doc for notes every time.

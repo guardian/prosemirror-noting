@@ -1,6 +1,6 @@
 import { AllSelection } from "prosemirror-state";
 import { Fragment } from "prosemirror-model";
-import v4 from "uuid/v4";
+import uuid from "uuid/v4";
 
 // Runs through a Fragment's nodes and runs `updater` on them,
 // which is expected to return a node - either the same one or a modified one -
@@ -37,7 +37,7 @@ const updateNodeMarkAttrs = (node, mark, attrs = {}) =>
 // e.g. <note id="1">test</note> some <note id="1">stuff</note>
 // results in
 // e.g. <note id="1">test</note> some <note id="2">stuff</note>
-const sanitizeFragmentInner = (frag, markType, createId = v4) => {
+const sanitizeFragmentInner = (frag, markType, createId = uuid) => {
   let idMap = {};
   // the current id of the node according to the input document
   let currentNoteId = null;
