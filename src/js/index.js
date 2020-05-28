@@ -11,7 +11,7 @@ import {
 } from "./utils/StateUtils";
 import { createNoteMark } from "./utils/SchemaUtils";
 import SharedNoteStateTracker from "./SharedNoteStateTracker";
-import v4 from "uuid/v4";
+import uuid from "uuid/v4";
 
 const toggleNote = key => (type, cursorToEnd = false) => (state, dispatch) =>
   dispatch
@@ -36,7 +36,7 @@ const setNotesMeta = key => (specs = []) => (state, dispatch) =>
 
 const setNoteMeta = key => (id, meta) =>
   setNotesMeta(key)([
-    { id, meta: Object.assign({}, meta, { [MetaIdKey]: v4() }) }
+    { id, meta: Object.assign({}, meta, { [MetaIdKey]: uuid() }) }
   ]);
 
 const collapseAllNotes = key => () => (state, dispatch) => {
