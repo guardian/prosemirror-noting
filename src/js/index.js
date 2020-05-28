@@ -11,6 +11,7 @@ import {
 } from "./utils/StateUtils";
 import { createNoteMark } from "./utils/SchemaUtils";
 import SharedNoteStateTracker from "./SharedNoteStateTracker";
+import v4 from "uuid/v4";
 
 const toggleNote = key => (type, cursorToEnd = false) => (state, dispatch) =>
   dispatch
@@ -33,7 +34,8 @@ const setNotesMeta = key => (specs = []) => (state, dispatch) =>
       )
     : true;
 
-const setNoteMeta = key => (id, meta) => setNotesMeta(key)([{ id, meta }]);
+const setNoteMeta = key => (id, meta) =>
+  setNotesMeta(key)([{ id, meta: Object.assign({}, meta, { id: v4() }) }]);
 
 const collapseAllNotes = key => () => (state, dispatch) => {
   // @TODO: This is searching the entire doc for notes every time.

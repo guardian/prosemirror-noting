@@ -24,7 +24,7 @@ const createNoteWrapper = (
 
   // A unique key for the widget. It must change to force a render
   // every time we'd like the cursor behaviour to change.
-  const key = `${id}-${sideAdjustedForPluginPriority}`;
+  const key = `${id}-${sideAdjustedForPluginPriority}-${meta.id}`;
 
   const toDom = () => {
     const element = document.createElement("span");
