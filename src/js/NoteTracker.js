@@ -172,7 +172,7 @@ export default class NoteTracker {
   }
 
   insertedRange(state) {
-    let ranges = getInsertedRanges(state);
+    const ranges = getInsertedRanges(state);
 
     if (!ranges.length) {
       return false;

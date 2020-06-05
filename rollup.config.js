@@ -38,7 +38,7 @@ export default [
     },
     plugins: [
       scss({
-        output: "pages/dist/styles.css"
+        output: "pages/dist/styles.css",
       }),
       eslint({
         exclude: ["node_modules/**"],

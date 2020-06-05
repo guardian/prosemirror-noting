@@ -34,9 +34,9 @@ const setNotesMeta = (key) => (specs = []) => (state, dispatch) =>
       )
     : true;
 
-const setNoteMeta = key => (id, meta) =>
+const setNoteMeta = (key) => (id, meta) =>
   setNotesMeta(key)([
-    { id, meta: Object.assign({}, meta, { [MetaIdKey]: uuid() }) }
+    { id, meta: Object.assign({}, meta, { [MetaIdKey]: uuid() }) },
   ]);
 
 const collapseAllNotes = (key) => () => (state, dispatch) => {
@@ -45,7 +45,7 @@ const collapseAllNotes = (key) => () => (state, dispatch) => {
   // order to make it act like others, and to clean this up, we
   // should be able to call noter.getState() and read the list of notes from there
   const allNotes = notesFromDoc(state.doc, state.config.schema.marks.note);
-  let hidden = !allNotes.every((note) => note.meta.hidden === true);
+  const hidden = !allNotes.every((note) => note.meta.hidden === true);
 
   if (!hidden) {
     return false;
@@ -63,7 +63,7 @@ const collapseAllNotes = (key) => () => (state, dispatch) => {
 
 const showAllNotes = (key) => () => (state, dispatch) => {
   const allNotes = notesFromDoc(state.doc, state.config.schema.marks.note);
-  let hidden = !allNotes.every((note) => note.meta.hidden === true);
+  const hidden = !allNotes.every((note) => note.meta.hidden === true);
 
   if (hidden) {
     return false;
@@ -154,7 +154,7 @@ const buildNoter = (
     showAllNotes: showAllNotes(key),
     toggleAllNotes: toggleAllNotes(key),
     addNote: (start, end, id) =>
-      noteTracker.addNote(start, end, undefined, id, true)
+      noteTracker.addNote(start, end, undefined, id, true),
   };
 };
 

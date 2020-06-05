@@ -15,7 +15,7 @@ export class TestState {
     if (!cmd) {
       throw new Error(`Command ${name} not registered with TestState`);
     }
-    cmd(...runArgs)(this.state, tr => this.apply(tr));
+    cmd(...runArgs)(this.state, (tr) => this.apply(tr));
     return this;
   }
 
@@ -50,14 +50,14 @@ export class TestState {
 
   undo(n = 1) {
     for (let i = 0; i < n; i += 1) {
-      undo(this.state, tr => this.apply(tr));
+      undo(this.state, (tr) => this.apply(tr));
     }
     return this;
   }
 
   redo(n = 1) {
     for (let i = 0; i < n; i += 1) {
-      redo(this.state, tr => this.apply(tr));
+      redo(this.state, (tr) => this.apply(tr));
     }
     return this;
   }
@@ -159,7 +159,7 @@ export class TestState {
   }
 }
 
-export const removeTags = _node => {
+export const removeTags = (_node) => {
   const node = _node.copy(_node.content);
   delete node.tag;
   const children = [];

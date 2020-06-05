@@ -1,0 +1,10 @@
+/dist/
+/pages/dist/
+.DS_Store
+/dist/
+*.log
+.vs
+yarn.lock
+.metals
+.npmignore
+.gitignore

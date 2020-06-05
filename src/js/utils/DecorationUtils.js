@@ -56,7 +56,7 @@ const createNoteWrapper = (
   return Decoration.widget(notePos, toDom, {
     key,
     side: sideAdjustedForPluginPriority,
-    marks: []
+    marks: [],
   });
 };
 

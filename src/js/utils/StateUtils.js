@@ -38,7 +38,7 @@ const updateNodeMarkAttrs = (node, mark, attrs = {}) =>
 // results in
 // e.g. <note id="1">test</note> some <note id="2">stuff</note>
 const sanitizeFragmentInner = (frag, markType, createId = uuid) => {
-  let idMap = {};
+  const idMap = {};
   // the current id of the node according to the input document
   let currentNoteId = null;
 
@@ -97,7 +97,7 @@ export const sanitizeNode = (node, markTypes, createId) =>
 
 // Return an array of all of the new ranges in a document [[start, end], ...]
 export const getInsertedRanges = ({ mapping }) => {
-  let ranges = [];
+  const ranges = [];
   mapping.maps.forEach((stepMap, i) => {
     stepMap.forEach((oldStart, oldEnd, newStart, newEnd) => {
       ranges.push([

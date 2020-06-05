@@ -15,8 +15,8 @@
     "prepublishOnly": "yarn build",
     "build": "tsc && rollup -c",
     "watch": "rollup -c -w",
-    "lint": "eslint src/js/index.js",    
-    "format": "prettier --write './src/**/*.?s' && prettier --write './pages/**/*.?s'",
+    "lint": "eslint \"src/js/**\"",
+    "format": "prettier --write '.'",
     "publish-pages": "git subtree push --prefix pages/dist origin gh-pages"
   },
   "devDependencies": {
