@@ -7,45 +7,45 @@ import clickHandler from "./clickHandler";
 import {
   notesFromDoc,
   sanitizeNode,
-  sanitizeFragment
+  sanitizeFragment,
 } from "./utils/StateUtils";
 import { createNoteMark } from "./utils/SchemaUtils";
 import SharedNoteStateTracker from "./SharedNoteStateTracker";
 import uuid from "uuid/v4";
 
-const toggleNote = key => (type, cursorToEnd = false) => (state, dispatch) =>
+const toggleNote = (key) => (type, cursorToEnd = false) => (state, dispatch) =>
   dispatch
     ? dispatch(
         state.tr.setMeta("toggle-note", {
           key,
           type,
-          cursorToEnd
+          cursorToEnd,
         })
       )
     : true;
 
-const setNotesMeta = key => (specs = []) => (state, dispatch) =>
+const setNotesMeta = (key) => (specs = []) => (state, dispatch) =>
   dispatch
     ? dispatch(
         state.tr.setMeta("set-notes-meta", {
           key,
-          specs
+          specs,
         })
       )
     : true;
 
-const setNoteMeta = key => (id, meta) =>
+const setNoteMeta = (key) => (id, meta) =>
   setNotesMeta(key)([
-    { id, meta: Object.assign({}, meta, { [MetaIdKey]: uuid() }) }
+    { id, meta: Object.assign({}, meta, { [MetaIdKey]: uuid() }) },
   ]);
 
-const collapseAllNotes = key => () => (state, dispatch) => {
+const collapseAllNotes = (key) => () => (state, dispatch) => {
   // @TODO: This is searching the entire doc for notes every time.
   // NoteTracker is essentially the state of the Noter plugin, in
   // order to make it act like others, and to clean this up, we
   // should be able to call noter.getState() and read the list of notes from there
   const allNotes = notesFromDoc(state.doc, state.config.schema.marks.note);
-  let hidden = !allNotes.every(note => note.meta.hidden === true);
+  const hidden = !allNotes.every((note) => note.meta.hidden === true);
 
   if (!hidden) {
     return false;
@@ -54,16 +54,16 @@ const collapseAllNotes = key => () => (state, dispatch) => {
   const specs = allNotes.map(({ id }) => ({
     id,
     meta: {
-      hidden: true
-    }
+      hidden: true,
+    },
   }));
 
   return setNotesMeta(key)(specs)(state, dispatch);
 };
 
-const showAllNotes = key => () => (state, dispatch) => {
+const showAllNotes = (key) => () => (state, dispatch) => {
   const allNotes = notesFromDoc(state.doc, state.config.schema.marks.note);
-  let hidden = !allNotes.every(note => note.meta.hidden === true);
+  const hidden = !allNotes.every((note) => note.meta.hidden === true);
 
   if (hidden) {
     return false;
@@ -72,14 +72,14 @@ const showAllNotes = key => () => (state, dispatch) => {
   const specs = allNotes.map(({ id }) => ({
     id,
     meta: {
-      hidden: false
-    }
+      hidden: false,
+    },
   }));
 
   return setNotesMeta(key)(specs)(state, dispatch);
 };
 
-const toggleAllNotes = key => () => (state, dispatch) =>
+const toggleAllNotes = (key) => () => (state, dispatch) =>
   collapseAllNotes(key)()(state)
     ? collapseAllNotes(key)()(state, dispatch)
     : showAllNotes(key)()(state, dispatch);
@@ -106,7 +106,7 @@ const buildNoter = (
     // element and the side that it's rendered on, to allow the consumer to
     // modify the element, e.g. add a title attribute.
     // (element: HTMLElement, side: Boolean) => void
-    modifyNoteDecoration = () => {}
+    modifyNoteDecoration = () => {},
   }
 ) => {
   noOfNoterPlugins++;
@@ -141,11 +141,12 @@ const buildNoter = (
         decorations: noteDecorator,
         handleClick: handleClick && clickHandler(noteTracker, handleClick),
         transformPasted: ({ content, openStart, openEnd }) =>
-          new Slice(sanitizeFragment(content, markType), openStart, openEnd)
+          new Slice(sanitizeFragment(content, markType), openStart, openEnd),
       },
       filterTransaction: (...args) =>
         noteTransaction.filterTransaction(...args),
-      appendTransaction: (...args) => noteTransaction.appendTransaction(...args)
+      appendTransaction: (...args) =>
+        noteTransaction.appendTransaction(...args),
     }),
     toggleNote: toggleNote(key),
     setNoteMeta: setNoteMeta(key),
@@ -153,7 +154,7 @@ const buildNoter = (
     showAllNotes: showAllNotes(key),
     toggleAllNotes: toggleAllNotes(key),
     addNote: (start, end, id) =>
-      noteTracker.addNote(start, end, undefined, id, true)
+      noteTracker.addNote(start, end, undefined, id, true),
   };
 };
 

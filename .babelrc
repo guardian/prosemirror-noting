@@ -1,6 +1,7 @@
 {
   "ignore": ["node_modules/**"],
-  "presets": [["@babel/env", { "modules": false }]],
+  "presets": [["@babel/env", { "modules": false }], "@babel/typescript"],
+  "plugins": ["@babel/proposal-class-properties"],
   "env": {
     "test": {
       "presets": ["@babel/env"]

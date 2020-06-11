@@ -1,7 +1,7 @@
 import NoteTracker from "../src/js/NoteTracker";
 import SharedNoteStateTracker from "../src/js/SharedNoteStateTracker";
 
-const getNoteRanges = notes => notes.map(({ start, end }) => [start, end]);
+const getNoteRanges = (notes) => notes.map(({ start, end }) => [start, end]);
 
 describe("NoteTracker", () => {
   let noteTracker;
@@ -92,7 +92,10 @@ describe("NoteTracker", () => {
 
       // This expects noteTracker.notes to put notes in ascending order
       // this need not be guaranteed
-      expect(getNoteRanges(noteTracker.notes)).toEqual([[5, 8], [28, 30]]);
+      expect(getNoteRanges(noteTracker.notes)).toEqual([
+        [5, 8],
+        [28, 30],
+      ]);
     });
   });
 
@@ -123,15 +126,18 @@ describe("NoteTracker", () => {
     it("correctly maps positions", () => {
       noteTracker.addNote(5, 7);
       noteTracker.addNote(11, 19);
-      noteTracker.mapPositions(pos => pos + 1);
+      noteTracker.mapPositions((pos) => pos + 1);
 
-      expect(getNoteRanges(noteTracker.notes)).toEqual([[6, 8], [12, 20]]);
+      expect(getNoteRanges(noteTracker.notes)).toEqual([
+        [6, 8],
+        [12, 20],
+      ]);
     });
 
     it("correctly removes 0 length notes", () => {
       noteTracker.addNote(5, 7);
       noteTracker.addNote(11, 19);
-      noteTracker.mapPositions(pos => (pos < 9 ? 5 : pos));
+      noteTracker.mapPositions((pos) => (pos < 9 ? 5 : pos));
 
       expect(getNoteRanges(noteTracker.notes)).toEqual([[11, 19]]);
     });
@@ -139,9 +145,12 @@ describe("NoteTracker", () => {
     it("correctly shrinks notes", () => {
       noteTracker.addNote(3, 8);
       noteTracker.addNote(11, 19);
-      noteTracker.mapPositions(pos => Math.max(pos, 5));
+      noteTracker.mapPositions((pos) => Math.max(pos, 5));
 
-      expect(getNoteRanges(noteTracker.notes)).toEqual([[5, 8], [11, 19]]);
+      expect(getNoteRanges(noteTracker.notes)).toEqual([
+        [5, 8],
+        [11, 19],
+      ]);
     });
   });
 });

@@ -56,7 +56,7 @@ const createNoteWrapper = (
   return Decoration.widget(notePos, toDom, {
     key,
     side: sideAdjustedForPluginPriority,
-    marks: []
+    marks: [],
   });
 };
 
@@ -70,7 +70,7 @@ const placeholderDecos = (noteTransaction, state) => {
   return state.selection.$cursor && type
     ? [
         noteWrapper("NONE", state.selection.$cursor.pos, -1),
-        noteWrapper("NONE", state.selection.$cursor.pos, 1)
+        noteWrapper("NONE", state.selection.$cursor.pos, 1),
       ]
     : [];
 };
@@ -80,7 +80,7 @@ export const createDecorateNotes = (
   noteTracker,
   modifyNoteDecoration,
   pluginPriority
-) => state => {
+) => (state) => {
   return DecorationSet.create(state.doc, [
     ...noteTracker.notes.reduce((out, { id, start, end, meta }) => {
       const noteWrapper = createNoteWrapper(
@@ -92,6 +92,6 @@ export const createDecorateNotes = (
       );
       return [...out, noteWrapper(id, start, -1), noteWrapper(id, end, 1)];
     }, []),
-    ...placeholderDecos(noteTransaction, state)
+    ...placeholderDecos(noteTransaction, state),
   ]);
 };
