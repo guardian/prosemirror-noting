@@ -8,7 +8,11 @@ Very basic demo [here](http://guardian.github.com/prosemirror-noting)
 
 ## Install
 
-`npm install prosemirror-noting`
+`npm install @guardian/prosemirror-noting`
+
+or
+
+`yarn add @guardian/prosemirror-noting`
 
 ## Usage
 
