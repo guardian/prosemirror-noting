@@ -16,7 +16,7 @@ jobs:
     with:
       DEBUG: true
 # This org name will probably need to change based on your team
-      ORG: guardian-devtools
+      ORG: guardian-ed-tools
       SKIP_NODE: true
     secrets:
        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
