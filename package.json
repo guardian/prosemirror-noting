@@ -50,7 +50,7 @@
     "rollup-plugin-babel": "^4.4.0",
     "rollup-plugin-dts": "^1.4.0",
     "rollup-plugin-eslint": "^7.0.0",
-    "rollup-plugin-scss": "^2.4.0",
+    "rollup-plugin-scss": "^4.0.0",
     "typescript": "^3.8.3"
   },
   "dependencies": {
