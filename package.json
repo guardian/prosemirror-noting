@@ -16,7 +16,8 @@
     "watch": "vite",
     "lint": "eslint \"src/js/**\"",
     "format": "prettier --write '.'",
-    "publish-pages": "git subtree push --prefix pages/dist origin gh-pages"
+    "publish-pages": "git subtree push --prefix pages/dist origin gh-pages",
+    "yalc": "yarn build && yalc push"
   },
   "devDependencies": {
     "@eslint/js": "^9.2.0",
@@ -38,6 +39,7 @@
     "vite": "^5.2.11"
   },
   "dependencies": {
+    "@guardian/prosemirror-noting": "file:.yalc/@guardian/prosemirror-noting",
     "prosemirror-state": "^1.3.3",
     "prosemirror-view": "^1.14.7",
     "uuid": "^3.1.0"

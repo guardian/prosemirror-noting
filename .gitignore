@@ -4,3 +4,5 @@ node_modules/
 *.log
 .vs
 .idea
+.yalc/
+yalc.lock
