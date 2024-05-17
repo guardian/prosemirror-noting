@@ -12,6 +12,7 @@ import {
 import { createNoteMark } from "./utils/SchemaUtils";
 import SharedNoteStateTracker from "./SharedNoteStateTracker";
 import uuid from "uuid/v4";
+import "../css/noting.scss";
 
 const toggleNote = (key) => (type, cursorToEnd = false) => (state, dispatch) =>
   dispatch
