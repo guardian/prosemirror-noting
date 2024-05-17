@@ -30,7 +30,7 @@ const mySchema = new Schema({
         class: meta.hidden ? "note--collapsed" : "",
         title: "My Title",
         contenteditable: !meta.hidden,
-      })
+      }),
     ),
   }),
 });
@@ -45,7 +45,7 @@ const noterPlugin = noter(mySchema.marks.note, doc, historyPlugin);
 new EditorView(document.querySelector("#editor"), {
   state: EditorState.create({
     doc: DOMParser.fromSchema(mySchema).parse(
-      document.querySelector("#content")
+      document.querySelector("#content"),
     ),
     plugins: [
       keymap({

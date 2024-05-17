@@ -1,5 +1,5 @@
-/dist/
-/pages/dist/
+./dist/
+./pages/dist/
 .DS_Store
 /dist/
 *.log
