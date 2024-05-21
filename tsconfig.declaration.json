@@ -4,6 +4,6 @@
     "declaration": true,
     "skipLibCheck": true,
     "emitDeclarationOnly": true,
-    "outDir": "dist"
+    "outFile": "./dist/noting.js"
   }
 }
