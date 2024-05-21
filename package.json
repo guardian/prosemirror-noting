@@ -17,7 +17,7 @@
     "lint": "eslint \"src/js/**\"",
     "format": "prettier --write '.'",
     "publish-pages": "git subtree push --prefix pages/dist origin gh-pages",
-    "yalc": "yarn build && yalc push"
+    "yalc": "yarn build && yalc publish"
   },
   "devDependencies": {
     "@eslint/js": "^9.2.0",
