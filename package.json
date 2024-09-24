@@ -47,7 +47,7 @@
     "prosemirror-model": "^1.9.1",
     "prosemirror-schema-basic": "^1.0.0",
     "prosemirror-test-builder": "^1.0.0",
-    "rollup": "2.48.0",
+    "rollup": "3.29.5",
     "rollup-plugin-babel": "^4.4.0",
     "rollup-plugin-dts": "3.0.2",
     "rollup-plugin-eslint": "^7.0.0",
