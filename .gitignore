@@ -4,3 +4,4 @@ node_modules/
 *.log
 .vs
 .idea
+/pages/dist/assets
